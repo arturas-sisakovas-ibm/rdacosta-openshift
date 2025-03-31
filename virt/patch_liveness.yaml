@@ -1,0 +1,8 @@
+spec:
+  template:
+    spec:
+      livenessProbe:
+        tcpSocket:
+          port: 3306
+        initialDelaySeconds: 40
+        periodSeconds: 5

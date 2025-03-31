@@ -14,5 +14,6 @@ spec:
         matchLabels:
           kubernetes.io/metadata.name: openshift-cnv
     ports:
-        - protocol: TCP
+      - portNumber:
+          protocol: TCP
           port: 22

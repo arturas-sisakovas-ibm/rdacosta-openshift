@@ -1,0 +1,2 @@
+oc patch vm/vm1 --type=merge -p '{"spec":{"template":{"spec":{"subdomain":"headless"}}}}'
+

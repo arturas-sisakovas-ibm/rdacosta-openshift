@@ -1,0 +1,12 @@
+spec:
+  template:
+    spec:
+      readinessProbe:
+        httpGet:
+          path: /healthz
+          port: 80
+        initialDelaySeconds: 40
+        periodSeconds: 5
+        timeoutSeconds: 2
+        failureThreshold: 2
+        successThreshold: 1
