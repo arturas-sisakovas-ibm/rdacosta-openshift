@@ -1,0 +1,16 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/instance: api
+  name: api
+spec:
+  port:
+    targetPort: 8080-tcp
+  to:
+    kind: Service
+    name: api
+    weight: 100
+  wildcardPolicy: None

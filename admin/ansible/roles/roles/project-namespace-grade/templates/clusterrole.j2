@@ -1,0 +1,20 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ cluster_role_name }}
+rules:
+{% for rule in rules %}
+  - apiGroups:
+{%   for api_group in rule.api_groups %}
+      - "{{ api_group}}"
+{%   endfor %}
+    resources:
+{%   for resource in rule.resources %}
+      - "{{ resource }}"
+{%   endfor %}
+    verbs:
+{%   for verb in rule.verbs %}
+      - "{{ verb }}"
+{%   endfor %}
+{% endfor %}

@@ -1,0 +1,12 @@
+{
+  "name": "world-fe",
+  "version": "1.0.0",
+  "description": "A frontend for world-api",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Build step placeholder: static files are ready!'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
+

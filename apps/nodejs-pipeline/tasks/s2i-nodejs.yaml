@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: s2i-nodejs
+spec:
+  params:
+    - name: PATH_CONTEXT
+      type: string
+      description: The path to the source code
+  workspaces:
+    - name: source
+  steps:
+    - name: set-permissions
+      image: busybox
+      script: |
+        #!/bin/sh
+        chmod -R 777 $(workspaces.source.path)/$(params.PATH_CONTEXT)
+    - name: s2i-build
+      image: registry.access.redhat.com/ubi8/nodejs-14
+      workingDir: $(workspaces.source.path)/$(params.PATH_CONTEXT)
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          npm install
+

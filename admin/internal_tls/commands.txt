@@ -1,0 +1,25 @@
+# Deploy trusted app
+oc new-project app1
+oc new-app --name foo quay.io/rdacosta/my_httpd:latest
+
+# To request a certificate from the service-ca clusteroperator, annotate the service for your app. This creates the secret
+oc -n app1 annotate service/foo service.beta.openshift.io/serving-cert-secret-name=foo-secret
+
+# Create a reencryption route
+
+
+# Patch trusted app to use TLS cert from service-ca
+oc patch deploy/foo --patch-file patch_trusted_app.yaml
+
+# Deploy trusted app
+oc new-project app2
+oc new-app --name bar quay.io/rdacosta/my_httpd:latest
+
+# Create and annotate configmap
+oc create cm ca-bundle
+oc annotate configmap ca-bundle service.beta.openshift.io/inject-cabundle=true
+
+# Patch trusting app to use the CA cert from service-ca
+oc patch deploy/bar --patch-file patch_trusting_app.yaml
+
+oc rsh barXXXX curl -s https://foo.app1.svc:8443

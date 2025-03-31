@@ -1,0 +1,1 @@
+oc patch vm web1 --type=json -p='[{"op":"add","path":"/spec/template/spec/readinessProbe","value":{"httpGet":{"path":"/healthz","port":80},"initialDelaySeconds":10,"periodSeconds":5,"timeoutSeconds":2,"failureThreshold":2,"successThreshold":1}}]'

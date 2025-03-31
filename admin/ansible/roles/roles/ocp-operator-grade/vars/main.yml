@@ -1,0 +1,17 @@
+---
+# vars file for ocp-operator-grade
+
+# from_yaml returns a single resource
+# from_yaml_all returns an array
+
+project:
+  resource: "{{ lookup('ansible.builtin.file', operator['id'] + '/project.yaml') | from_yaml }}"
+# namespace:
+ns:
+  resource: "{{ lookup('ansible.builtin.file', operator['id'] + '/namespace.yaml') | from_yaml }}"
+operator_group:
+  resource: "{{ lookup('ansible.builtin.file', operator['id'] + '/operatorgroup.yaml') | from_yaml }}"
+subscription:
+  resource: "{{ lookup('ansible.builtin.file', operator['id'] + '/subscription.yaml') | from_yaml }}"
+cluster_service_version:
+  api_version: operators.coreos.com/v1alpha1

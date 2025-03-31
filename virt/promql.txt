@@ -1,0 +1,1 @@
+(node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 50) * on(instance) group_left (nodename) node_uname_info{nodename=~".+"}

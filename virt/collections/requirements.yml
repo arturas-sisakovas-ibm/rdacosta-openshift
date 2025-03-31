@@ -1,0 +1,6 @@
+collections:
+  - name: ansible.builtin
+  - name: ansible.posix
+  - name: community.general
+  - name: freeipa.ansible_freeipa
+  - name: redhat.openshift

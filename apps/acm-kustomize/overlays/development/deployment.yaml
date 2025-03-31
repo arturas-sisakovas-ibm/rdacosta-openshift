@@ -1,0 +1,19 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  template:
+    spec:
+      volumes:
+      - name: db-volume
+        persistentVolumeClaim:
+        claimName: dev-mysql-pv-claim
+      containers:
+        - name: mysql
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi

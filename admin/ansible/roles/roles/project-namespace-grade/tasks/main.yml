@@ -1,0 +1,32 @@
+---
+# tasks file for project-namespace-grade
+
+- name: Project
+  block:
+
+    - name: "Check project: {{ ns }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ api_version['project'] | default('project.openshift.io/v1') }}"
+        kind: Project
+        name: "{{ ns }}"
+        wait: true
+      # retries: "{{ retries_num }}"
+      # delay: "{{ delay_num }}"
+      register: grade_project
+      failed_when:
+        - grade_project['resources'] | length == 0
+
+- name: Namespace
+  block:
+
+    - name: "Check namespace: {{ ns }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ api_version['namespace'] | default('v1') }}"
+        kind: Namespace
+        name: "{{ ns }}"
+        wait: true
+      # retries: "{{ retries_num }}"
+      # delay: "{{ delay_num }}"
+      register: grade_namespace
+      failed_when:
+        - grade_namespace['resources'] | length == 0

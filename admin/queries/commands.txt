@@ -1,0 +1,28 @@
+# Deploy app
+
+oc new-project helloworld
+oc new-app --name helloworld https://gitlab.com/rgdacosta/ocp-apps.git --context-dir php-helloworld
+oc expose svc/helloworld --hostname hello.apps.ocp4.example.com
+
+# Get JSON data
+oc get -o json deploy/helloworld
+
+# Get available replica count 
+oc get deploy/helloworld -o jsonpath='{.status.availableReplicas}'
+
+# Get reported conditions
+oc get deploy/helloworld -o jsonpath='{.status.conditions[*].type}'
+
+# Get first index
+oc get deploy/helloworld -o jsonpath='{.status.conditions[0].type}'
+
+# Show value of the status key where type has value of Available
+oc get deploy/helloworld -o jsonpath='{.status.conditions[?(@.type=="Available")].status}'
+
+# Show hostname of route resource of all routes in openshift-monitoring project on new lines
+oc get route -n openshift-monitoring -o jsonpath='{.items[*].spec.host}' | tr " " "\n"
+
+
+
+
+

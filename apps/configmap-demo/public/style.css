@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    padding: 0;
+  }
+  
+  .segment {
+    height: 20vh;
+    background-image: url('/images/tiles.jpg');
+  }
+  
+  .middle-segment {
+    height: 60vh;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  span {
+    font-size: 6em;
+  }
+  

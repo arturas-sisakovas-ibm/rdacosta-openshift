@@ -1,0 +1,18 @@
+- name: Automate Migration
+  hosts: localhost
+  collections:
+    - rgdacosta.openshift_virt
+
+    
+  tasks:
+
+    - name: Generate random string
+      ansible.builtin.set_fact:
+        random_string: "{{ lookup('community.general.random_string', upper=false, numbers=true, special=false, length=4) }}"
+
+    - name: Include roles
+      loop:
+        - rgdacosta.openshift_virt.provider
+        - rgdacosta.openshift_virt.virtplan
+      ansible.builtin.include_role:
+        name: "{{ item }}"

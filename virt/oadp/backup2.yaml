@@ -1,0 +1,22 @@
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: vms-backup
+  namespace: openshift-adp
+spec:
+  includedNamespaces:
+    - vms
+  includedResources:
+    - '*'
+  storageLocation: oadp-dpa-1
+  snapshotVolumes: true
+  hooks:
+    resources:
+      - name: kubevirt-hook
+        includedResources:
+          - kubevirt.io/virtualmachines
+          - kubevirt.io/virtualmachineinstances
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/managed-by: kubevirt
+

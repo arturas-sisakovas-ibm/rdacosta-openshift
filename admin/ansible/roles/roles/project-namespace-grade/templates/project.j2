@@ -1,0 +1,11 @@
+---
+apiVersion: {{ api_version['project'] | default("project.openshift.io/v1") }}
+kind: Project
+metadata:
+  name: {{ namespace }}
+{% if labels is defined %}
+  labels:
+  {% for label in labels %}
+    {{ label }}
+  {% endfor %}
+{% endif %}

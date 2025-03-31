@@ -1,0 +1,7 @@
+apiVersion: helm.openshift.io/v1beta1
+kind: HelmChartRepository
+metadata:
+  name: gitlab-repo
+spec:
+  connectionConfig:
+    url: https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/helm-charts

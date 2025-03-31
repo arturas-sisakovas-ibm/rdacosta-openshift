@@ -1,0 +1,24 @@
+- name: Create route for helloworld application
+  hosts: localhost
+  become: false
+  gather_facts: false
+
+  tasks:
+
+    - name: Ensure authentication token is obtained
+      register: openshift_auth_results
+      redhat.openshift.openshift_auth:
+        host: https://api.ocp4.example.com:6443
+        username: admin
+        password: redhat
+        validate_certs: false
+        state: present
+
+    - name: Expose the insecure hello-world service externally
+      redhat.openshift.openshift_route:
+        host: https://api.ocp4.example.com:6443
+        validate_certs: false
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+        service: helloworld
+        namespace: helloworld
+        hostname: hello-ansible.apps.ocp4.example.com

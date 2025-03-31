@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: openshift-client
+spec:
+  params:
+    - name: script
+      type: string
+      description: The oc script to run
+  steps:
+    - name: run-script
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        oc rollout restart deployment/hellojs
+

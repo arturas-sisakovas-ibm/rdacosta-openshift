@@ -1,0 +1,162 @@
+# images are available at registry.ocp4.example.com:8443
+# imagestreams exist in openshift-virtualization-os-images namespace.
+---
+apiVersion: hco.kubevirt.io/v1beta1
+kind: HyperConverged
+metadata:
+  name: kubevirt-hyperconverged
+  namespace: openshift-cnv
+  annotations:
+    deployOVS: "false"
+  labels:
+    app: kubevirt-hyperconverged
+    operators.coreos.com/kubevirt-hyperconverged.openshift-cnv: ""
+# spec: {}
+spec:
+  featureGates:
+    enableCommonBootImageImport: true
+    nonRoot: true
+  dataImportCronTemplates:
+    - metadata:
+        annotations:
+          cdi.kubevirt.io/storage.bind.immediate.requested: "true"
+        labels:
+          instancetype.kubevirt.io/default-instancetype: u1.medium
+          instancetype.kubevirt.io/default-preference: rhel.9
+          kubevirt.io/dynamic-credentials-support: "true"
+        name: rhel9-image-cron
+      spec:
+        garbageCollect: Outdated
+        managedDataSource: rhel9
+        schedule: 0 * * * *
+        template:
+          metadata: {}
+          spec:
+            source:
+              registry:
+                imageStream: rhel9-guest
+                pullMethod: node
+            storage:
+              resources:
+                requests:
+                  storage: 30Gi
+          status: {}
+    - metadata:
+        annotations:
+          cdi.kubevirt.io/storage.bind.immediate.requested: "true"
+        labels:
+          instancetype.kubevirt.io/default-instancetype: u1.medium
+          instancetype.kubevirt.io/default-preference: rhel.8
+        name: rhel8-image-cron
+      spec:
+        garbageCollect: Outdated
+        managedDataSource: rhel8
+        schedule: 2 * * * *
+        template:
+          metadata: {}
+          spec:
+            source:
+              registry:
+                imageStream: rhel8-guest
+                pullMethod: node
+            storage:
+              resources:
+                requests:
+                  storage: 30Gi
+          status: {}
+    - metadata:
+        annotations:
+          cdi.kubevirt.io/storage.bind.immediate.requested: "true"
+        labels:
+          instancetype.kubevirt.io/default-instancetype: u1.medium
+          instancetype.kubevirt.io/default-preference: centos.stream9
+          kubevirt.io/dynamic-credentials-support: "true"
+        name: centos-stream9-image-cron
+      spec:
+        garbageCollect: Outdated
+        managedDataSource: centos-stream9
+        schedule: 10 * * * *
+        template:
+          metadata: {}
+          spec:
+            source:
+              registry:
+                pullMethod: node
+                imageStream: centos-stream-9-guest
+            storage:
+              resources:
+                requests:
+                  storage: 30Gi
+          status: {}
+    - metadata:
+        annotations:
+          cdi.kubevirt.io/storage.bind.immediate.requested: "true"
+        labels:
+          instancetype.kubevirt.io/default-instancetype: u1.medium
+          instancetype.kubevirt.io/default-preference: fedora
+          kubevirt.io/dynamic-credentials-support: "true"
+        name: fedora-image-cron
+      spec:
+        garbageCollect: Outdated
+        managedDataSource: fedora
+        schedule: 12 * * * *
+        template:
+          metadata: {}
+          spec:
+            source:
+              registry:
+                pullMethod: node
+                imageStream: fedora-guest
+            storage:
+              resources:
+                requests:
+                  storage: 30Gi
+          status: {}
+    - metadata:
+        annotations:
+          cdi.kubevirt.io/storage.bind.immediate.requested: "true"
+          dataimportcrontemplate.kubevirt.io/enable: "true"
+        labels:
+          instancetype.kubevirt.io/default-instancetype: u1.medium
+          instancetype.kubevirt.io/default-preference: centos.stream8
+        name: centos-stream8-image-cron
+      spec:
+        garbageCollect: Outdated
+        managedDataSource: centos-stream8
+        schedule: 20 * * * *
+        template:
+          metadata: {}
+          spec:
+            source:
+              registry:
+                pullMethod: node
+                imageStream: centos-stream-8-guest
+            storage:
+              resources:
+                requests:
+                  storage: 30Gi
+          status: {}
+    - metadata:
+        annotations:
+          cdi.kubevirt.io/storage.bind.immediate.requested: "true"
+          dataimportcrontemplate.kubevirt.io/enable: "true"
+        labels:
+          instancetype.kubevirt.io/default-instancetype: u1.medium
+          instancetype.kubevirt.io/default-preference: centos.7
+        name: centos-7-image-cron
+      spec:
+        garbageCollect: Outdated
+        managedDataSource: centos7
+        schedule: 22 * * * *
+        template:
+          metadata: {}
+          spec:
+            source:
+              registry:
+                pullMethod: node
+                imageStream: centos7-guest
+            storage:
+              resources:
+                requests:
+                  storage: 30Gi
+          status: {}

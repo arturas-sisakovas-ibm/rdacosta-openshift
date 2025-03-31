@@ -1,0 +1,9 @@
+spec:
+  template:
+    spec:
+      tolerations:
+      - key: "restricted"
+        operator: "Equal"
+        value: "true"
+        effect: "NoExecute"
+        tolerationSeconds: 3600

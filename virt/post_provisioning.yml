@@ -1,0 +1,117 @@
+---
+- name: Configure virtual machines
+  # run ansible-playbook post_provisioning.yml -e my_namespace=${vm-namespace} -e my_vm_name=${vm-name}
+  # if your VMs are always in the same namespace, like vms, then change hosts as follows
+  # hosts: "vms-{{ my_vm_name | default('all') }}"
+  hosts: "{{ my_namespace + '-' + my_vm_name | default('vms-all') }}"
+  gather_facts: true
+  become: true
+  force_handlers: true
+
+  tasks:
+
+    - name: Install the katello-ca-consumer-latest rpm from a remote repo
+      ansible.builtin.package:
+        name: https://satellite.zero-effort.net/pub/katello-ca-consumer-latest.noarch.rpm
+        state: present
+        validate_certs: false
+        disable_gpg_check: true
+
+    - name: Set fact for RHEL 8 Satellite activation key
+      when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "8"
+      ansible.builtin.set_fact:
+        my_key: zero-effort-8
+
+    - name: Set fact for RHEL 9 Satellite activation key
+      when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "9"
+      set_fact:
+        my_key: zero-effort-9
+
+    - name: Ensure system is registered with Satellite
+      community.general.redhat_subscription:
+        activationkey: "{{ my_key }}"
+        org_id: "{{ my_org }}"
+
+    - name: Ensure basic tools are installed
+      ansible.builtin.package:
+        state: installed
+        name:
+          - git
+          - rsync
+          - vim-enhanced
+          - cockpit
+          - cockpit-packagekit
+          - cockpit-pcp
+          - cockpit-storaged
+          - firewalld
+          - nfs-utils
+          - autofs
+          - python3-netaddr
+          - insights-client
+          - tmux
+
+    - name: Ensure katello-agent is installed
+      when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "8"
+      ansible.builtin.package:
+        name: katello-agent
+        state: installed
+
+    - name: Ensure core services are started
+      loop:
+        - cockpit.socket
+        - firewalld.service
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+
+    - name: Ensure firewall allows service traffic
+      ansible.posix.firewalld:
+        service: ssh
+        state: enabled
+        immediate: true
+        permanent: true
+
+    - name: Ensure timezone is set
+      community.general.timezone:
+        name: "{{ my_timezone | default('UTC') }}"
+
+    - name: Ensure motd files are removed
+      loop:
+        - cockpit
+        - insights-client
+      ansible.builtin.file:
+        path: /etc/motd.d/{{ item }}
+        state: absent
+
+    - name: Ensure ansible user exists
+      ansible.builtin.user:
+        name: "{{ my_user | default('ansible') }}"
+        password: "{{ my_password | default('redhat123') | password_hash('sha512') }}"
+        groups: wheel
+        state: present
+        update_password: on_create
+
+    - name: Ensure ssh key is installed
+      loop:
+        - "{{ my_user | default('ansible') }}"
+        - root
+      ansible.posix.authorized_key:
+        manage_dir: yes
+        user: "{{ item }}"
+        key: "{{ lookup('file', 'id_rsa.pub') }}"
+
+    - name: Ensure IPA Client role is included
+      ansible.builtin.include_role:
+        name: freeipa.ansible_freeipa.ipaclient
+
+    - name: Ensure automount is setup
+      freeipa.ansible_freeipa.ipaautomountlocation:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: home
+        state: present
+
+  handlers:
+
+    - name: Ensure insights-client is registered
+      ansible.builtin.command: insights-client --register

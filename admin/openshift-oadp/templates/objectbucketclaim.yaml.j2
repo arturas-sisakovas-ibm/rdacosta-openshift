@@ -1,0 +1,11 @@
+---
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: {{ obc_name }}  # my-object-bucket
+  namespace: {{ backups_project }}  # my-project
+spec:
+  generateBucketName: {{ obc_name }}
+  storageClassName: {{ obc_storage_class | default('openshift-storage.noobaa.io') }}
+  additionalConfig:
+    bucketclass: {{ obc_bucket_class | default('noobaa-default-bucket-class') }}

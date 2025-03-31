@@ -1,0 +1,164 @@
+---
+# tasks file for ocp-operator-grade
+
+- name: Project
+  block:
+
+    - name: "Check project: {{ resource_name }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] }}"
+        kind: "{{ resource['kind'] }}"
+        name: "{{ resource_name }}"
+        namespace: "{{ resource_ns }}"
+      vars:
+        resource: "{{ project['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      failed_when:
+        - result['resources'] | length == 0
+
+- name: Namespace
+  block:
+
+    - name: "Check namespace: {{ name }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] }}"
+        kind: "{{ resource['kind'] }}"
+        name: "{{ resource_name }}"
+        namespace: "{{ resource_ns }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      failed_when:
+        - result['resources'] | length == 0
+      vars:
+        resource: "{{ ns['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+
+- name: OperatorGroup
+  block:
+
+    # Because the web console creates a unique name for the operator group,
+    # check to see if an operator group already exists.
+    - name: "Identify if an operator group exists for: {{ resource_name }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] | default('operators.coreos.com/v1') }}"
+        kind: OperatorGroup
+        namespace: "{{ resource_ns }}"
+      vars:
+        resource: "{{ operator_group['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+      register: operator_exists
+      failed_when:
+        - operator_exists['resources'] | length == 0
+
+    - name: Print current operator group name
+      ansible.builtin.debug:
+        msg: "{{ operator_exists['resources'][0]['metadata']['name'] }}"
+
+    - name: "Check operator group: {{ current_name }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] }}"
+        kind: "{{ resource['kind'] }}"
+        name: "{{ current_name }}"
+        namespace: "{{ current_ns }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      failed_when:
+        - result['resources'] | length == 0
+      vars:
+        resource: "{{ operator_group['resource'] }}"
+        current_name: "{{ operator_exists['resources'][0]['metadata']['name'] }}"
+        current_ns: "{{ operator_exists['resources'][0]['metadata']['namespace'] }}"
+      when:
+        - operator_exists['resources'] | length > 0
+        - operator_exists['resources'][0]['metadata']['name'] is defined
+
+  rescue:
+
+    - name: "Check operator group: {{ resource_name }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] }}"
+        kind: "{{ resource['kind'] }}"
+        name: "{{ resource_name }}"
+        namespace: "{{ resource_ns }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      failed_when:
+        - result['resources'] | length == 0
+      vars:
+        resource: "{{ operator_group['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+
+- name: Subscription
+  block:
+
+    - name: "Check subscription: {{ resource_name }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] }}"
+        kind: "{{ resource['kind'] }}"
+        name: "{{ resource_name }}"
+        namespace: "{{ resource_ns }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      failed_when:
+        - result['resources'] | length == 0
+      vars:
+        resource: "{{ subscription['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+
+- name: Extra resources
+  block:
+
+    - name: Check resources from file
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] }}"
+        kind: "{{ resource['kind'] }}"
+        name: "{{ resource_name }}"
+        namespace: "{{ resource_ns }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      failed_when:
+        - result['resources'] | length == 0
+      vars:
+        # from_yaml return a single resource
+        # from_yaml_all returns an array
+        resource: "{{ lookup('ansible.builtin.file', item) | from_yaml }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+      # loop: "{{ all_resource_files }}"
+      # loop: "{{ operator['resource_files'] }}"
+      loop: "{{ operator['extra_resource_files'] }}"
+      when:
+        - operator['extra_resource_files'] is defined
+        - operator['extra_resource_files'] | length > 0
+
+- name: CustomResourceDefinition
+  block:
+
+    - name: Check CustomResourceDefinition
+      kubernetes.core.k8s_info:
+        api_version: apiextensions.k8s.io/v1
+        kind: CustomResourceDefinition
+        name: "{{ item }}"
+        label_selectors: "{{ label_selector }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: crd_resources
+      loop_control:
+        label: "CustomResourceDefinition/{{ item }}"
+      loop: "{{ operator['custom_resource_definitions'] }}"
+      when:
+        - operator['custom_resource_definitions'] is defined
+        - operator['custom_resource_definitions'] | length > 0

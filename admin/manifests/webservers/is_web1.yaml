@@ -1,0 +1,22 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  labels:
+    app: web1
+    app.kubernetes.io/component: web1
+    app.kubernetes.io/instance: web1
+  name: web1
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+  - annotations:
+      openshift.io/imported-from: quay.io/rdacosta/my_httpd:latest
+    from:
+      kind: DockerImage
+      name: quay.io/rdacosta/my_httpd:latest
+    importPolicy:
+      importMode: Legacy
+    name: latest
+    referencePolicy:
+      type: Source

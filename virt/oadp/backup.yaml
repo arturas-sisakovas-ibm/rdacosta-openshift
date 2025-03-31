@@ -1,0 +1,14 @@
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: vms-backup
+  namespace: openshift-adp
+  labels:
+    velero.io/storage-location: oadp-dpa-1
+spec:
+  includedNamespaces:
+    - vms
+  includedResources: 
+    - "*"
+  storageLocation: oadp-dpa-1
+  snapshotVolumes: true

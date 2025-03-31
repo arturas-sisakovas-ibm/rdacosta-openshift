@@ -1,0 +1,56 @@
+- name: Upgrade minor release for RHEL 9
+  hosts: "{{ my_host | mandatory('You must use the variable my_host to define the target for automation')  }}"
+  gather_facts: true
+  become: true
+
+  collections:
+    - redhat.rhel_system_roles
+
+  tasks:
+
+    - name: Ensure dnf-utils is installed
+      ansible.builtin.dnf:
+        name: dnf-utils
+        state: installed
+
+    - name: Ensure RHEL 9 is being used
+      ansible.builtin.assert:
+        that: 
+          - ansible_facts['distribution']  == "RedHat" 
+          - ansible_facts['distribution_major_version'] == "9"
+        fail_msg: |
+
+          ****************************
+          This playbook is for RHEL 9
+          ****************************
+        success_msg: |
+
+          **********************************
+          Conditions satisfied - proceeding
+          **********************************
+
+    - name: Set RHEL release 
+      community.general.rhsm_release: 
+        release: "{{ redhat_release | default('9.4') }}"
+
+    - name: Update packages for new release
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+
+    - name: Determine if reboot is necessary
+      register: reboothint
+      changed_when: false
+      ignore_errors: true
+      ansible.builtin.command: /usr/bin/dnf needs-restarting -r
+
+    - name: Ensure server is rebooted
+      when: reboothint['rc'] == 1
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+
+    - name: Ensure that we can connect to server
+      ansible.builtin.wait_for:
+        port: 22
+        delay: 10
+        timeout: 600

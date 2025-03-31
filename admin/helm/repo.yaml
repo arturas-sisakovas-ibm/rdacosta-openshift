@@ -1,0 +1,9 @@
+apiVersion: helm.openshift.io/v1beta1
+kind: HelmChartRepository
+metadata:
+  name: gitlab-repo 
+spec:
+ # optional name that might be used by console
+  name: gitlab-repo
+  connectionConfig:
+    url: https://gitlab.com/rgdacosta/openshift/-/blob/master/helm-charts

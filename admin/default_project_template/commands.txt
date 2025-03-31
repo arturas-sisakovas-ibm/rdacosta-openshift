@@ -1,0 +1,6 @@
+oc create -f project-template.yaml -n openshift-config
+
+oc patch projects.config.openshift.io/cluster --patch-file patch.yaml
+
+
+watch oc get pods -n openshift-apiserver

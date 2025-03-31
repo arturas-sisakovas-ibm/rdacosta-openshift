@@ -1,0 +1,16 @@
+ipa_users:
+
+   allison:
+      groups: openshift-admins
+      ipa_user_pass: redhat
+
+   bobby:
+      groups: openshift-users
+      ipa_user_pass: redhat
+
+   curtis:
+      ipa_user_pass: redhat
+      
+ipa_server: idm.ocp4.example.com
+ipa_admin_user: admin
+ipa_admin_password: Redhat123@!

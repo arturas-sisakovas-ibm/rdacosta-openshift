@@ -1,0 +1,6 @@
+---
+plugin: kubevirt.core.kubevirt
+namespaces:
+  - default
+create_groups: true
+network_name: bridge-network

@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: openshift-gitops
+  namespace: openshift-gitops
+spec:
+  server:
+    route:
+      tls:
+        termination: reencrypt
+  rbac:
+    policy: |
+      g, ocpadmins, role:admin
+  repo:
+    volumeMounts:
+      - mountPath: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+        name: cluster-root-ca-bundle
+        subPath: ca-bundle.crt
+    volumes:
+      - configMap:
+          name: cluster-root-ca-bundle
+        name: cluster-root-ca-bundle

@@ -1,0 +1,5 @@
+spec:
+  template:
+    spec:
+      hostname: webx
+      subdomain: headless

@@ -1,0 +1,7 @@
+apiVersion: nodemaintenance.medik8s.io/v1beta1
+kind: NodeMaintenance
+metadata:
+  name: worker02
+spec:
+  nodeName: worker02
+  reason: SNOW250130

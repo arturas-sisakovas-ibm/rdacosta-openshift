@@ -1,0 +1,21 @@
+# Show where alertmanager config is 
+oc get -o yaml secret/alertmanager-main -n openshift-monitoring
+
+# OPTIONAL: Extract existing alertmanager secret with config
+oc extract secret/alertmanager-main --to /tmp/ -n openshift-monitoring --confirm
+
+# Update existing alertmanager secret with new config
+oc set data secret/alertmanager-main -n openshift-monitoring --from-file alertmanager.yaml
+
+# Ensure alertmanager loads new config
+oc logs -f -c alertmanager alertmanager-main-0 -n openshift-monitoring
+
+# Check persistent storage configuration
+oc get -o json cm/cluster-monitoring-config -n openshift-monitoring | jq .data
+
+# Change monitoring persistent storage
+oc set data configmap/cluster-monitoring-config --from-file config.yaml=monitoring_persistent-storage.yml -n openshift-monitoring
+
+# Create new rules
+oc apply -f alert_memory.yaml
+oc apply -f alert_pods-not-starting.yaml

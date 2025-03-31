@@ -1,0 +1,201 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: webserver-vm-template
+  namespace: openshift
+  annotations:
+    description: "Template to deploy two webserver VMs with a service and route"
+    openshift.io/display-name: "Web Server VM Template"
+    tags: "hidden,kubevirt,virtualmachine,webserver"
+    iconClass: icon-rhel
+    openshift.io/display-name: OpenShift Virtualization Web Stack Template
+    openshift.io/documentation-url: https://github.com/kubevirt/common-templates
+    openshift.io/support-url: https://github.com/kubevirt/common-templates/issues
+    template.kubevirt.io/version: v1alpha1
+  labels:
+    app.kubernetes.io/component: templating
+    app.kubernetes.io/managed-by: ssp-operator
+    app.kubernetes.io/name: custom-templates
+    app.kubernetes.io/part-of: hyperconverged-cluster
+    flavor.template.kubevirt.io/small: "true"
+    os.template.kubevirt.io/rhel9: "true"
+    template.kubevirt.io/default-os-variant: "true"
+    template.kubevirt.io/type: vm
+    vm.kubevirt.io/template: rhel9-server-small
+    vm.kubevirt.io/template.namespace: openshift
+    workload.template.kubevirt.io/server: "true"
+parameters:
+- name: VM1_NAME
+  description: Name of the first webserver VM
+  value: web1
+- name: VM2_NAME
+  description: Name of the second webserver VM
+  value: web2
+- name: ROOT_DISK
+  description: URL of the root disk image
+  value: http://utility:8080/openshift4/images/rhel9-helloworld.qcow2
+- name: ROOT_DISK_SIZE
+  description: Size of the root disk
+  value: 15Gi
+- name: STORAGE_PROVISIONER
+  description: Storage provisioner for VMs
+  value: ocs-external-storagecluster-ceph-rbd-virtualization
+- name: SSH_KEY_SECRET
+  description: Name of the SSH key secret
+  value: ssh-pub-key
+- name: CLOUD_USER_PASSWORD
+  description: Password for cloud-user
+  value: redhatocp
+objects:
+- apiVersion: kubevirt.io/v1
+  kind: VirtualMachine
+  metadata:
+    name: ${VM1_NAME}
+    labels:
+      app: webserver
+  spec:
+    running: true
+    dataVolumeTemplates:
+    - metadata:
+        name: ${VM1_NAME}
+      spec:
+        pvc:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: ${ROOT_DISK_SIZE}
+          storageClassName: ${STORAGE_PROVISIONER}
+        source:
+          http:
+            url: ${ROOT_DISK}
+    template:
+      metadata:
+        labels:
+          app: webserver
+      spec:
+        domain:
+          cpu:
+            cores: 2
+            sockets: 1
+            threads: 2
+          memory:
+            guest: 2Gi
+          devices:
+            disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+            interfaces:
+            - name: default
+              masquerade: {}
+        networks:
+        - name: default
+          pod: {}
+        volumes:
+        - name: rootdisk
+          dataVolume:
+            name: ${VM1_NAME}
+        - name: cloudinitdisk
+          cloudInitConfigDrive:
+            userData: |-
+              #cloud-config
+              user: cloud-user
+              password: ${CLOUD_USER_PASSWORD}
+              chpasswd:
+                expire: false
+              packages:
+                - httpd
+              runcmd:
+                - systemctl enable httpd --now
+                - echo "This is ${VM1_NAME}" > /var/www/html/index.html
+- apiVersion: kubevirt.io/v1
+  kind: VirtualMachine
+  metadata:
+    name: ${VM2_NAME}
+    labels:
+      app: webserver
+  spec:
+    running: true
+    dataVolumeTemplates:
+    - metadata:
+        name: ${VM2_NAME}
+      spec:
+        pvc:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: ${ROOT_DISK_SIZE}
+          storageClassName: ${STORAGE_PROVISIONER}
+        source:
+          http:
+            url: ${ROOT_DISK}
+    template:
+      metadata:
+        labels:
+          app: webserver
+      spec:
+        domain:
+          cpu:
+            cores: 2
+            sockets: 1
+            threads: 2
+          memory:
+            guest: 2Gi
+          devices:
+            disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+            interfaces:
+            - name: default
+              masquerade: {}
+        networks:
+        - name: default
+          pod: {}
+        volumes:
+        - name: rootdisk
+          dataVolume:
+            name: ${VM2_NAME}
+        - name: cloudinitdisk
+          cloudInitConfigDrive:
+            userData: |-
+              #cloud-config
+              user: cloud-user
+              password: ${CLOUD_USER_PASSWORD}
+              chpasswd:
+                expire: false
+              packages:
+                - httpd
+              runcmd:
+                - systemctl enable httpd --now
+                - echo "This is ${VM2_NAME}" > /var/www/html/index.html
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: webapp
+  spec:
+    selector:
+      app: webserver
+    ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+    type: ClusterIP
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: webapp-route
+    annotations:
+      haproxy.router.openshift.io/balance: roundrobin
+  spec:
+    to:
+      kind: Service
+      name: webapp
+    port:
+      targetPort: 80

@@ -1,0 +1,7 @@
+ansible-galaxy collection install -r requirements.yml
+
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+ansible-playbook playbook.yml --tags deploy # deploys the app
+
+ansible-playbook playbook.yml --tags delete # deletes the app

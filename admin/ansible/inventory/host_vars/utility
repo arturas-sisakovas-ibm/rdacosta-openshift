@@ -1,0 +1,5 @@
+---
+#	host_vars/utility
+
+ansible_host: utility
+ansible_user: lab

@@ -1,0 +1,32 @@
+oc get nodes
+oc get nodes --show-labels
+oc get nodes -L tier
+oc label node/worker01 tier=basic
+oc label node/worker02 tier=standard
+oc label node/worker03 tier=premium
+oc get nodes -L tier
+oc get pods -o wide
+oc scale deploy/hello1 --replicas=3
+oc get pods -l deployment=hello1 -o wide 
+oc patch deploy/hello1 -p '{"spec":{"template":{"spec":{"nodeSelector":{"tier":"basic"}}}}}'
+oc get pods -l deployment=hello1 -o wide 
+oc scale deploy/hello2 --replicas=3
+oc patch deploy/hello2 --patch-file nodeaffinity.yml
+oc get pods -l deployment=hello2 -o wide
+oc adm taint node worker06 tier=superfast:NoExecute
+oc patch deploy/hello3 --patch-file toleration.yml
+oc get pods -l deployment=hello3 -o wide
+
+
+oc new-app --name hello1 quay.io/rdacosta/hello-world-nginx:latest
+oc new-app --name hello2 quay.io/rdacosta/hello-world-nginx:latest
+oc new-app --name hello3 quay.io/rdacosta/hello-world-nginx:latest
+
+oc label node worker01 sla=bronze
+oc label node worker02 sla=silver
+oc label node worker03 sla=gold
+for i in 1 2; do oc label node worker0${i} worker-type=virtual; done
+oc label node worker03 worker-type=physical
+or i in 1 2 3; do oc label node/worker0${i} node-role.kubernetes.io/infra=; done
+oc label node worker01 cpu-type=e5-4650
+oc label node worker02 cpu-type=e5-1650

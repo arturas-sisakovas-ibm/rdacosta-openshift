@@ -1,0 +1,22 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: global-customizations
+  name: 99-customizations
+spec:
+  config:
+    ignition:
+      version: 3.1.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,IyAuYmFzaHJjCgojIFNvdXJjZSBnbG9iYWwgZGVmaW5pdGlvbnMKaWYgWyAtZiAvZXRjL2Jhc2hyYyBdOyB0aGVuCgkuIC9ldGMvYmFzaHJjCmZpCgojIFVzZXIgc3BlY2lmaWMgZW52aXJvbm1lbnQKUEFUSD0iJEhPTUUvLmxvY2FsL2JpbjokSE9NRS9iaW46JFBBVEgiCmV4cG9ydCBQQVRICgojIFVuY29tbWVudCB0aGUgZm9sbG93aW5nIGxpbmUgaWYgeW91IGRvbid0IGxpa2Ugc3lzdGVtY3RsJ3MgYXV0by1wYWdpbmcgZmVhdHVyZToKIyBleHBvcnQgU1lTVEVNRF9QQUdFUj0KCiMgVXNlciBzcGVjaWZpYyBhbGlhc2VzIGFuZCBmdW5jdGlvbnMKCmFsaWFzIGRlY29tbWVudD0nZWdyZXAgLXYgIl5bWzpzcGFjZTpdXSooKCN8O3wvLykuKik/JCIgJwo=
+        mode: 0600
+        overwrite: true
+        path: /var/roothome/.bashrc
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,W0pvdXJuYWxdClN0b3JhZ2U9cGVyc2lzdGVudAo=
+        mode: 0600
+        overwrite: true
+        path: /etc/systemd/journald.conf

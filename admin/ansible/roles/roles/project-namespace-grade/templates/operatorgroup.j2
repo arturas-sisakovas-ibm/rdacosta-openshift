@@ -1,0 +1,9 @@
+---
+apiVersion: {{ api_version['operator_group'] | default("operators.coreos.com/v1") }}
+kind: OperatorGroup
+metadata:
+  name: {{ operator['operator_group']['name'] }}
+  namespace: {{ operator['namespace']['name'] }}
+spec:
+  targetNamespaces:
+    - {{ operator['namespace']['name'] }}

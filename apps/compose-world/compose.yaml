@@ -1,0 +1,74 @@
+services:
+
+  database:
+    container_name: world_db
+    options:
+      --rm: true
+    image: quay.io/rdacosta/mysql-57-rhel7:latest
+    environment:
+      MYSQL_DATABASE: world
+      MYSQL_USER: ricardo
+      MYSQL_PASSWORD: redhat123
+      MYSQL_ROOT_PASSWORD: redhat321
+    ports:
+      - 3306:3306
+    volumes:
+      - ~/ocp-apps/compose-world/world_db/:/var/lib/mysql:Z
+    networks:
+      - app-net
+
+  db_init:
+    container_name: db_init
+    image: quay.io/rdacosta/mysql-57-rhel7:latest
+    volumes:
+      - ~/ocp-apps/world-sql-db/world.sql:/var/tmp/world.sql:Z
+    depends_on:
+      database:
+        condition: service_started
+    environment:
+      MYSQL_DATABASE: world
+      MYSQL_USER: ricardo
+      MYSQL_PASSWORD: redhat123
+      MYSQL_ROOT_PASSWORD: redhat321
+    command: ["sh", "-c", "until mysql -hworld_db -u$$MYSQL_USER -p$$MYSQL_PASSWORD -e 'show databases;'; do mysql -hworld_db -u$$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE < /var/tmp/world.sql; done"]
+    networks:
+      - app-net
+  
+  api:
+    container_name: world_api
+    options:
+      --rm: true
+    depends_on:
+      database:
+        condition: service_started
+      db_init:
+        condition: service_completed_successfully
+    image: quay.io/rdacosta/world_api:latest
+    ports:
+      - 8080:8080
+    environment:
+      WORLD_HOST: world_db
+      WORLD_DATABASE: world
+      WORLD_USER: ricardo
+      WORLD_PASSWORD: redhat123
+    networks:
+      - app-net
+
+  frontend:
+    container_name: world_fe
+    options:
+      --rm: true
+      #depends_on:
+      # api:
+      #  condition: service_started
+    image: quay.io/rdacosta/world_fe:latest
+    ports:
+      - 8000:8080
+    environment:
+      WORLD_API: http://world_api:8080
+    networks:
+      - app-net
+
+networks:
+  app-net: {}
+

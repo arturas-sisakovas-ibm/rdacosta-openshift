@@ -1,0 +1,66 @@
+---
+# tasks file for resource-delete
+
+- name: Delete resource
+  block:
+
+    - name: Print the 'resource' to be deleted
+      ansible.builtin.debug:
+        var: resource
+
+    - name: "Remove resource: {{ resource_id }}"
+      kubernetes.core.k8s:
+        state: absent
+        definition:
+          "{{ resource }}"
+        # delete_all: true
+        wait: true
+        wait_sleep: "{{ wait_sleep }}"
+        wait_timeout: "{{ wait_timeout }}"
+      vars:
+        resource_id: "{{ resource.kind }}/{{ resource.metadata.name }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      # until: result.rc == 0
+
+  rescue:
+
+    - name: "Forcefully delete the resource with 'oc': {{ resource_id }}"
+      vars:
+        resource_id: "{{ resource.kind }}/{{ resource.metadata.name }}"
+      ignore_errors: true
+      register: result_force
+      ansible.builtin.shell:
+        cmd: |
+          if [ -z "{{ resource.metadata.namespace | default('') }}" ]
+          then
+            NS=""
+          else
+            NS="--namespace {{ resource.metadata.namespace }}"
+          fi
+          oc delete {{ resource.kind }} {{ resource.metadata.name }} \
+            ${NS} \
+            --ignore-not-found --wait=true --force=true --now=true \
+            --cascade=foreground --grace-period=1 --timeout=0s
+
+  always:
+
+    - name: "Verify that the resource is absent: {{ resource_id }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource.apiVersion }}"
+        kind: "{{ resource.kind }}"
+        name: "{{ resource.metadata.name }}"
+        namespace: "{{ resource.metadata.namespace | default(None) }}"
+        wait: false
+      vars:
+        resource_id: "{{ resource.kind }}/{{ resource.metadata.name }}"
+      register: result_delete
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      failed_when:
+        - result_delete['resources'] | length > 0
+
+    - name: Debug
+      ansible.builtin.debug:
+        var: result_delete['resources']

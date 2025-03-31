@@ -1,0 +1,54 @@
+---
+# https://github.com/openshift/oadp-operator
+# https://dev.operatorhub.io/operator/oadp-operator
+# https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html-single/backup_and_restore/index#oadp-installing-operator-doc
+# https://docs.openshift.com/container-platform/4.16/backup_and_restore/application_backup_and_restore/installing/installing-oadp-ocs.html
+
+- name: Install the 'OADP' operator
+  hosts: utility
+  gather_facts: false
+
+  module_defaults:
+    group/kubernetes.core.k8s:
+      host: "{{ ocp_cluster['host'] }}"
+      kubeconfig: "{{ ocp_cluster['kubeconfig'] }}"
+      validate_certs: "{{ ocp_cluster['validate_certs'] }}"
+      wait: true
+      wait_sleep: "{{ wait_sleep }}"
+      wait_timeout: "{{ wait_timeout }}"
+
+  vars:
+    operator: "{{ operators['oadp'] }}"
+    ns: "{{ operator['namespace'] | default('openshift-adp') }}"
+    label_selector: "{{ operator['label_selector'] }}"
+    # endpoint_names:
+    #   # NOTE: These endpoints should have a 'subset'
+    #   # -
+    #   # NOTE: We don't care about metrics endpoints
+    #   # # - openshift-adp-velero-metrics-svc
+    #   # # - openshift-adp-controller-manager-metrics-service
+    #   # NOTE: These endpoints do not have a 'subset' and will ALWAYS fail the check
+    #   # -
+    # routes:
+    #   -
+
+  tasks:
+    - name: check if operator is installed
+      block:
+          # cmd is used for speed; if the items are not present, k8s_info takes several minutes to fail
+
+        - name: Check for CSV
+          ansible.builtin.command:
+            cmd: "oc get csv oadp-operator.v1.4.1 -n openshift-adp"
+          register: csv_status
+          ignore_errors: true
+
+    - name: operator install
+      block:
+
+        - name: Install OADP operator
+          include_role:
+            name: ocp-operator-install
+          vars:
+            operator: "{{ operators['oadp'] }}"
+          when: csv_status.rc != 0 and '"Succeeded" not in csv_status.stdout'

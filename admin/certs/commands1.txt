@@ -1,0 +1,32 @@
+# Install Ansible collection
+ansible-galaxy collection install community.crypto
+
+# create Classroom CA
+ansible-playbook ca.yml 
+
+# Setup /tmp/certs/wildcard-api.pem
+ansible-playbook wildcard-api.yml 
+
+# Verify subject alt names
+openssl x509 -in /tmp/certs/wildcard-api.pem -noout -subject -issuer -ext 'subjectAltName' -dates
+
+# Combine /etc/pki/tls/certs/classroom-ca.pem and wildcard-api.pem
+cat /tmp/certs/wildcard-api.pem /etc/pki/tls/certs/classroom-ca.pem > /home/student/combined-cert.pem
+
+# Create secret for custom wildcard certificate
+oc create secret tls custom-tls --cert /home/student/combined-cert.pem --key /tmp/certs/wildcard-api-key.pem -n openshift-config
+
+# Patch apiserver/cluster
+oc patch apiserver/cluster --type='json' -p='[{"op": "replace", "path": "/spec/servingCerts/namedCertificates/0/servingCertificate/name", "value":"custom-tls"}]'
+
+# Create configmap
+oc create configmap combined-certs --from-file ca-bundle.crt=/home/student/combined-cert.pem -n openshift-config 
+
+# Patch proxy/cluster
+oc patch proxy/cluster --type='json' -p='[{"op": "replace", "path": "/spec/trustedCA/name","value": "combined-certs"}]'
+
+# Create secret for ingress
+oc create secret tls custom-tls-bundle --cert /home/student/combined-cert.pem --key /tmp/certs/wildcard-api-key.pem -n openshift-ingress
+
+# Patch ingresscontroller/default
+oc patch -n openshift-ingress-operator ingresscontroller/default --type='json' -p='[{"op": "replace", "path": "/spec/defaultCertificate/name","value": "custom-tls-bundle"}]'

@@ -1,0 +1,16 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: baz 
+          volumeMounts:
+            - mountPath: /etc/pki/ca-trust/extracted/pem
+              name: trusted-ca
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: ca-bundle 
+            items:
+              - key: service-ca.crt 
+                path: tls-ca-bundle.pem
+          name: trusted-ca

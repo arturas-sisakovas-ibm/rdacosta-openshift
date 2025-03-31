@@ -1,0 +1,13 @@
+# idm integration secret
+oc create secret generic idm-secret --from-literal=bindPassword='Redhat123@!' -n openshift-config
+
+# download ca certificate
+wget http://idm.ocp4.example.com/ipa/config/ca.crt
+
+# create integration cm
+oc create cm ca-config-map --from-file=ca.crt -n openshift-config
+
+# edit authentication operator CRD
+oc edit oauth/cluster
+
+oc apply -f ldap-auth.yml

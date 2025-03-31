@@ -1,0 +1,13 @@
+kind: "BuildConfig"
+apiVersion: "build.openshift.io/v1"
+metadata:
+  name: "simple-pipeline"
+spec:
+  source:
+    contextDir: simple-pipeline
+    git:
+      uri: "https://gitlab.com/rgdacosta/ocp-apps"
+      ref: "master"
+  strategy:
+    jenkinsPipelineStrategy:
+      type: JenkinsPipeline

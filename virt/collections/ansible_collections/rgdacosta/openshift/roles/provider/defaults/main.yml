@@ -1,0 +1,30 @@
+---
+# defaults file for providers
+
+my_provider_secret: |
+  apiVersion: v1
+  data:
+    insecureSkipVerify: "{{ ovirt_tls | default('true') | b64encode }}"
+    password: "{{ ovirt_password | b64encode }}" 
+    url: "{{ my_provider_api | default('https://rhvm.zero-effort.net/ovirt-engine/api') | b64encode }}"
+    user: "{{ ovirt_user | default('admin@internal') | b64encode }}"
+  kind: Secret
+  metadata:
+    labels:
+      createdForProviderType: ovirt
+      createdForResourceType: providers
+    name: "{{ my_provider | default('redhat-virtualization') }}"
+    namespace: "{{ my_namespace | default('openshift-mtv') }}"
+  type: Opaque
+
+my_source_provider: |
+  apiVersion: forklift.konveyor.io/v1beta1
+  kind: Provider
+  metadata:
+    name: "{{ my_provider | default('redhat-virtualization') }}"
+    namespace: "{{ my_namespace | default('openshift-mtv') }}"
+  spec:
+    secret:
+      name: "{{ my_provider_creds | default('redhat-virtualization') }}"
+      namespace: "{{ my_namespace | default('openshift-mtv') }}"
+

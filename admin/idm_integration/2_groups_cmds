@@ -1,0 +1,43 @@
+# prep
+oc create -f rbac.yml
+
+# change to project 
+oc project idm-integrator
+
+# verify that the sa is actually created
+oc get sa
+
+# LDAP groups sync (dry run)
+oc adm groups sync --sync-config ldap-sync.yml
+
+# LDAP groups sync
+oc adm groups sync --sync-config ldap-sync.yml --confirm
+
+# LDAP groups sync secret
+oc create secret generic idm-secret --from-literal=bindPassword='redhatocp'
+
+# download ca certificate
+wget http://idm.ocp4.example.com/ipa/config/ca.crt
+
+# create integration cm
+oc create cm idm-cm --from-file=ca.crt=ca.crt,cron-ldap-sync.yml=cron-ldap-sync.yml
+
+# create cronjob
+oc create -f cronjob.yml
+
+# watch jobs
+oc get jobs
+
+# RBAC
+oc adm policy add-cluster-role-to-group cluster-admin openshift-admins
+oc adm policy remove-cluster-role-from-group self-provisioner system:authenticated:oauth
+
+# Image notes
+registry.ocp4.example.com:8443/openshift4/ose-cli:v4.10 (DO280)
+registry.ocp4.example.com:8443/openshift4/ose-cli:v4.12 (DO380)
+
+# Alternatively
+
+oc -n openshift import-image ose-cli --from=registry.ocp4.example.com:8443/openshift4/ose-cli --confirm --all 
+
+

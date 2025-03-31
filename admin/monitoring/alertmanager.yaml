@@ -1,0 +1,17 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 192.168.50.254:25
+  smtp_hello: localhost
+  smtp_from: alerts@ocp4.example.com
+  smtp_require_tls: false
+receivers:
+- name: Mail
+  email_configs:
+    - to: ocp-admins@example.com
+route:
+  group_by:
+  - namespace
+  group_interval: 5m
+  group_wait: 30s
+  receiver: Mail
+  repeat_interval: 1m

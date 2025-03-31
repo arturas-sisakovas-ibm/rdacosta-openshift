@@ -1,0 +1,27 @@
+# Deploy operator
+oc apply -f deploy_logging.yaml
+
+# Deploy logging instance
+oc apply -f clusterlogging.yaml
+
+# Configure log forwarder
+oc apply -f clusterlogforwarder.yaml
+
+# Deploy event router
+oc process -f eventrouter.yaml | oc apply -f -
+
+# Monitor infra log for sshd systemd unit from utility
+
+ssh root@utility
+tail -f /var/log/openshift/infra.log | egrep -o "\{.*}$" | jq '. | select(.systemd.u.SYSLOG_IDENTIFIER=="sshd") | .hostname + " " + .message'
+
+# Monitor user login events from utility
+
+egrep -ho "\{.*}$" /var/log/openshift/audit.log* | jq '. | select(."audit.linux".type == "USER_LOGIN") | ."@timestamp" + " " + .hostname + " " + .message'
+
+# Monitor infra log for openshift-storage namespace
+tail -f /var/log/openshift/infra.log | egrep -o "\{.*}$" | jq '. | select(.kubernetes.namespace_name == "openshift-storage") | .kubernetes.pod_name + " " + .message'
+
+# label a ns as logging=critical
+
+oc label ns/mysql logging=critical

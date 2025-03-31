@@ -1,0 +1,26 @@
+- name: Setup rsyslog on utility
+  hosts: utility
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: Ensure config is copied
+      notify: Ensure rsyslog is restarted
+      ansible.builtin.copy:
+        src: 011-ocp.conf
+        dest: /etc/rsyslog.d/
+        mode: '0644'
+
+    - name: Ensure scriptlet is copied
+      ansible.builtin.copy:
+        src: rotate.sh
+        dest: /usr/local/bin
+        mode: '0755'
+
+  handlers:
+
+    - name: Ensure rsyslog is restarted
+      ansible.builtin.service:
+        name: rsyslog
+        state: restarted

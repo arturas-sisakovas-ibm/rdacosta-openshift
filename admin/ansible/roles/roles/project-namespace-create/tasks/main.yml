@@ -1,0 +1,80 @@
+---
+# tasks file for project-namespace-create
+
+- name: Project
+  block:
+
+    - name: "Check project: {{ ns }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ api_version['project'] | default('project.openshift.io/v1') }}"
+        kind: Project
+        name: "{{ ns }}"
+        wait: false
+      register: check_project
+
+    - name: "Create project: {{ ns }}"
+      kubernetes.core.k8s:
+        state: present
+        # definition: "{{ lookup('ansible.builtin.template', item) }}"
+        definition:
+          apiVersion: project.openshift.io/v1
+          kind: Project
+          metadata:
+            creationTimestamp: null
+            name: "{{ ns }}"
+          spec: {}
+          status: {}
+        wait: true
+      register: create_project
+      when:
+        - check_project['resources'] | length == 0
+      # loop:
+      #   - project.j2
+
+- name: Namespace
+  block:
+
+    - name: "Check namespace: {{ ns }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ api_version['namespace'] | default('v1') }}"
+        kind: Namespace
+        name: "{{ ns }}"
+        wait: true
+      register: check_namespace
+
+    - name: "Create namespace: {{ ns }}"
+      kubernetes.core.k8s:
+        state: present
+        # definition: "{{ lookup('ansible.builtin.template', item) }}"
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            creationTimestamp: null
+            name: "{{ ns }}"
+          spec: {}
+          status: {}
+        wait: true
+      register: create_namespace
+      when:
+        - check_namespace['resources'] | length == 0
+      # loop:
+      #   - namespace.j2
+
+- name: Wait
+  block:
+
+    - name: "Wait for namespace creation: {{ ns }}"
+      kubernetes.core.k8s_info:
+        kind: Namespace
+        name: "{{ ns }}"
+        wait: true
+      # retries: "{{ retries_num }}"
+      # delay: "{{ delay_num }}"
+      register: namespace_active
+      until:
+        - namespace_active['resources'] | length > 0
+        - namespace_active['resources'][0]['status']['phase'] is defined
+        - namespace_active['resources'][0]['status']['phase'] == "Active"
+      # when:
+      #   - create_namespace['changed']

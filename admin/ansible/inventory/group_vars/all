@@ -1,0 +1,194 @@
+---
+#	group_vars/all
+
+sku: DO316
+
+ocp_cluster:
+  host: "https://api.ocp4.example.com:6443"
+  kubeconfig: /home/lab/ocp4/auth/kubeconfig
+  validate_certs: False
+  users:
+    - username: admin
+      password: redhatocp
+      cluster_role: cluster-admin
+    - username: developer
+      password: developer
+    - username: dbadmin1
+      password: redhatocp
+    - username: dbadmin1
+      password: redhatocp
+
+user_kubeconfig:
+  file: /home/lab/.kube/config
+  remote: true
+
+control_nodes:
+  - master01
+  - master02
+  - master03
+
+worker_nodes:
+  - worker01
+  - worker02
+
+# Default values for 'wait' and 'retry'
+retries_num: 60
+delay_num: 5
+wait_sleep: 5
+wait_timeout: 360
+
+# defaults file for 'ocp-control-plane-certs'
+ca_cert_file: /etc/pki/tls/certs/classroom-ca.pem
+ca_private_key: /etc/pki/tls/private/classroom-ca-key.pem
+cert_path: /tmp/certs
+organization_name: Red Hat, Inc.
+organizational_unit_name: Training
+locality_name: Raleigh
+state_or_province_name: NC
+country_name: US
+# Replace with your wildcard_domain. This can be found with:
+# oc get ingresses.config.openshift.io/cluster -o jsonpath='{.spec.domain}'
+wildcard_domain: apps.ocp4.example.com
+configure_api: true
+cert_name: wildcard
+combined_name: wildcard-combined
+cert_comment: "Classroom {% if configure_api | bool == True %}Wildcard & API{% else %}Wildcard{% endif %} Certificate"
+default_user: student
+not_after: "+3650d"
+update_cert: false
+
+# SSH authorized key
+# 2048 SHA256:M8ikhcEDm2tQ95Z0o7ZvufqEixCFCt+wowZLNzNlBT0 LabGradingKey (RSA)
+ssh_key_file: "lab_rsa.pub"
+lab_rsa: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGtUW3ismHyuCW4CDdTVOOOq6aySdtYenXFWWx7HJa4VTepkG00aaLId9ocra10hc+MB0GTJMCyabDv3i8NKdi6GDH/aOLVsp/Ewy8DEzZMBlJDCt4v2i4/wU4liw6KgEFkZs+5hnqU8d4QzldyGJ5onr+AGvFOKG68CS0BBl40Z1twf1HhCyx8k6nzD2ovlkxWRFZKPAFrtPCBVvQDkOfVFZF+lwzaSztgAjbFZ4A9jqQyUYx4kOJ5DtRef36ucdUdVQale0+8lICl7/gb142SPpYfhxe88/BJScLPRjvVNeu1TxRmoHtVazqnAoRxQYAn2MoI6AG+w6QuZf8f7aL LabGradingKey"
+
+utility_url: http://utility.lab.example.com:8080/openshift4/images/
+vm_sc_name: ocs-external-storagecluster-ceph-rbd-virtualization
+vm_sc_mode: Block
+vm_access_mode: ReadWriteMany
+dv_sc_name: ocs-external-storagecluster-ceph-rbd-virtualization
+dv_sc_mode: Block
+
+api_version:
+  project: project.openshift.io/v1
+  namespace: v1
+  operator_group: operators.coreos.com/v1
+  subscription: operators.coreos.com/v1alpha1
+  cluster_service_version: operators.coreos.com/v1alpha1
+  install_plan: operators.coreos.com/v1alpha1
+
+catalog_namespace: openshift-marketplace
+
+operators:
+
+  virt:
+    id: virt
+    namespace: openshift-cnv
+    package_manifest: kubevirt-hyperconverged
+    cluster_service_version: kubevirt-hyperconverged-operator.v4.16.2
+    label_selector: operators.coreos.com/kubevirt-hyperconverged.openshift-cnv
+    base_resource_files:
+      - virt/project.yaml
+      - virt/namespace.yaml
+    resource_files:
+      - virt/operatorgroup.yaml
+      - virt/subscription.yaml
+    extra_resource_files:
+      - virt/openshift-virt-hyperconverged.yaml
+    custom_resource_definitions:
+      - networkaddonsconfigs.networkaddonsoperator.network.kubevirt.io
+      - kubevirts.kubevirt.io
+      - ssps.ssp.kubevirt.io
+      - cdis.cdi.kubevirt.io
+      - hostpathprovisioners.hostpathprovisioner.kubevirt.io
+      - mtqs.mtq.kubevirt.io
+      - hyperconvergeds.hco.kubevirt.io
+
+  mtv:
+    id: mtv
+    namespace: openshift-mtv
+    package_manifest: mtv-operator
+    label_selector: operators.coreos.com/mtv-operator.openshift-mtv
+    base_resource_files:
+      - mtv/project.yaml
+      - mtv/namespace.yaml
+    resource_files:
+      - mtv/operatorgroup.yaml
+      - mtv/subscription.yaml
+    extra_resource_files:
+      - mtv/openshift-mtv-forklift.yaml
+    custom_resource_definitions:
+      - hooks.forklift.konveyor.io
+      - hosts.forklift.konveyor.io
+      - migrations.forklift.konveyor.io
+      - networkmaps.forklift.konveyor.io
+      - openstackvolumepopulators.forklift.konveyor.io
+      - ovirtvolumepopulators.forklift.konveyor.io
+      - plans.forklift.konveyor.io
+      - providers.forklift.konveyor.io
+      - storagemaps.forklift.konveyor.io
+      - forkliftcontrollers.forklift.konveyor.io
+
+  nmo:
+    id: nmo
+    namespace: openshift-workload-availability
+    package_manifest: node-maintenance-operator
+    label_selector: operators.coreos.com/node-maintenance-operator.openshift-workload-availability
+    base_resource_files:
+      - nmo/project.yaml
+      - nmo/namespace.yaml
+    resource_files:
+      - nmo/operatorgroup.yaml
+      - nmo/subscription.yaml
+    extra_resource_files: []
+    custom_resource_definitions:
+      - nodemaintenances.nodemaintenance.medik8s.io
+
+  nmstate:
+    id: nmstate
+    namespace: openshift-nmstate
+    package_manifest: kubernetes-nmstate-operator
+    label_selector: operators.coreos.com/kubernetes-nmstate-operator.openshift-nmstate
+    base_resource_files:
+      - nmstate/project.yaml
+      - nmstate/namespace.yaml
+    resource_files:
+      - nmstate/operatorgroup.yaml
+      - nmstate/subscription.yaml
+    extra_resource_files:
+      - nmstate/openshift-nmstate-nmstate.yaml
+    custom_resource_definitions:
+      - nmstates.nmstate.io
+      - nodenetworkconfigurationenactments.nmstate.io
+      - nodenetworkconfigurationpolicies.nmstate.io
+      - nodenetworkstates.nmstate.io
+
+  oadp:
+    id: oadp
+    namespace: openshift-adp
+    package_manifest: redhat-oadp-operator
+    label_selector: operators.coreos.com/redhat-oadp-operator.openshift-adp
+    base_resource_files:
+      - oadp/project.yaml
+      - oadp/namespace.yaml
+    resource_files:
+      - oadp/operatorgroup.yaml
+      - oadp/subscription.yaml
+    extra_resource_files:
+      - oadp/openshift-oadp-dataprotectionapplication.yaml
+    custom_resource_definitions:
+      - dataprotectionapplications.oadp.openshift.io
+      - cloudstorages.oadp.openshift.io
+      - backups.velero.io
+      - backuprepositories.velero.io
+      - backupstoragelocations.velero.io
+      - datadownloads.velero.io
+      - datauploads.velero.io
+      - deletebackuprequests.velero.io
+      - downloadrequests.velero.io
+      - podvolumebackups.velero.io
+      - podvolumerestores.velero.io
+      - restores.velero.io
+      - schedules.velero.io
+      - serverstatusrequests.velero.io
+      - volumesnapshotlocations.velero.io

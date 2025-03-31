@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: maven-java-pipeline-run
+spec:
+  pipelineRef:
+    name: maven-java-pipeline
+  params:
+    - name: GIT_REPO
+      value: "https://gitlab.com/rgdacosta/ocp-apps"
+    - name: GIT_REVISION
+      value: "master"
+    - name: MVN_APP_PATH
+      value: "vertx-site"
+    - name: DEPLOY_ARTIFACT_NAME
+      value: "target/vertx-site-1.0.0-SNAPSHOT-fat.jar"
+    - name: DEPLOY_APP_NAME
+      value: "vertx-site"
+  workspaces:
+    - name: shared
+      persistentVolumeClaim:
+        claimName: shared
+    - name: maven_config
+      secret:
+        secretName: mvn-settings
+

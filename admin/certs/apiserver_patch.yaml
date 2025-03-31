@@ -1,0 +1,8 @@
+---
+spec:
+  servingCerts:
+    namedCertificates:
+    - names:
+      - api.ocp4.example.com
+      servingCertificate:
+        name: custom-tls

@@ -1,0 +1,6 @@
+---
+#	host_vars/localhost
+
+ansible_connection: local
+ansible_user: student
+ansible_password: redhat

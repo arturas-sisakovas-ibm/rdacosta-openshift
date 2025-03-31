@@ -1,0 +1,81 @@
+---
+# https://github.com/openshift/oadp-operator
+# https://dev.operatorhub.io/operator/oadp-operator
+# https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html-single/backup_and_restore/index#oadp-installing-operator-doc
+# https://docs.openshift.com/container-platform/4.16/backup_and_restore/application_backup_and_restore/installing/installing-oadp-ocs.html
+
+- name: Grade the 'OADP' operator
+  hosts: utility
+  gather_facts: false
+  check_mode: true
+
+  module_defaults:
+    group/kubernetes.core.k8s:
+      host: "{{ ocp_cluster['host'] }}"
+      kubeconfig: "{{ ocp_cluster['kubeconfig'] }}"
+      validate_certs: "{{ ocp_cluster['validate_certs'] }}"
+      wait: false
+      # wait_sleep: "{{ wait_sleep }}"
+      # wait_timeout: "{{ wait_timeout }}"
+
+  vars:
+    operator: "{{ operators['oadp'] }}"
+    ns: "{{ operator['namespace'] | default('openshift-adp') }}"
+    label_selector: "{{ operator['label_selector'] }}"
+    all_resource_files: "{{ [operator['base_resource_files'], operator['resource_files'], operator['extra_resource_files']] | flatten }}"
+
+  roles:
+
+    - role: ocp-operator-grade
+      operator: "{{ operators['oadp'] }}"
+
+  tasks:
+
+    - name: Extra resources
+      block:
+
+      # Check all that is created on the install AND configure playbooks
+
+        # NOTE:
+        #   I had to convert 'from_yaml_all' to 'from_yaml' because I was getting a weird error:
+        #     ansible: Failed to load resource definition: 'str' object has no attribute 'setdefault'
+        - name: Check resources from file
+          kubernetes.core.k8s_info:
+            api_version: "{{ resource.apiVersion }}"
+            kind: "{{ resource.kind }}"
+            name: "{{ resource.metadata.name }}"
+            namespace: "{{ resource.metadata.namespace | default(None) }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: result
+          failed_when:
+            - result['resources'] | length == 0
+          vars:
+            # from_yaml return a single resource
+            # from_yaml_all returns an array
+            resource: "{{ lookup('ansible.builtin.file', item) | from_yaml }}"
+          # loop: "{{ all_resource_files }}"
+          # loop: "{{ operator['resource_files'] }}"
+          loop: "{{ operator['extra_resource_files'] }}"
+          when:
+            - operator['extra_resource_files'] is defined
+            - operator['extra_resource_files'] | length > 0
+
+    - name: CustomResourceDefinition
+      block:
+
+        - name: Check CustomResourceDefinition
+          kubernetes.core.k8s_info:
+            api_version: apiextensions.k8s.io/v1
+            kind: CustomResourceDefinition
+            name: "{{ item }}"
+            label_selectors: "{{ label_selector }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: crd_resources
+          loop_control:
+            label: "CustomResourceDefinition/{{ item }}"
+          loop: "{{ operator['custom_resource_definitions'] }}"
+          when:
+            - operator['custom_resource_definitions'] is defined
+            - operator['custom_resource_definitions'] | length > 0

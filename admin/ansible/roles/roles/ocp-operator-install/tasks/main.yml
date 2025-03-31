@@ -1,0 +1,233 @@
+---
+# tasks file for ocp-operator-install
+
+- name: PackageManifest
+  block:
+
+    - name: "Get PackageManifest"
+      kubernetes.core.k8s_info:
+        api_version: packages.operators.coreos.com/v1
+        kind: PackageManifest
+        name: "{{ operator['package_manifest'] }}"
+        namespace: "{{ catalog_namespace | default('openshift-marketplace') }}"
+      register: package_manifest
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      until:
+        - package_manifest['resources'] | length > 0
+        - package_manifest['resources'][0]['status']['packageName'] is defined
+        - package_manifest['resources'][0]['status']['channels'] | length > 0
+        - package_manifest['resources'][0]['status']['channels'][0]['currentCSV'] is defined
+
+- name: Project
+  block:
+
+    - name: "Create project: {{ resource_name }}"
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ resource }}"
+      vars:
+        resource: "{{ project['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+      register: create_project
+
+- name: Namespace
+  block:
+
+    - name: "Create namespace: {{ resource_name }}"
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ resource }}"
+      vars:
+        resource: "{{ ns['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+      register: create_namespace
+
+    - name: "Wait for namespace creation: {{ resource_name }}"
+      kubernetes.core.k8s_info:
+        kind: Namespace
+        name: "{{ resource_name }}"
+      vars:
+        resource: "{{ ns['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+      register: namespace_active
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      until:
+        - namespace_active['resources'] | length > 0
+        - namespace_active['resources'][0]['status']['phase'] is defined
+        - namespace_active['resources'][0]['status']['phase'] == "Active"
+      # when:
+      #   - create_namespace['changed']
+
+- name: OperatorGroup
+  block:
+
+    # Because the web console creates a unique name for the operator group,
+    # check to see if an operator group already exists.
+    # - name: Identify if an operator group exists for "{{ operator['name'] }}"
+    - name: "Identify if an operator group exists for {{ resource_name }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] | default('operators.coreos.com/v1') }}"
+        kind: OperatorGroup
+        namespace: "{{ resource_ns }}"
+        wait: false
+      vars:
+        resource: "{{ operator_group['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+      register: operator_exists
+      # failed_when:
+      #   - operator_exists['resources'] | length == 0
+
+    - name: Print current operator group name
+      ansible.builtin.debug:
+        msg: "{{ operator_exists['resources'][0]['metadata']['name'] }}"
+      when:
+        - operator_exists['resources'] | length > 0
+        - operator_exists['resources'][0]['metadata']['name'] is defined
+
+    # Install operator group that the web console already deployed
+    # - name: Create operator group "{{ operator_exists['resources'][0]['metadata']['name'] }}"
+    - name: "Create operator group: {{ current_name }}"
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: operators.coreos.com/v1
+          kind: OperatorGroup
+          metadata:
+            name: "{{ current_name }}"
+            namespace: "{{ current_ns }}"
+          spec: "{{ resource['spec'] }}"
+      vars:
+        current_name: "{{ operator_exists['resources'][0]['metadata']['name'] }}"
+        current_ns: "{{ operator_exists['resources'][0]['metadata']['namespace'] }}"
+        resource: "{{ operator_group['resource'] }}"
+      when:
+        - operator_exists['resources'] | length > 0
+        - operator_exists['resources'][0]['metadata']['name'] is defined
+
+  # rescue:
+
+    - name: "Create operator group: {{ resource_name }}"
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ resource }}"
+      vars:
+        resource: "{{ operator_group['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+      when:
+        - operator_exists['resources'] | length == 0
+
+- name: Subscription
+  block:
+
+    - name: "Create subscription for operator: {{ resource_name }}"
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ resource }}"
+      vars:
+        resource: "{{ subscription['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+      register: create_subscription
+
+    - name: "Get Subscription"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] | default('operators.coreos.com/v1alpha1') }}"
+        kind: Subscription
+        name: "{{ resource_name }}"
+        namespace: "{{ resource_ns }}"
+      vars:
+        resource: "{{ subscription['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+      register: subscription_resource
+
+    - name: "Get CSV from PackageManifest"
+      ansible.builtin.set_fact:
+        package_manifest_csv: "{{ package_manifest['resources'][0]['status']['channels'][0]['currentCSV'] }}"
+        subscription_csv: "{{ subscription_resource['resources'][0]['spec']['startingCSV'] }}"
+
+    - name: "Patch subscription CSV if needed"
+      when:
+        - subscription_csv != package_manifest_csv
+      block:
+
+        - name: "Patch subscription CSV"
+          diff: true
+          kubernetes.core.k8s_json_patch:
+            api_version: operators.coreos.com/v1alpha1
+            kind: Subscription
+            name: "{{ resource_name }}"
+            namespace: "{{ resource_ns }}"
+            wait: true
+            patch:
+              - op: replace
+                path: /spec/startingCSV
+                value: "{{ package_manifest_csv }}"
+          vars:
+            resource: "{{ subscription['resource'] }}"
+            resource_name: "{{ resource['metadata']['name'] }}"
+            resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+
+        - name: Print CSV values
+          ansible.builtin.debug:
+            var: csv
+          vars:
+            csv:
+              subscription: "{{ subscription_csv }}"
+              package_manifest: "{{ package_manifest_csv }}"
+
+    - name: "Wait for creation of subscription: {{ resource_name }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ resource['apiVersion'] | default('operators.coreos.com/v1alpha1') }}"
+        kind: Subscription
+        name: "{{ resource_name }}"
+        namespace: "{{ resource_ns }}"
+      vars:
+        resource: "{{ subscription['resource'] }}"
+        resource_name: "{{ resource['metadata']['name'] }}"
+        resource_ns: "{{ resource['metadata']['namespace'] | default(None) }}"
+      register: subscription_ready
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      until:
+        - subscription_ready['resources'] | length > 0
+        - subscription_ready['resources'][0]['status']['installedCSV'] is defined
+        - subscription_ready['resources'][0]['status']['state'] is defined
+        - subscription_ready['resources'][0]['status']['state'] == "AtLatestKnown"
+      # when:
+      #   - create_subscription['changed']
+
+    - name: "Get 'installedCSV' fron Subscription"
+      ansible.builtin.set_fact:
+        starting_csv: "{{ subscription_ready['resources'][0]['spec']['startingCSV'] }}"
+        installed_csv: "{{ subscription_ready['resources'][0]['status']['installedCSV'] }}"
+
+    - name: Fail if 'installedCSV' is different from 'startingCSV'
+      ansible.builtin.fail:
+        msg: "'installedCSV' ({{ installed_csv }}) is different from 'startingCSV' ({{ starting_csv }})"
+      when:
+        - installed_csv != starting_csv
+
+- name: ClusterServiceVersion
+  block:
+
+    - name: Wait for ClusterServiceVersion to succeed
+      kubernetes.core.k8s_info:
+        api_version: "{{ cluster_service_version['api_version'] | default('operators.coreos.com/v1alpha1') }}"
+        kind: ClusterServiceVersion
+        name: "{{ csv_name }}"
+        namespace: "{{ ns }}"
+      vars:
+        csv_name: "{{ installed_csv }}"
+        ns: "{{ operator_group['resource']['metadata']['namespace'] }}"
+      register: csv_ready
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      until:
+        - csv_ready['resources'] | length > 0
+        - csv_ready['resources'][0]['status']['phase'] is defined
+        - csv_ready['resources'][0]['status']['phase'] == "Succeeded"
+      # when:
+      #   - create_subscription['changed']

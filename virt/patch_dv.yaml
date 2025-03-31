@@ -1,0 +1,23 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/domain/devices/disks/-",
+    "value": {
+      "name": "blank-disk",
+      "disk": {
+        "bus": "virtio-scsi"
+      }
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/volumes/-",
+    "value": {
+      "name": "blank-disk",
+      "dataVolume": {
+        "name": "blank-disk-datavolume"
+      }
+    }
+  }
+]
+

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: web1
+    app.kubernetes.io/component: web1
+    app.kubernetes.io/instance: web1
+    app.kubernetes.io/name: web1
+    app.kubernetes.io/part-of: my-app
+    app.openshift.io/runtime-version: latest
+  name: web1
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: 8080-tcp
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    deployment: web1
+  sessionAffinity: None
+  type: ClusterIP

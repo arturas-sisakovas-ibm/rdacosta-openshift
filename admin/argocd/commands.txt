@@ -1,0 +1,41 @@
+================
+# infra-argocd
+================
+
+# Disconnect the default ArgoCD instance from the operator to preserve customizations
+
+oc patch argocd openshift-gitops -n openshift-gitops -p '[{"op": "remove", "path": "/metadata/ownerReferences"}]' --type json
+
+# Create configmap to inject trusted certs
+
+oc create configmap -n openshift-gitops cluster-root-ca-bundle
+
+oc label configmap -n openshift-gitops cluster-root-ca-bundle config.openshift.io/inject-trusted-cabundle=true
+
+# Give Cluster ArgoCD the ability to deploy to OpenShift
+
+oc adm policy add-cluster-role-to-user cluster-admin -z openshift-gitops-argocd-application-controller -n openshift-gitops
+
+# Verify RBAC
+
+oc auth can-i create deployment --as=system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n foo-$RANDOM
+
+# Patch ArgoCD resource
+
+oc -n openshift-gitops patch argocd/openshift-gitops --type=merge --patch-file patch_argocd.yaml
+
+==============
+# app-argocd
+==============
+
+# Create groups
+
+oc apply -f group_gitops.yaml
+
+# DeployApp ArgoCD  instance
+
+oc apply -f app-argocd-instance.yaml
+
+# Allow ArgoCD instance in project app-argocd to manage applications in namespace mysql
+
+oc label namespace mysql argocd.argoproj.io/managed-by=app-argocd

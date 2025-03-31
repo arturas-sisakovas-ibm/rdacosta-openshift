@@ -1,0 +1,2 @@
+curl -s "http://localhost:3000/city?name=Belfast" | jq
+curl -s "http://localhost:3000/country?name=Austria" | jq

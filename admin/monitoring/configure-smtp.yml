@@ -1,0 +1,53 @@
+---
+- name: Configure postfix on utility
+  hosts: utility
+
+  vars:
+    email_alias: ocp-admins
+    email_user: lab
+    email_user_password: redhat
+
+  tasks:
+    - name: Ensure software is installed
+      ansible.builtin.dnf:
+        name:
+          - postfix
+          - mutt
+          - s-nail
+        state: installed
+
+    - name: Ensure services are started and enabled
+      ansible.builtin.service:
+        name: postfix 
+        state: started
+        enabled: true
+
+    - name: Ensure mail from OCP nodes is allowed
+      notify: restart_postfix
+      ansible.builtin.copy:
+        src: files/main.cf
+        dest: /etc/postfix/
+
+    - name: Ensure {{ email_user }} user exists
+      ansible.builtin.user:
+        name: "{{ email_user }}"
+        password: "{{ email_user_password | password_hash('sha512') }}"
+        update_password: on_create
+        state: present
+
+    - name: Ensure {{ email_alias }} alias exists
+      notify: run_newaliases
+      ansible.builtin.lineinfile:
+        path: /etc/aliases
+        regexp: '^{{ email_alias }}'
+        line: "{{ email_alias }}: {{ email_user }}"
+
+  handlers:
+    - name: restart_postfix
+      ansible.builtin.service:
+        name: postfix
+        state: restarted
+
+    - name: run_newaliases
+      ansible.builtin.command: /usr/bin/newaliases
+      changed_when: false

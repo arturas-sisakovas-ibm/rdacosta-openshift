@@ -1,0 +1,11 @@
+metadata:
+  annotations:
+    scheduler.alpha.kubernetes.io/defaultTolerations: |
+      [
+        {
+          "Key": "lowlatency",
+          "Operator": "Equal",
+          "Value": "true",
+          "Effect": "NoExecute"
+        }
+      ]

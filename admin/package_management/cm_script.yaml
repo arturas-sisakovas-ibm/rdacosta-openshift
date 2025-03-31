@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: packages-installer
+data:
+  install_packages.sh: |
+    #!/bin/bash
+    dnf install -y vim-enhanced

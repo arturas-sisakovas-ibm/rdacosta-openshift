@@ -1,0 +1,1 @@
+https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/coffee-shop-chart/coffee-shop.tgz

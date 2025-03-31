@@ -1,0 +1,108 @@
+---
+# tasks file for project-namespace-delete
+
+- name: Namespace
+  block:
+
+    - name: Patch
+      block:
+
+        - name: "Check if namespace exists: {{ ns }}"
+          kubernetes.core.k8s_info:
+            api_version: "{{ api_version['namespace'] | default('v1') }}"
+            kind: Namespace
+            name: "{{ ns }}"
+            wait: false
+          register: namespace_result
+
+        - name: Patch namespace to delete finalizers
+          diff: true
+          kubernetes.core.k8s_json_patch:
+            wait: true
+            api_version: "{{ api_version['namespace'] | default('v1') }}"
+            kind: Namespace
+            name: "{{ ns }}"
+            patch:
+              - op: remove
+                path: /spec/finalizers
+          when:
+            - namespace_result['resources'] | length > 0
+
+    - name: "Delete namespace: {{ ns }}"
+      kubernetes.core.k8s:
+        state: absent
+        api_version: "{{ api_version['namespace'] | default('v1') }}"
+        kind: Namespace
+        name: "{{ ns }}"
+        wait: true
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: delete_namespace
+
+  rescue:
+
+    - name: "Forcefully delete the namespace with 'oc': {{ ns }}"
+      ignore_errors: true
+      ansible.builtin.command:
+        cmd: |
+          oc delete namespace {{ ns }} \
+            --ignore-not-found --wait=true --force=true --now=true \
+            --cascade=foreground --grace-period=1 --timeout=0s
+
+    - name: Print 'oc' result
+      ansible.builtin.debug:
+        var: oc_delete_namespace
+
+- name: Project
+  block:
+
+    - name: "Delete project: {{ ns }}"
+      kubernetes.core.k8s:
+        state: absent
+        api_version: "{{ api_version['project'] | default('project.openshift.io/v1') }}"
+        kind: Project
+        name: "{{ ns }}"
+        wait: true
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: delete_project
+
+  rescue:
+
+    - name: "Forcefully delete project with 'oc': {{ ns }}"
+      ignore_errors: true
+      register: oc_delete_project
+      ansible.builtin.command:
+        cmd: |
+          oc delete project {{ ns }} \
+            --ignore-not-found --wait=true --force=true --now=true \
+            --cascade=foreground --grace-period=1 --timeout=0s
+
+    - name: Print 'oc' result
+      ansible.builtin.debug:
+        var: oc_delete_project
+
+- name: Wait
+  block:
+
+    - name: "Wait for resources to be deleted: {{ ns }}"
+      kubernetes.core.k8s_info:
+        api_version: "{{ item['apiVersion'] }}"
+        kind: "{{ item['kind'] }}"
+        name: "{{ item['metadata']['name'] }}"
+        namespace: "{{ item['metadata']['namespace'] | default(None) }}"
+        wait: false
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      loop_control:
+        label: "{{ item.kind }}"
+      loop:
+        - apiVersion: "{{ api_version['namespace'] | default('v1') }}"
+          kind: Namespace
+          metadata:
+            name: "{{ ns }}"
+        - apiVersion: "{{ api_version['project'] | default('project.openshift.io/v1') }}"
+          kind: Project
+          metadata:
+            name: "{{ ns }}"

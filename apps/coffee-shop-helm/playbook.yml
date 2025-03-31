@@ -1,0 +1,93 @@
+- name: Deploy the Coffee Shop application
+  hosts: localhost
+  become: false
+  gather_facts: false
+
+  collections:
+    - kubernetes.core
+    - community.okd
+
+  vars:
+
+    my_namespace: coffee-shop
+    my_user: admin
+    my_pass: redhat
+    my_ocp: https://api.ocp4.example.com:6443
+    my_repo: https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/coffee-shop-chart/coffee-shop.tgz
+    my_app: coffee-shop
+
+  tasks:
+
+    - name: Ensure token is obtained
+      register: openshift_auth_results
+      tags:
+        - always
+      kubernetes.core.k8s_auth:
+        username: "{{ my_user }}"
+        password: "{{ my_pass }}"
+        host: "{{ my_ocp }}"
+        state: present
+        validate_certs: false
+
+    - name: Ensure project exists
+      tags:
+        - never
+        - build
+        - deploy
+      kubernetes.core.k8s:
+        host: "{{ my_ocp }}"
+        api_key: "{{ openshift_auth_results['k8s_auth']['api_key'] }}"
+        validate_certs: false
+        name: "{{ my_namespace }}"
+        api_version: project.openshift.io/v1
+        kind: Project
+        state: present
+
+    - name: Ensure app is deployed
+      tags:
+        - never
+        - build
+        - deploy
+      kubernetes.core.helm:
+        host: "{{ my_ocp }}"
+        api_key: "{{ openshift_auth_results['k8s_auth']['api_key'] }}"
+        validate_certs: false
+        name: "{{ my_app }}"
+        release_namespace: "{{ my_namespace }}"
+        chart_ref: "{{ my_repo }}"
+        release_state: present
+
+    - name: Ensure route information is retrieved
+      tags:
+        - never
+        - build
+        - deploy
+      kubernetes.core.k8s_info:
+        host: "{{ my_ocp }}"
+        api_key: "{{ openshift_auth_results['k8s_auth']['api_key'] }}"
+        validate_certs: false
+        kind: Route
+        namespace: "{{ my_namespace }}"
+        name: "{{ my_app }}"
+      register: my_route
+
+    - name: Ensure route is displayed
+      tags:
+        - never
+        - build
+        - deploy
+      debug:
+        msg: Your application is available at http://{{ my_route['resources'][0]['spec']['host'] }}
+
+    - name: Ensure project is absent
+      tags:
+        - never
+        - delete
+      kubernetes.core.k8s:
+        host: "{{ my_ocp }}"
+        api_key: "{{ openshift_auth_results['k8s_auth']['api_key'] }}"
+        validate_certs: false
+        name: "{{ my_namespace }}"
+        api_version: project.openshift.io/v1
+        kind: Project
+        state: absent

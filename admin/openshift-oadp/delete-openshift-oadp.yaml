@@ -1,0 +1,371 @@
+---
+# https://github.com/openshift/oadp-operator
+# https://dev.operatorhub.io/operator/oadp-operator
+# https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html-single/backup_and_restore/index#oadp-installing-operator-doc
+# https://docs.openshift.com/container-platform/4.16/backup_and_restore/application_backup_and_restore/installing/installing-oadp-ocs.html
+
+- name: Delete the 'OADP' operator
+  hosts: utility
+  gather_facts: false
+
+  module_defaults:
+    group/kubernetes.core.k8s:
+      host: "{{ ocp_cluster['host'] }}"
+      kubeconfig: "{{ ocp_cluster['kubeconfig'] }}"
+      validate_certs: "{{ ocp_cluster['validate_certs'] }}"
+      wait: true
+      wait_sleep: "{{ wait_sleep }}"
+      wait_timeout: "{{ wait_timeout }}"
+
+  vars:
+    operator: "{{ operators['oadp'] }}"
+    ns: "{{ operator['namespace'] | default('openshift-adp') }}"
+    label_selector: "{{ operator['label_selector'] }}"
+
+  tasks:
+
+    - name: Patch
+      block:
+
+        - name: Check if namespace exists
+          kubernetes.core.k8s_info:
+            kind: Namespace
+            name: "{{ ns }}"
+          register: namespace_result
+
+        - name: Patch namespace to delete finalizers
+          diff: true
+          kubernetes.core.k8s_json_patch:
+            wait: true
+            kind: Namespace
+            name: "{{ ns }}"
+            patch:
+              - op: remove
+                path: /spec/finalizers
+          when:
+            - namespace_result['resources'] | length > 0
+
+    - name: Get
+      block:
+
+        - name: Get subscription
+          kubernetes.core.k8s_info:
+            api_version: "{{ resource['apiVersion'] | default('operators.coreos.com/v1alpha1') }}"
+            kind: Subscription
+            name: "{{ resource_name }}"
+            namespace: "{{ resource_ns }}"
+          vars:
+            resource: "{{ lookup('ansible.builtin.file', operator['id'] + '/subscription.yaml') | from_yaml }}"
+            resource_name: "{{ resource['metadata']['name'] }}"
+            resource_ns: "{{ resource['metadata']['namespace'] }}"
+          register: subscription_ready
+          # retries: "{{ retries_num }}"
+          # delay: "{{ delay_num }}"
+
+        - name: Get CSV
+          kubernetes.core.k8s_info:
+            api_version: "{{ api_version['cluster_service_version'] | default('operators.coreos.com/v1alpha1') }}"
+            kind: ClusterServiceVersion
+            name: "{{ csv_name }}"
+            namespace: "{{ ns }}"
+          vars:
+            csv_name: "{{ subscription_ready['resources'][0]['status']['installedCSV'] }}"
+            ns: "{{ operator['namespace'] }}"
+          register: csv_ready
+          when:
+            - subscription_ready['resources'] | length > 0
+            - subscription_ready['resources'][0]['status']['installedCSV'] is defined
+          # retries: "{{ retries_num }}"
+          # delay: "{{ delay_num }}"
+
+    # - name: Try
+    #   block:
+
+    #     # TODO: Check if resources exist before waiting
+    #     - name: Wait for resources to be ready
+    #       kubernetes.core.k8s_info:
+    #         api_version: "{{ item['apiVersion'] }}"
+    #         kind: "{{ item['kind'] }}"
+    #         name: "{{ item['metadata']['name'] }}"
+    #         namespace: "{{ item['metadata']['namespace'] }}"
+    #         wait: false
+    #         # wait: true
+    #         # wait_condition:
+    #         #   type: Available
+    #         #   status: "True"
+    #       register: resources_ready
+    #       retries: "{{ retries_num }}"
+    #       delay: "{{ delay_num }}"
+    #       until:
+    #         - resources_ready['resources'] | length > 0
+    #         - resources_ready['resources'][0]['status']['conditions'] is defined
+    #         # - resources_ready['resources'][0]['status']['conditions'][0]['type'] == "Reconciled"
+    #       loop_control:
+    #         label: "{{ item.kind }}/{{ item.apiVersion }}"
+    #       loop:
+    #         - apiVersion: oadp.openshift.io/v1alpha1
+    #           kind: DataProtectionApplication
+    #           # metadata:
+    #           #   name: velero-sample
+    #           #   namespace: "{{ ns }}"
+    #           # status:
+    #           #   conditions:
+    #           #     - type: Reconciled
+    #           #       status: true
+    #           #       reason: Complete
+
+    #         - apiVersion: cloudstorages.oadp.openshift.io/v1alpha1
+    #           kind: CloudStorage
+
+    #   rescue:
+
+    #     - name: Debug
+    #       ansible.builtin.debug:
+    #         var: result
+
+    #     - name: Pause
+    #       ansible.builtin.pause:
+    #         seconds: 1
+
+    - name: Try
+      block:
+
+        # NOTE:
+        #   ansible-lint returns a warning about the 'delete_all' argument, but it works.
+        - name: Remove resources (all)
+          kubernetes.core.k8s:
+            state: absent
+            definition: "{{ item }}"
+            delete_all: true
+            wait: false
+          ignore_errors: true
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: result
+          loop_control:
+            label: "{{ item.kind }}/{{ item.apiVersion }}"
+          loop:
+            # These CRDs come from the ClusterServiceVersion
+            # - metadata.annotations.alm-examples
+            # - spec.customresourcedefinitions.owned
+
+            - apiVersion: oadp.openshift.io/v1alpha1
+              kind: DataProtectionApplication
+              # metadata:
+              #   name: velero-sample
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: cloudstorages.oadp.openshift.io/v1alpha1
+              kind: CloudStorage
+
+            - apiVersion: velero.io/v1
+              kind: Backup
+              # metadata:
+              #   name: backup
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: backuprepositories.velero.io/v1
+              kind: BackupRepository
+
+            - apiVersion: velero.io/v1
+              kind: BackupStorageLocation
+              # metadata:
+              #   name: backupstoragelocation
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: datadownloads.velero.io/v2alpha1
+              kind: DataDownload
+
+            - apiVersion: datauploads.velero.io/v2alpha1
+              kind: DataUpload
+
+            - apiVersion: velero.io/v1
+              kind: DeleteBackupRequest
+              # metadata:
+              #   name: deletebackuprequest
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: velero.io/v1
+              kind: DownloadRequest
+              # metadata:
+              #   name: downloadrequest
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: velero.io/v1
+              kind: PodVolumeBackup
+              # metadata:
+              #   name: podvolumebackup
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: velero.io/v1
+              kind: PodVolumeRestore
+              # metadata:
+              #   name: podvolumerestore
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: velero.io/v1
+              kind: Restore
+              # metadata:
+              #   name: restore
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: velero.io/v1
+              kind: Schedule
+              # metadata:
+              #   name: schedule
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: velero.io/v1
+              kind: ServerStatusRequest
+              # metadata:
+              #   name: serverstatusrequest
+              #   namespace: "{{ ns }}"
+
+            - apiVersion: velero.io/v1
+              kind: VolumeSnapshotLocation
+              # metadata:
+              #   name: volumesnapshotlocation
+              #   namespace: "{{ ns }}"
+
+      rescue:
+
+        - name: Debug
+          ansible.builtin.debug:
+            var: result
+
+        - name: Pause
+          ansible.builtin.pause:
+            seconds: 1
+
+    - name: Try
+      block:
+
+        # NOTE:
+        #   I had to convert 'from_yaml_all' to 'from_yaml' because I was getting a weird error:
+        #     ansible: Failed to load resource definition: 'str' object has no attribute 'setdefault'
+        - name: Delete extra resources from file
+          kubernetes.core.k8s:
+            state: absent
+            definition: "{{ lookup('ansible.builtin.file', item) | from_yaml }}"
+          ignore_errors: true
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: result
+          loop: "{{ operator['extra_resource_files'] | reverse | list }}"
+          # ignore_errors: true
+
+      rescue:
+
+        - name: Debug
+          ansible.builtin.debug:
+            var: result
+
+        - name: Pause
+          ansible.builtin.pause:
+            seconds: 1
+
+    - name: "Delete CSV: {{ resource_name }}"
+      kubernetes.core.k8s:
+        state: absent
+        api_version: "{{ csv_ready['resources'][0]['apiVersion'] | default('operators.coreos.com/v1alpha1') }}"
+        kind: ClusterServiceVersion
+        name: "{{ resource_name }}"
+        namespace: "{{ resource_ns }}"
+      vars:
+        csv_name: "clusterserviceversion.operators.coreos.com/kubevirt-hyperconverged-operator.v4.16.1"
+        resource_name: "{{ csv_ready['resources'][0]['metadata']['name'] | default(operator['cluster_service_version']) }}"
+        resource_ns: "{{ csv_ready['resources'][0]['metadata']['namespace'] | default(operator['namespace']) }}"
+      # when:
+      #   - csv_ready['resources'] | length > 0
+      #   - csv_ready['resources'][0]['status']['installedCSV'] is defined
+
+    # NOTE:
+    #   The project and namespace are not deleted because it causes errors
+    #   The root cause is the "finalizer" setting in the namespace
+    #
+    # NOTE:
+    #   This task does not delete the project and namespace because that causes problems
+    #   This has the side effect of having an admonition saying that "the namespace exists"
+    #   when installing the operator a second time from the web console. Apparently the
+    #   web console installer does the same thing (I haven't fully confirmed it yet) and
+    #   not deleting the project and namespace saves us from having errors and timeouts with
+    #   the finalizers.
+    #
+    # NOTE:
+    #   I had to convert 'from_yaml_all' to 'from_yaml' because I was getting a weird error
+    #   ansible: Failed to load resource definition: 'str' object has no attribute 'setdefault'
+    - name: Delete resources from file
+      kubernetes.core.k8s:
+        state: absent
+        definition: "{{ lookup('ansible.builtin.file', item) | from_yaml }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      loop: "{{ operator['resource_files'] | reverse | list }}"
+
+    - name: Try
+      block:
+
+        # NOTE:
+        #   ansible-lint returns a warning about the 'delete_all' argument, but it works.
+        - name: Remove resources (all)
+          kubernetes.core.k8s:
+            state: absent
+            definition: "{{ item }}"
+            delete_all: true
+            wait: false
+          ignore_errors: true
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: result
+          loop_control:
+            label: "{{ item.kind }}/{{ item.apiVersion }}"
+          loop:
+            - apiVersion: v1
+              kind: Service
+              metadata:
+                namespace: "{{ ns }}"
+
+            - apiVersion: v1
+              kind: Endpoints
+              metadata:
+                namespace: "{{ ns }}"
+
+            - apiVersion: apps/v1
+              kind: DaemonSet
+              metadata:
+                namespace: "{{ ns }}"
+
+            - apiVersion: v1
+              kind: Deployment
+              metadata:
+                namespace: "{{ ns }}"
+
+            - apiVersion: v1
+              kind: Pod
+              metadata:
+                namespace: "{{ ns }}"
+
+      rescue:
+
+        - name: Debug
+          ansible.builtin.debug:
+            var: result
+
+        - name: Pause
+          ansible.builtin.pause:
+            seconds: 1
+
+    - name: Remove CRDs
+      kubernetes.core.k8s:
+        state: absent
+        api_version: apiextensions.k8s.io/v1
+        kind: CustomResourceDefinition
+        name: "{{ item }}"
+        label_selectors: "{{ label_selector }}"
+        wait: false
+      ignore_errors: true
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: result
+      loop: "{{ operator['custom_resource_definitions'] }}"

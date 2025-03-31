@@ -1,0 +1,40 @@
+my_plan: |
+  apiVersion: forklift.konveyor.io/v1beta1
+  kind: Plan
+  metadata:
+    name: "{{ my_plan_name | default(my_vm) }}"
+    namespace: "{{ my_namespace | default('openshift-mtv') }}"
+  spec:
+    archived: false
+    description: Ansible generated
+    targetNamespace: "{{ my_namespace | default('openshift-mtv') }}"
+    vms: "{{ my_vm }}"
+    warm: false
+    provider:
+      source:
+        name: "{{ my_provider | default('redhat-virtualization') }}"
+        namespace: "{{ my_namespace | default('openshift-mtv') }}"
+      destination:
+        name: host
+        namespace: "{{ my_namespace | default('openshift-mtv') }}"
+    map:
+      network:
+        name: redhat-virtualization-mqf7d
+        namespace: openshift-mtv
+      storage:
+        name: redhat-virtualization-5lm76
+        namespace: openshift-mtv
+
+my_migration: |          
+  api_version: forklift.konveyor.io/v1beta1
+  kind: Migration
+  name: "{{ my_vm }}"
+  namespace: "{{ my_namespace | default('openshift-mtv') }}"
+    metadata:
+      name: "{{ my_plan_name | default(my_vm) }}"
+      namespace: "{{ my_namespace | default('openshift-mtv') }}"
+    spec:
+      plan:
+        name: "{{ my_plan_name | default(my_vm) }}"
+        namespace: "{{ my_namespace | default('openshift-mtv') }}"
+

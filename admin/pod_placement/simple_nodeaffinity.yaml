@@ -1,0 +1,22 @@
+spec:
+  template:
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: sla 
+                operator: In 
+                values:
+                - gold 
+                - silver
+                key: gpu-enabled
+                operator: In
+                values:
+                - true
+                key: tier
+                operator: In
+                values:
+                - advanced
+                - premium

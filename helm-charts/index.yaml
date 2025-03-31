@@ -1,0 +1,40 @@
+apiVersion: v1
+entries:
+  coffee-shop:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-03-18T08:59:09.802592032-04:00"
+    description: A Helm chart for Kubernetes
+    digest: 0f654af12a880b6c184f6a1165314a8aa8c196d79842d8c7393b10125b8ccc5f
+    name: coffee-shop
+    type: application
+    urls:
+    - https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/helm-charts/coffee-shop-0.1.0.tgz
+    version: 0.1.0
+  famouschart:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-03-18T08:59:09.808147364-04:00"
+    dependencies:
+    - name: mariadb
+      repository: https://charts.bitnami.com/bitnami
+      version: 9.3.11
+    description: A Helm chart for Kubernetes
+    digest: 167d4e572cf3121fc66fd8d5fd20e01a35fabcda7bc3772fcd71cbc5d72ae6f4
+    name: famouschart
+    type: application
+    urls:
+    - https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/helm-charts/famousquotes-0.1.0.tgz
+    version: 0.1.0
+  webserver:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-03-18T08:59:09.808639037-04:00"
+    description: A Helm chart for Kubernetes
+    digest: 6f23fdd36de064867cd513f1f55887f02a0fdcd2758698bd17dd4732a1b9b59d
+    name: webserver
+    type: application
+    urls:
+    - https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/helm-charts/webserver-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-03-18T08:59:09.80075063-04:00"

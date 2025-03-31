@@ -1,0 +1,22 @@
+{
+  "name": "query-api",
+  "version": "2.0.0",
+  "description": "Query API for the World Database",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [
+    "mysql",
+    "database",
+    "node.js"
+  ],
+  "author": "Ricardo da Costa",
+  "license": "MIT",
+  "dependencies": {
+    "mysql": "^2.18.1",
+    "express": "^4.17.1",
+    "axios": "^1.6.0"
+  }
+}
+

@@ -1,0 +1,23 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  labels:
+    app: db
+    app.kubernetes.io/component: db
+    app.kubernetes.io/instance: db
+  name: db
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+  - annotations:
+      openshift.io/imported-from: quay.io/rdacosta/mysql-57-rhel7:latest
+    from:
+      kind: DockerImage
+      name: quay.io/rdacosta/mysql-57-rhel7:latest
+    generation: 2
+    importPolicy:
+      importMode: Legacy
+    name: latest
+    referencePolicy:
+      type: Source

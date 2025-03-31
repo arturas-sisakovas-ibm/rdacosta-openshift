@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: node-memory-running-low
+  namespace: openshift-monitoring 
+spec:
+  groups:
+  - name: node-memory-running-low.rules
+    rules:
+    - alert: NodeMemoryRunningLow
+      expr: |
+        (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10) * on(instance) group_left (nodename) node_uname_info{nodename=~".+"}
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Memory running low on {{ $labels.nodename }}"
+        description: "Memory available on node {{ $labels.nodename }} is less than 10% of total memory."
+        receiver: Mail
+

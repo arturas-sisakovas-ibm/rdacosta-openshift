@@ -1,0 +1,35 @@
+# Show certificates currently being used by the cluster
+oc get -o json proxy/cluster | jq .spec.trustedCA
+oc get cm/combined-certs -n openshift-config
+
+# Create project and deploy apps
+oc new-project hello-world
+oc new-app --name hello1 quay.io/rdacosta/hello-world-nginx:latest
+oc new-app --name hello2 quay.io/rdacosta/hello-world-nginx:latest
+
+# Create route
+oc create route edge --service hello1 --hostname hello1.apps.ocp4.example.com
+oc create route edge --service hello2 --hostname hello2.apps.ocp4.example.com
+
+# Test route from workstation where the CA is trusted
+curl https://hello1.apps.ocp4.example.com
+curl https://hello2.apps.ocp4.example.com
+
+# Test from within the app pods where the CA is not trusted
+oc exec -it deployment/hello1 -- curl https://hello2.apps.ocp4.example.com
+oc exec -it deployment/hello2 -- curl https://hello1.apps.ocp4.example.com
+
+# Create and label configmap
+oc create cm ca-certs
+oc label cm/ca-certs config.openshift.io/inject-trusted-cabundle=true
+
+# Test configmap
+oc get configmap ca-certs -o yaml | head -n 6
+
+# Set deployments to mount configmap to expected location
+oc set volume deploy/hello1 -t configmap --name trusted-ca --add --read-only=true --mount-path /etc/pki/ca-trust/extracted/pem --configmap-name ca-certs
+oc set volume deploy/hello2 -t configmap --name trusted-ca --add --read-only=true --mount-path /etc/pki/ca-trust/extracted/pem --configmap-name ca-certs
+
+# Patch deployment to use configmap
+oc patch deploy/hello1 -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"items":[{"key":"ca-bundle.crt","path":"tls-ca-bundle.pem"}]},"name":"trusted-ca"}]}}}}'
+oc patch deploy/hello2 -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"items":[{"key":"ca-bundle.crt","path":"tls-ca-bundle.pem"}]},"name":"trusted-ca"}]}}}}'

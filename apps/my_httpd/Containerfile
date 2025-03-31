@@ -1,0 +1,28 @@
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+ENV HTTP_PORT=8080
+
+RUN dnf install -y httpd && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf/* && \
+    sed -i -e "s/^Listen 80/Listen ${HTTP_PORT}/g" /etc/httpd/conf/httpd.conf && \
+    sed -i -e "s/^#ServerName.*/ServerName localhost/g" /etc/httpd/conf/httpd.conf && \
+    sed -i -e "s/ErrorLog.*/ErrorLog \/dev\/stderr/" /etc/httpd/conf/httpd.conf && \
+    sed -i -e "s/CustomLog.*/CustomLog \/dev\/stdout combined/" /etc/httpd/conf/httpd.conf && \
+    chgrp -R root /var/log/httpd /var/run/httpd && \
+    chmod -R g=u /var/log/httpd /var/run/httpd
+
+WORKDIR /var/www/html
+
+COPY index.html .
+
+LABEL description="My httpd container application" \
+      io.k8s.description="My httpd container application" \
+      io.openshift.expose-services="${HTTP_PORT}:http" \
+      io.openshift.tags="httpd, web server, apache, apache2"
+
+EXPOSE ${HTTP_PORT}
+
+USER 1001
+
+ENTRYPOINT /usr/sbin/httpd -DFOREGROUND

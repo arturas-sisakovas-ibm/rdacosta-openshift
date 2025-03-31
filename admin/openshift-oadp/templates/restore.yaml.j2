@@ -1,0 +1,9 @@
+﻿---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: restore-{{ unix_epoch }}
+  namespace: {{ adp_namespace | default('openshift-adp') }}
+spec:
+  backupName: backup-{{ unix_epoch }}
+  restorePVs: true

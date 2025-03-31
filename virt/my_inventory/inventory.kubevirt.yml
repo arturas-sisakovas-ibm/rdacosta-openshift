@@ -1,0 +1,6 @@
+plugin: kubevirt.core.kubevirt
+connections:
+  - use_service: true
+namespaces:
+  - openshift-mtv
+  - vms

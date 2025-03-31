@@ -1,0 +1,73 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: my-nodejs-pipeline
+
+spec:
+
+  params:
+
+    - name: git-url
+      type: string
+      description: The git repository URL
+
+    - name: path-context
+      type: string
+      description: The subdirectory for the Node.js app
+
+  workspaces:
+    - name: shared-workspace
+
+  tasks:
+
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: subdirectory
+          value: "source/$(params.path-context)"
+
+    - name: build
+      taskRef:
+        name: s2i-nodejs
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: PATH_CONTEXT
+          value: "/workspace/source/$(params.path-context)"
+
+    - name: conditional-deploy
+      taskSpec:
+        steps:
+          - name: create-or-update-deployment
+            image: quay.io/openshift/origin-cli:latest
+            script: |
+              #!/bin/sh
+              if ! oc get deployment hellojs; then
+                oc create deployment hellojs --image=my-nodejs-app-image
+              else
+                echo "Deployment exists, skipping creation."
+              fi
+      runAfter:
+        - build
+
+    - name: deploy
+      taskRef:
+        name: openshift-client
+      runAfter:
+        - conditional-deploy
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: script
+          value: "oc rollout restart deployment/hellojs"

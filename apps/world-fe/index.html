@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City and Country Query</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>City and Country Info</h1>
+
+        <label for="queryType">Query Type:</label>
+        <select id="queryType">
+            <option value="city">City</option>
+            <option value="country">Country</option>
+        </select>
+
+        <label for="queryInput">Enter Name:</label>
+        <input type="text" id="queryInput" placeholder="Enter city or country name">
+
+        <button id="submitBtn">Query</button>
+        <div id="result"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+

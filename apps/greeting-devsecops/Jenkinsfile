@@ -1,0 +1,44 @@
+pipeline {
+    agent { label 'nodejs' }
+
+    environment { APP_NAMESPACE = 'rgdacosta-devsecops' }
+
+    stages{
+
+        stage('Test'){
+            steps {
+                sh "node greeting-devsecops/test.js"
+            }
+        }
+
+        stage('Deploy') {
+	    steps {
+		sh '''
+		    oc start-build greeting \
+		    --follow --wait -n ${APP_NAMESPACE}
+		''' }
+		}
+
+	stage('Push to Quay') {
+    	    steps {
+        	sh '''
+            	  oc start-build greeting --follow --wait -n ${APP_NAMESPACE}
+		   ''' }
+		}
+    }
+    post {
+        failure {
+            withCredentials([usernamePassword(
+                credentialsId: 'gitlab-global',
+                usernameVariable: 'USERNAME',
+                passwordVariable: 'PASSWORD'
+	)]) {
+		sh """
+                    curl -X POST \
+                    -H 'PRIVATE-TOKEN: $PASSWORD' -H 'Content-Type: application/json' \
+                    'https://gitlab.com/api/v4/projects/19797749/issues' \
+                    -d '{"title": "CI build $BUILD_NUMBER", "body": "Pipeline build $BUILD_NUMBER has failed"}'
+		   """ }
+		} 
+	}
+}

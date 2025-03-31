@@ -1,0 +1,18 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: foo
+          volumeMounts:
+           - name: secret-volume
+             mountPath: /etc/pki/tls/
+      volumes:
+        - name: secret-volume
+          secret:
+            defaultMode: 440
+            secretName: foo-secret
+            items:
+             - key: tls.crt 
+               path: certs/localhost.crt
+             - key: tls.key
+               path: private/localhost.key

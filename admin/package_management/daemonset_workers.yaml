@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: packages-installer
+spec:
+  selector:
+    matchLabels:
+      app: packages-installer
+  template:
+    metadata:
+      labels:
+        app: packages-installer
+    spec:
+      containers:
+      - name: packages-installer
+        image: registry.access.redhat.com/ubi8/ubi:latest
+        command: ["/bin/bash"]
+        args: ["-c", "/scripts/install_packages.sh"]
+        volumeMounts:
+        - name: packages-installer
+          mountPath: /scripts
+      volumes:
+      - name: packages-installer
+        configMap:
+          name: packages-installer
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""

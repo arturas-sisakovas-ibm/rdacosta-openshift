@@ -1,0 +1,32 @@
+# Label nodes as infra
+for i in {4..6}; do oc label node/worker0$i node-role.kubernetes.io/infra=; done
+
+# Remove worker label
+for i in {4..6}; do oc label node/worker0$i node-role.kubernetes.io/worker-; done
+
+# Show nodes
+oc get nodes
+
+# Show before state
+oc debug node/worker04 
+chroot /host
+cat /var/roothome/.bashrc
+
+# Show mc and mcp (before)
+oc get mc
+oc get mcp
+
+# Create mc and mcp
+oc create -f mc.yml
+oc create -f mcp.yml
+
+# Show mc and mcp (after)
+oc get mc
+oc get mcp
+
+# Show after state
+oc debug node/worker04 
+chroot /host
+cat /var/roothome/.bashrc
+
+

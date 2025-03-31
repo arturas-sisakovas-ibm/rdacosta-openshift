@@ -1,0 +1,97 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+metadata:
+  name: webserver
+objects:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: ${NAME}
+      app.kubernetes.io/component: ${NAME}
+      app.kubernetes.io/instance: ${NAME}
+    name: ${NAME}
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        deployment: ${NAME}
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          deployment: ${NAME}
+      spec:
+        containers:
+        - image: quay.io/rdacosta/my_httpd
+          imagePullPolicy: IfNotPresent
+          name: ${NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${NAME}
+      app.kubernetes.io/component: ${NAME}
+      app.kubernetes.io/instance: ${NAME}
+    name: ${NAME}
+  spec:
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      deployment: ${NAME}
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    labels:
+      app: ${NAME}
+      app.kubernetes.io/component: ${NAME}
+      app.kubernetes.io/instance: ${NAME}
+    name: ${NAME}
+  spec:
+    host: ${HOSTNAME}
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: ${NAME}
+      weight: 100
+    wildcardPolicy: None
+parameters:
+- description: The name of your application 
+  displayName: Name
+  name: NAME
+  required: true
+  value: webserver
+- description: The URL of your webserver
+  displayName: URL
+  name: HOSTNAME
+  required: false
+

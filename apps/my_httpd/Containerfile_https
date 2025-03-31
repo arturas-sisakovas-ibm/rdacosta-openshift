@@ -1,0 +1,32 @@
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+ENV HTTP_PORT=8080
+ENV HTTPS_PORT=8443
+
+RUN dnf install -y httpd mod_ssl openssl && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf/* && \
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+    -keyout /etc/pki/tls/private/localhost.key \
+    -out /etc/pki/tls/certs/localhost.crt \
+    -subj "/C=US/ST=NC/L=Raleigh/O=RedHat/OU=Training/CN=localhost" && \
+    sed -i -e "s/^Listen 80/Listen ${HTTP_PORT}/g" /etc/httpd/conf/httpd.conf && \
+    sed -i -e "s/443/${HTTPS_PORT}/g" /etc/httpd/conf.d/ssl.conf && \
+    sed -i -e "s/^#ServerName.*/ServerName localhost/g" /etc/httpd/conf/httpd.conf && \
+    chgrp -R root /var/log/httpd /var/run/httpd /etc/pki/tls/private/localhost.key && \
+    chmod -R g=u /var/log/httpd /var/run/httpd /etc/pki/tls/private/localhost.key
+
+WORKDIR /var/www/html
+
+COPY index.html .
+
+LABEL description="My httpd container application" \
+      io.k8s.description="My httpd container application" \
+      io.openshift.expose-services="${HTTP_PORT}:http,${HTTPS_PORT}:https" \
+      io.openshift.tags="httpd, web server, apache, apache2"
+
+EXPOSE ${HTTP_PORT} ${HTTPS_PORT}
+
+USER 1001
+
+ENTRYPOINT /usr/sbin/httpd -DFOREGROUND

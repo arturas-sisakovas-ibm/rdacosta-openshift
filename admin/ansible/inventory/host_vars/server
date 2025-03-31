@@ -1,0 +1,8 @@
+---
+#	host_vars/server.srv
+
+ansible_host: server.srv
+ansible_user: lab
+ansible_ssh_private_key_file: /home/lab/.ssh/lab_rsa
+ansible_ssh_common_args:
+  '-o ProxyJump="lab@utility"'

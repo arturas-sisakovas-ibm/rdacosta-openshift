@@ -1,0 +1,8 @@
+apiVersion: helm.openshift.io/v1beta1
+kind: HelmChartRepository
+metadata:
+  name: gitlab
+spec:
+  connectionConfig:
+    url: https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/coffee-shop-chart
+  name: Ricardo da Costa's GitLab repo

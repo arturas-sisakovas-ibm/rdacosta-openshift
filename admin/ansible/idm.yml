@@ -1,0 +1,35 @@
+---
+- name: Create FreeIPA Users and Add to Group
+  hosts: localhost
+  become: true
+
+  tasks:
+    - name: Install required packages
+      ansible.builtin.dnf:
+        name: python3-freeipa
+        state: present
+
+    - name: Create FreeIPA users
+      loop: "{{ ipa_users | dict2items }}"
+      community.general.ipa_user:
+        name: "{{ item['key'] }}"
+        password: "{{ item['value']['ipa_user_pass'] }}"
+        state: "{{ my_state | default('present') }}" 
+        givenname: "{{ item['key'] }}"
+        sn: User
+        ipa_host: "{{ ipa_server }}"
+        ipa_user: "{{ ipa_admin_user }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        update_password: on_create
+        validate_certs: false
+
+    - name: Add users to FreeIPA group
+      loop: "{{ ipa_users | dict2items }}"
+      community.general.ipa_group:
+        name: "{{ item['value']['groups'] | default('omit') }}"
+        state: "{{ my_state | default('present') }}"
+        user: "{{ item['key'] }}"
+        ipa_host: "{{ ipa_server }}"
+        ipa_user: "{{ ipa_admin_user }}"
+        ipa_pass: "{{ ipa_admin_password }}"
+        validate_certs: false

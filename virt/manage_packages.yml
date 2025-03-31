@@ -1,0 +1,27 @@
+- name: Manage software
+  hosts: "{{ my_host | mandatory('You must indicate the hosts to target with the variable my_host') }}"
+  become: false
+  gather_facts: false
+
+  tasks:
+
+    - name: Print usage message
+      ansible.builtin.debug:
+        msg: |
+
+          Set a value for the variable my_package to be the name of the package to manage
+
+          Set a value for the variable my_state to be one of the following:
+
+            'installed' to install software
+
+            'latest' to update software
+
+            'removed' to remove software
+
+
+    - name: Ensure {{ my_package | default('bash') }} is at state {{ my_state | default('installed') }}
+      become: true
+      ansible.builtin.dnf:
+        name: "{{ my_package | default('bash') }}"
+        state: "{{ my_state | default('installed') }}"

@@ -1,0 +1,12 @@
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-adp
+  namespace: openshift-adp
+  labels:
+    operators.coreos.com/redhat-oadp-operator.openshift-adp: ""
+spec:
+  targetNamespaces:
+    - openshift-adp
+  upgradeStrategy: Default

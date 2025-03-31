@@ -1,0 +1,18 @@
+# Get storageclasses
+oc get sc
+
+# Create configmap with storage
+oc create configmap cluster-monitoring-config -n openshift-monitoring --from-file config.yaml=persistent-storage.yml
+
+# Ensure re-deployment
+oc get pvc -l -n openshift-monitoring
+
+# Test if retention period is correct
+oc get -o json pod/prometheus-k8s-0 -n openshift-monitoring | jq -c .spec.containers[0].args
+
+# Is Prometheus using the correct size?
+oc exec -n openshift-monitoring statefulset/prometheus-k8s -c prometheus -- df -h /prometheus | awk '{if (NR!=1) {print substr($2, 1, length($2)-1)}}'
+
+# Is AlertManager using the correct size?
+oc exec -n openshift-monitoring statefulset/alertmanager-main -c alertmanager -- df -h /alertmanager | awk '{if (NR!=1) {print substr($2, 1, length($2)-1)}}'
+

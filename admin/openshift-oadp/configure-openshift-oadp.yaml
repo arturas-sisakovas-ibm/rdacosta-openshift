@@ -1,0 +1,443 @@
+---
+# https://github.com/openshift/oadp-operator
+# https://dev.operatorhub.io/operator/oadp-operator
+# https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html-single/backup_and_restore/index#oadp-installing-operator-doc
+# https://docs.openshift.com/container-platform/4.16/backup_and_restore/application_backup_and_restore/installing/installing-oadp-ocs.html
+
+- name: Install the 'OADP' operator
+  hosts: utility
+  gather_facts: false
+
+  module_defaults:
+    group/kubernetes.core.k8s:
+      host: "{{ ocp_cluster['host'] }}"
+      kubeconfig: "{{ ocp_cluster['kubeconfig'] }}"
+      validate_certs: "{{ ocp_cluster['validate_certs'] }}"
+      wait: true
+      wait_sleep: "{{ wait_sleep }}"
+      wait_timeout: "{{ wait_timeout }}"
+    # FIXME: Error loading module_defaults: could not resolve the module_defaults group community.okd.okd
+    # group/community.okd.okd:
+    #   host: "{{ ocp_cluster['host'] }}"
+    #   validate_certs: "{{ ocp_cluster['validate_certs'] }}"
+    # FIXME: Error loading module_defaults: could not resolve could not resolve action community.okd.openshift_auth in module_defaults
+    # community.okd.openshift_auth:
+    #   host: "{{ ocp_cluster['host'] }}"
+    #   validate_certs: "{{ ocp_cluster['validate_certs'] }}"
+
+  vars:
+    operator: "{{ operators['oadp'] }}"
+    ns: "{{ operator['namespace'] | default('openshift-adp') }}"
+    adp_namespace: openshift-adp
+    label_selector: "{{ operator['label_selector'] }}"
+    noobaa_namespace: openshift-storage
+    noobaa_storageclass_name: openshift-storage.noobaa
+    noobaa_bucketclass_name: noobaa-default-bucket-class
+    aws_dir: /home/lab/.aws
+    cloud_credentials: "{{ aws_dir }}/credentials"
+    s3cfg_config: /home/student/.s3cfg
+    template_s3cfg: templates/s3cfg.j2
+    template_dpa: templates/openshift-oadp-dataprotectionapplication.yaml.j2
+    rbd_ocs_volumesnapshotclass: ocs-external-storagecluster-rbdplugin-snapclass
+    backups_project: backups
+    obc_name: backup-obc
+    template_obc: templates/objectbucketclaim.yaml.j2
+    file_ssh_key_pub: /home/student/.ssh/lab_rsa.pub
+    file_ssh_key: /home/student/.ssh/lab_rsa
+    ssh_key: "{{ lookup('ansible.builtin.file', file_ssh_key_pub) }}"
+
+  tasks:
+
+    - name: Log in as admin
+      block:
+
+        # FIXME: The openshift module caused error so I replaced it with a command
+        - name: OpenShift admin login
+          # community.okd.openshift_auth:
+          #   username: "{{ item['user'] }}"
+          #   password: "{{ item['pass'] }}"
+          ansible.builtin.command:
+            # --insecure-skip-tls-verify
+            cmd: "oc login -u '{{ item['user'] }}' -p '{{ item['pass'] }}' '{{ ocp_cluster['host'] }}'"
+          register: openshift_auth_admin
+          ignore_errors: false
+          loop_control:
+            label: "{{ item.user }}"
+          loop:
+            - user: admin
+              pass: redhatocp
+
+    - name: Check if config is needed
+      kubernetes.core.k8s_info:
+        api_version: oadp.openshift.io/v1alpha1
+        kind: DataProtectionApplication
+        name: "{{ dpa_name | default('oadp-dpa') }}"
+        namespace: "{{ oadp_project | default('openshift-adp') }}"
+      retries: "{{ retries_num }}"
+      delay: "{{ delay_num }}"
+      register: dpa_info
+
+    # FIXME:
+    #   Check if the play needs to be ended here or if we can
+    #   add register/when clauses to control step execution
+    - name: End config if DPA is available
+      meta: end_play
+      when:
+        - dpa_info.resources | length > 0
+
+    - name: NooBaa
+      block:
+
+        - name: Get 'noobaa-admin' credentials from ODF
+          kubernetes.core.k8s_info:
+            api_version: v1
+            kind: Secret
+            name: noobaa-admin
+            namespace: "{{ noobaa_namespace }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: secret_noobaa_admin
+
+        - name: "Set S3 facts: Secret"
+          ansible.builtin.set_fact:
+            admin_access_key: "{{ secret_noobaa_admin.resources[0].data.AWS_ACCESS_KEY_ID | b64decode }}"
+            admin_secret_key: "{{ secret_noobaa_admin.resources[0].data.AWS_SECRET_ACCESS_KEY | b64decode }}"
+          when:
+            - secret_noobaa_admin.resources | length > 0
+            - secret_noobaa_admin.resources[0].data.AWS_ACCESS_KEY_ID is defined
+            - secret_noobaa_admin.resources[0].data.AWS_SECRET_ACCESS_KEY is defined
+          failed_when:
+            - secret_noobaa_admin.resources | length == 0
+
+        - name: Get NooBaa S3 endpoint
+          kubernetes.core.k8s_info:
+            api_version: route.openshift.io/v1
+            kind: Route
+            name: s3
+            namespace: "{{ noobaa_namespace }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: route_s3
+
+        - name: "Set S3 facts: Route"
+          ansible.builtin.set_fact:
+            s3_endpoint: "{{ route_s3.resources[0].spec.host }}"
+          when:
+            - route_s3.resources | length > 0
+            - route_s3.resources[0].spec.host is defined
+          failed_when:
+            - route_s3.resources | length == 0
+
+    - name: Backups project
+      block:
+
+        - name: Create backups project
+          kubernetes.core.k8s:
+            state: present
+            definition:
+              apiVersion: project.openshift.io/v1
+              kind: Project
+              metadata:
+                name: "{{ backups_project }}"
+          register: project_resource
+
+    - name: StorageClass
+      block:
+
+        - name: "Check if StorageClass exists: {{ noobaa_storageclass_name }}"
+          kubernetes.core.k8s_info:
+            api_version: storage.k8s.io/v1
+            kind: StorageClass
+            name: "{{ noobaa_storageclass_name }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: storageclass_resource
+
+    - name: BucketClass
+      block:
+
+        # Check BucketClass to prevent OBC stuck in 'Pending'
+        - name: "Check if BucketClass exists: {{ noobaa_bucketclass_name }}"
+          kubernetes.core.k8s_info:
+            api_version: noobaa.io/v1alpha1
+            kind: BucketClass
+            name: "{{ noobaa_bucketclass_name }}"
+            namespace: "{{ noobaa_namespace }}"
+            wait: true
+            wait_sleep: "{{ wait_sleep }}"
+            wait_timeout: "{{ wait_timeout }}"
+            wait_condition:
+              type: Available
+              status: "True"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: bucketclass_resource
+          until:
+            - bucketclass_resource.resources | length > 0
+            - bucketclass_resource.resources[0].status.phase is defined
+            - bucketclass_resource.resources[0].status.phase == "Ready"
+          # failed_when:
+          #   - (bucketclass_resource.resources | length == 0) or
+          #     (bucketclass_resource.resources[0].status.phase != "Ready")
+
+    - name: ObjectBucketClaim
+      block:
+
+        - name: Create Object Bucket Claim
+          kubernetes.core.k8s:
+            state: present
+            definition: "{{ lookup('ansible.builtin.template', template_obc) | from_yaml }}"
+          register: obc_resource
+
+        - name: Get Object Bucket Claim
+          kubernetes.core.k8s_info:
+            api_version: objectbucket.io/v1alpha1
+            kind: ObjectBucketClaim
+            name: "{{ obc_name }}"
+            namespace: "{{ backups_project }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: obc_result
+          until:
+            - obc_result.resources | length > 0
+            - obc_result.resources[0].status.phase is defined
+            - obc_result.resources[0].status.phase == "Bound"
+          # failed_when:
+          #   - (obc_result.resources | length == 0) or
+          #     (obc_result.resources[0].status.phase != "Bound")
+
+        - name: Get Object Bucket
+          kubernetes.core.k8s_info:
+            api_version: objectbucket.io/v1alpha1
+            kind: ObjectBucket
+            name: "obc-{{ backups_project }}-{{ obc_name }}"
+            namespace: null
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: obc_result
+
+        - name: Get OBC configmap
+          kubernetes.core.k8s_info:
+            api_version: v1
+            kind: ConfigMap
+            name: "{{ obc_name }}"
+            namespace: "{{ backups_project }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: obc_configmap
+
+        - name: "Set S3 facts: ConfigMap"
+          ansible.builtin.set_fact:
+            s3_bucket: "{{ obc_configmap.resources[0].data.BUCKET_NAME }}"
+          when:
+            - obc_configmap.resources | length > 0
+            - obc_configmap.resources[0].data.BUCKET_NAME is defined
+          failed_when:
+            - obc_configmap.resources | length == 0
+
+        - name: Get OBC secret
+          kubernetes.core.k8s_info:
+            api_version: v1
+            kind: Secret
+            name: "{{ obc_name }}"
+            namespace: "{{ backups_project }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: obc_secret
+
+        - name: "Set S3 facts: Secret"
+          ansible.builtin.set_fact:
+            access_key: "{{ obc_secret.resources[0].data.AWS_ACCESS_KEY_ID | b64decode }}"
+            secret_key: "{{ obc_secret.resources[0].data.AWS_SECRET_ACCESS_KEY | b64decode }}"
+          when:
+            - obc_secret.resources | length > 0
+            - obc_secret.resources[0].data.AWS_ACCESS_KEY_ID is defined
+            - obc_secret.resources[0].data.AWS_SECRET_ACCESS_KEY is defined
+          failed_when:
+            - obc_secret.resources | length == 0
+
+    - name: "{{ cloud_credentials }}"
+      delegate_to: utility
+      block:
+
+        - name: "Create directory '{{ aws_dir }}'"
+          ansible.builtin.file:
+            path: "{{ aws_dir }}"
+            state: directory
+            mode: '0700'
+
+        - name: Create 'cloud-credentials' file
+          ansible.builtin.copy:
+            dest: "{{ cloud_credentials }}"
+            mode: '0600'
+            content: |
+              [default]
+              aws_access_key_id={{ access_key }}
+              aws_secret_access_key={{ secret_key }}
+
+        - name: Read 'cloud-credentials' file
+          ansible.builtin.slurp:
+            src: "{{ cloud_credentials }}"
+          register: cloud_credentials_slurp
+
+        - name: Create 'cloud-credentials' secret
+          kubernetes.core.k8s:
+            state: present
+            inline:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                creationTimestamp: null
+                name: "{{ oadp_secret | default('cloud-credentials') }}"
+                namespace: "{{ oadp_project | default('openshift-adp') }}"
+              data:
+                cloud: "{{ cloud_credentials_slurp['content'] }}"
+
+    - name: '~/.s3cfg'
+      delegate_to: localhost
+      block:
+
+        - name: Create '~/.s3cfg' file
+          ansible.builtin.template:
+            # src: templates/s3cfg.j2
+            src: "{{ template_s3cfg }}"
+            dest: "{{ s3cfg_config }}"
+            mode: '0600'
+
+        - name: Test 's3cmd'
+          ansible.builtin.command:
+            cmd: "s3cmd ls s3://{{ s3_bucket }}"
+          register: output
+          changed_when:
+            - output.rc == 0
+          # failed_when:
+          #   - output.rc != 0
+
+    - name: Label nodes
+      block:
+
+        # TODO: Check if this is really needed
+        - name: Delete label from master nodes
+          kubernetes.core.k8s:
+            state: patched
+            kind: Node
+            name: "{{ item }}"
+            definition:
+              metadata:
+                labels:
+                  node-role.kubernetes.io/worker: NULL
+          loop:
+            - master01
+            - master02
+            - master03
+
+        - name: Add label to worker nodes
+          kubernetes.core.k8s:
+            state: patched
+            kind: Node
+            name: "{{ item }}"
+            definition:
+              metadata:
+                labels:
+                  node-role.kubernetes.io/nodeAgent: ""
+          loop:
+            - worker01
+            - worker02
+
+    - name: DataProtectionApplication
+      block:
+
+        - name: Create 'DPA' instance for 'OADP' operator
+          kubernetes.core.k8s:
+            state: present
+            definition: "{{ lookup('ansible.builtin.template', template_dpa) | from_yaml }}"
+          register: dpa_result
+          # vars:
+          #   # oadp_dpa_name | default('oadp-dpa'
+          #   # oadp_project | default('openshift-adp
+          #   # s3_endpoint | default('s3-openshift-storage.apps.ocp4.example.com'
+          #   # s3_bucket: my-object-bucket-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+        - name: Get DataProtectionApplication resource
+          kubernetes.core.k8s_info:
+            api_version: oadp.openshift.io/v1alpha1
+            kind: DataProtectionApplication
+            name: "{{ dpa_name | default('oadp-dpa') }}"
+            namespace: "{{ oadp_project | default('openshift-adp') }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: dpa_resource
+          failed_when:
+            - dpa_resource.resources | length == 0
+
+        - name: Wait until the DataProtectionApplication is Reconciled
+          kubernetes.core.k8s_info:
+            api_version: oadp.openshift.io/v1alpha1
+            kind: DataProtectionApplication
+            name: "{{ dpa_name | default('oadp-dpa') }}"
+            namespace: "{{ oadp_project | default('openshift-adp') }}"
+            wait: true
+            wait_sleep: "{{ wait_sleep }}"
+            wait_timeout: "{{ wait_timeout }}"
+            wait_condition:
+              type: Reconciled
+              status: "True"
+          register: dpa_reconciled
+          # retries: "{{ retries_num }}"
+          # delay: "{{ delay_num }}"
+          # until:
+          #   - dpa_reconciled['resources'] | length > 0
+          #   - dpa_reconciled['resources'][0]['status']['phase'] is defined
+          #   - dpa_reconciled['resources'][0]['status']['phase'] == "Running"
+
+    - name: BackupStorageLocation
+      block:
+
+        - name: Get BackupStorageLocation resource
+          kubernetes.core.k8s_info:
+            api_version: velero.io/v1
+            kind: BackupStorageLocation
+            name: "{{ bsl_name | default('oadp-dpa-1') }}"
+            namespace: "{{ oadp_project | default('openshift-adp') }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: bsl_resource
+          until:
+            - bsl_resource.resources | length > 0
+            - bsl_resource.resources[0].status.phase is defined
+            - bsl_resource.resources[0].status.phase == "Available"
+          # failed_when:
+          #   - (bsl_resource.resources | length == 0) or
+          #     (bsl_resource.resources[0].status.phase != "Available")
+
+    - name: VolumeSnapshotLocation
+      block:
+
+        - name: Get VolumeSnapshotLocation resource
+          kubernetes.core.k8s_info:
+            api_version: velero.io/v1
+            kind: VolumeSnapshotLocation
+            name: "{{ vsl_name | default('oadp-dpa-1') }}"
+            namespace: "{{ oadp_project | default('openshift-adp') }}"
+          retries: "{{ retries_num }}"
+          delay: "{{ delay_num }}"
+          register: vsl_resource
+          until:
+            - vsl_resource.resources | length > 0
+          failed_when:
+            - vsl_resource.resources | length == 0
+
+    - name: VolumeSnapshotClass
+      block:
+
+        # TODO: Check if we can convert this task to 'kubernetes.core.k8s_json_patch'
+        - name: Patch VolumeSnapshotClass
+          kubernetes.core.k8s:
+            state: patched
+            kind: VolumeSnapshotClass
+            name: "{{ rbd_ocs_volumesnapshotclass }}"
+            definition:
+              deletionPolicy: "Retain"
+              metadata:
+                labels:
+                  velero.io/csi-volumesnapshot-class: "true"

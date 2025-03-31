@@ -1,0 +1,12 @@
+---
+apiVersion: {{ api_version['subscription'] | default("operators.coreos.com/v1alpha1") }}
+kind: Subscription
+metadata:
+  name: {{ operator['subscription']['name'] }}
+  namespace: {{ operator['namespace']['name'] }}
+spec:
+  name: {{ operator['name'] }}
+  channel: {{ operator['subscription']['channel'] | default("stable") }}
+  source: {{ operator['subscription']['source'] | default("redhat-operators") }}
+  sourceNamespace: {{ operator['subscription']['source_namespace'] | default("openshift-marketplace") }}
+  startingCSV: {{ operator['subscription']['starting_csv'] }}

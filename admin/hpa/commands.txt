@@ -1,0 +1,22 @@
+# Setup
+oc new-project hpa
+oc create -f loadtest.yaml
+oc set resources deployment/loadtest --requests=cpu=25m,memory=32Mi --limits=cpu=100m,memory=128Mi
+
+# Verify resources
+
+oc get -o json deploy/loadtest | jq .spec.template.spec.containers[].resources
+
+# Prove pods can manually scale to 5
+oc scale deployment/loadtest --replicas=5
+
+# Scale pods back to 1
+oc scale deployment/loadtest --replicas=1
+
+# Implement autocaler
+oc autoscale deployment/loadtest --min 2 --max 10 --cpu-percent 50
+
+# Increase load
+curl -X GET http://loadtest.apps.ocp4.example.com/api/loadtest/v1/cpu/1
+
+

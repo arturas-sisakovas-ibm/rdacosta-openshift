@@ -1,0 +1,15 @@
+helm repo add stakater https://stakater.github.io/stakater-charts
+
+helm repo update
+
+helm install stakater/reloader # For helm3 add --generate-name flag or set the release name
+
+helm -n stakater-reloader install stakater stakater/reloader
+
+oc create sa stakater-reloader-sa
+
+oc adm policy add-scc-to-user anyuid -z reloader-sa
+
+oc set sa deploy/reloader reloader-sa
+
+oc create clusterrolebinding edit-secrets-configmaps --clusterrole=edit --serviceaccount=stakater-reloader:stakater-reloader-sa

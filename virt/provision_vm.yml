@@ -1,0 +1,41 @@
+---
+- name: Deploy VM
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Generate random string
+      ansible.builtin.set_fact:
+        random_string: "{{ lookup('community.general.random_string', upper=false, numbers=true, special=false, length=4) }}" 
+
+    - name: Ensure token is obtained
+      register: openshift_auth_results
+      redhat.openshift.openshift_auth:
+        host: "{{ my_ocp_api }}"
+        username: "{{ my_ocp_user }}"
+        password: "{{ my_ocp_pass }}"
+        state: present
+
+    - name: Ensure namespace exists
+      redhat.openshift.k8s:
+        host: "{{ my_ocp_api }}"
+        api_key: "{{ openshift_auth_results['openshift_auth']['api_key'] }}"
+        name: "{{ my_namespace | default('vms') }}"
+        kind: Namespace
+        api_version: v1
+        state: present
+
+    - name: Ensure VM exists
+      redhat.openshift.k8s:
+        host: "{{ my_ocp_api }}"
+        api_key: "{{ openshift_auth_results['openshift_auth']['api_key'] }}"
+        definition: "{{ my_vm_definition }}"
+
+    - name: Ensure VM service exists 
+      redhat.openshift.k8s:
+        host: "{{ my_ocp_api }}"
+        api_key: "{{ openshift_auth_results['openshift_auth']['api_key'] }}"
+        definition: "{{ my_svc_definition }}"
