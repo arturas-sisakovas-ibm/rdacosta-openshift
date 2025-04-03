@@ -197,11 +197,11 @@ spec:
                 name: appstream
                 gpgcheck: False
                 baseurl: http://content.example.com/rhel9.4/x86_64/dvd/AppStream
-              packages:
-                - vim-enhanced
-                - curl
-              runcmd:
-              - [ setsebool, -P, virt_qemu_ga_manage_ssh, on ]
+            packages:
+              - vim-enhanced
+              - curl
+            runcmd:
+            - [ setsebool, -P, virt_qemu_ga_manage_ssh, on ]
         name: cloudinitdisk
 ---
 apiVersion: kubevirt.io/v1
