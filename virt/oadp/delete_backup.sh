@@ -6,7 +6,7 @@ BUCKET_NAME="$(oc get backupstoragelocation/oadp-dpa-1 -n openshift-adp -o yaml 
 step_break() {
   echo
   echo "-----------------------------------------------------"
-  echo "$1"
+  echo "🔧 $1"
   echo "-----------------------------------------------------"
 	}
 
