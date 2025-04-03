@@ -1,0 +1,106 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  labels:
+    app: db
+    kubevirt.io/dynamic-credentials-support: "true"
+  name: db
+spec:
+  dataVolumeTemplates:
+  - apiVersion: cdi.kubevirt.io/v1beta1
+    kind: DataVolume
+    metadata:
+      creationTimestamp: null
+      name: db
+    spec:
+      source:
+        http:
+          url: http://utility:8080/openshift4/images/rhel9-mariadb.qcow2 
+      storage:
+        resources:
+          requests:
+            storage: 10Gi
+  running: true
+  template:
+    metadata:
+      annotations:
+        vm.kubevirt.io/flavor: small
+        vm.kubevirt.io/os: rhel9
+        vm.kubevirt.io/workload: server
+      creationTimestamp: null
+      labels:
+        kubevirt.io/domain: db
+        kubevirt.io/size: small
+        network.kubevirt.io/headlessService: headless
+    spec:
+      accessCredentials:
+      - sshPublicKey:
+          propagationMethod:
+            qemuGuestAgent:
+              users:
+              - cloud-user
+          source:
+            secret:
+              secretName: ssh-pub-key
+      architecture: amd64
+      domain:
+        cpu:
+          cores: 1
+          sockets: 1
+          threads: 1
+        devices:
+          disks:
+          - disk:
+              bus: virtio
+            name: rootdisk
+          - disk:
+              bus: virtio
+            name: cloudinitdisk
+          interfaces:
+          - masquerade: {}
+            model: virtio
+            name: default
+          networkInterfaceMultiqueue: true
+          rng: {}
+        features:
+          acpi: {}
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi: {}
+        machine:
+          type: pc-q35-rhel9.4.0
+        memory:
+          guest: 2Gi
+        resources: {}
+      networks:
+      - name: default
+        pod: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - dataVolume:
+          name: db
+        name: rootdisk
+      - cloudInitNoCloud:
+          userData: |-
+            #cloud-config
+            user: cloud-user
+            password: redhatocp
+            chpasswd: { expire: False }
+            yum_repos:
+              baseos:
+                name: baseos
+                gpgcheck: False
+                baseurl: http://content.example.com/rhel9.4/x86_64/dvd/BaseOS
+              appstream:
+                name: appstream
+                gpgcheck: False
+                baseurl: http://content.example.com/rhel9.4/x86_64/dvd/AppStream
+            packages:
+              - vim-enhanced
+              - curl
+              - bash-completion
+            runcmd:
+            - [ setsebool, -P, virt_qemu_ga_manage_ssh, on ]
+        name: cloudinitdisk
