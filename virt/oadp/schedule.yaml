@@ -2,12 +2,12 @@
 apiVersion: velero.io/v1
 kind: Schedule
 metadata:
-  name: vms-backup-schedule 
+  name: schedule-backup-webservers
   namespace: openshift-adp
 spec:
   schedule: '0 2 * * *'
   template:
     includedNamespaces:
-      - vms
+      - backup-webservers
     storageLocation: oadp-dpa-1
     snapshotVolumes: true

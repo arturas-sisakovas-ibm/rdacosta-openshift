@@ -2,10 +2,10 @@
 apiVersion: velero.io/v1
 kind: Restore
 metadata:
-  name: vms-restore
+  name: restore-webservers
   namespace: openshift-adp
 spec:
-  backupName: vms-backup
+  backupName: backup-webservers
   includedResources:
     - "*"
   restorePVs: true
