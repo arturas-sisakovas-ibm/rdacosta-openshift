@@ -1,0 +1,13 @@
+label worker01 and worker02 tier=production
+
+nodeSelector for web1 for tier=production
+
+nodeAffinity for web2 for tier=production
+
+workloadAntiAffinity for web2 for app=webserver
+
+taint worker02 as sla=premium:NoExecute
+
+see web2 become unschedulable
+
+tolerate sla=premiun:NoExecute
