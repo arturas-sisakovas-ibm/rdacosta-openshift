@@ -2,9 +2,9 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: group-sync
-  namespace: idm-integrator
+  namespace: idm-integration
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "0 0 * * *"
   jobTemplate:
     spec:
       template:
@@ -12,7 +12,7 @@ spec:
           restartPolicy: Never
           containers:
           - name: sync
-            image: registry.ocp4.example.com:8443/openshift4/ose-cli:v4.10
+            image: registry.redhat.io/openshift4/ose-cli:latest 
             command:
             - /bin/sh
             - -c

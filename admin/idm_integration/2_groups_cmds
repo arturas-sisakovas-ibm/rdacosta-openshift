@@ -1,5 +1,5 @@
 # prep
-oc create -f rbac.yml
+oc create -f rbac.yaml
 
 # change to project 
 oc project idm-integrator
@@ -8,10 +8,10 @@ oc project idm-integrator
 oc get sa
 
 # LDAP groups sync (dry run)
-oc adm groups sync --sync-config ldap-sync.yml
+oc adm groups sync --sync-config ldap-sync.yaml
 
 # LDAP groups sync
-oc adm groups sync --sync-config ldap-sync.yml --confirm
+oc adm groups sync --sync-config ldap-sync.yaml --confirm
 
 # LDAP groups sync secret
 oc create secret generic idm-secret --from-literal=bindPassword='redhatocp'
@@ -20,10 +20,10 @@ oc create secret generic idm-secret --from-literal=bindPassword='redhatocp'
 wget http://idm.ocp4.example.com/ipa/config/ca.crt
 
 # create integration cm
-oc create cm idm-cm --from-file=ca.crt=ca.crt,cron-ldap-sync.yml=cron-ldap-sync.yml
+oc create cm idm-cm --from-file=ca.crt=ca.crt,cron-ldap-sync.yaml=cron-ldap-sync.yaml
 
 # create cronjob
-oc create -f cronjob.yml
+oc create -f cronjob.yaml
 
 # watch jobs
 oc get jobs

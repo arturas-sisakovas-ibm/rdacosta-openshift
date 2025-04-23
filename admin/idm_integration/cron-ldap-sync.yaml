@@ -1,14 +1,14 @@
 kind: LDAPSyncConfig
 apiVersion: v1
-url: ldaps://idm.ocp4.example.com
-bindDN: uid=integrator,cn=users,cn=accounts,dc=ocp4,dc=example,dc=com
+url: ldaps://penrith.zero-effort.net
+bindDN: uid=integrator,cn=users,cn=accounts,dc=zero-effort,dc=net
 bindPassword:
   file: /etc/secrets/bindPassword
 insecure: false
 ca: /etc/config/ca.crt
 rfc2307:
     groupsQuery:
-        baseDN: "cn=groups,cn=accounts,dc=ocp4,dc=example,dc=com"
+        baseDN: "cn=groups,cn=accounts,dc=zero-effort,dc=net"
         scope: sub
         derefAliases: never
         pageSize: 0
@@ -17,7 +17,7 @@ rfc2307:
     groupNameAttributes: [ cn ]
     groupMembershipAttributes: [ member ]
     usersQuery:
-        baseDN: "cn=users,cn=accounts,dc=ocp4,dc=example,dc=com"
+        baseDN: "cn=users,cn=accounts,dc=zero-effort,dc=net"
         scope: sub
         derefAliases: never
         pageSize: 0
