@@ -1,0 +1,22 @@
+---
+- name: Start Migration Plans using MTV
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vms_to_migrate: "{{ vms_to_migrate_raw.split(',') | map('trim') | list }}"
+
+  tasks:
+    - name: Start migration for each plan
+      k8s:
+        state: present
+        definition:
+          apiVersion: forklift.konveyor.io/v1beta1
+          kind: Migration
+          metadata:
+            generateName: migrate-{{ item }}-
+            namespace: openshift-mtv
+          spec:
+            plan:
+              name: migrate-{{ item }}
+              namespace: openshift-mtv
+      loop: "{{ vms_to_migrate }}"
