@@ -7,7 +7,7 @@
     destination_provider: host
     network_map_name: vmware-9ht5w
     storage_map_name: vmware-8g72m
-    vms_to_migrate: ["vmx", "vmy"]
+    vms_to_migrate: "{{ vms_to_migrate_raw.split(',') | map('trim') | list }}"
 
   tasks:
     - name: Create Migration Plans
