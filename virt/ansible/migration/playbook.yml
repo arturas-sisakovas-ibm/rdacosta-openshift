@@ -1,38 +1,24 @@
----
-- name: Migrate VMs from VMware to OpenShift Virtualization using MTV
-  hosts: localhost
-  gather_facts: false
-  vars:
-    source_provider: vmware
-    destination_provider: host
-    network_map_name: vmware-9ht5w
-    storage_map_name: vmware-8g72m
-    vms_to_migrate: "{{ vms_to_migrate_raw.split(',') | map('trim') | list }}"
-
-
-  tasks:
-
-    - name: Create Migration Plans
-      k8s:
-        state: present
-        definition:
-          apiVersion: migrations.openshift.io/v1alpha1
-          kind: Plan
-          metadata:
-            name: migrate-{{ item }}
-            namespace: openshift-mtv
-          spec:
-            description: Migration plan for VM {{ item }}
-            provider:
-              source: "{{ source_provider }}"
-              destination: "{{ destination_provider }}"
-            map:
-              network: "{{ network_map_name }}"
-              storage: "{{ storage_map_name }}"
-            vms:
-              - name: "{{ item }}"
-                namespace: ""  # Optional: set this if VMs live in a vSphere folder
-            targetNamespace: "{{ item }}-namespace"
-            warm: false
-      loop: "{{ vms_to_migrate }}"
+- name: Create Migration Plans
+  k8s:
+    state: present
+    definition:
+      apiVersion: forklift.konveyor.io/v1beta1
+      kind: Plan
+      metadata:
+        name: migrate-{{ item }}
+        namespace: openshift-mtv
+      spec:
+        description: Migration plan for VM {{ item }}
+        provider:
+          source: "{{ source_provider }}"
+          destination: "{{ destination_provider }}"
+        map:
+          network: "{{ network_map_name }}"
+          storage: "{{ storage_map_name }}"
+        vms:
+          - name: "{{ item }}"
+            namespace: ""  # Optional: folder or namespace in vCenter
+        targetNamespace: "{{ item }}-namespace"
+        warm: false
+  loop: "{{ vms_to_migrate }}"
 
