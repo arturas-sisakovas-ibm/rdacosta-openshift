@@ -5,54 +5,11 @@
   vars:
     source_provider: vmware
     destination_provider: host
-    network_maps:
-      - source: "{{ vmware_net_1 }}"
-        destination: "{{ host_net_1 }}"
-      - source: "{{ vmware_net_2 }}"
-        destination: "{{ host_net_2 }}"
-    storage_maps:
-      - source: "{{ vmware_storage }}"
-        destination: "{{ host_storage }}"
-    vms_to_migrate: "{{ vms }}" 
+    network_map_name: vmware-9ht5w
+    storage_map_name: vmware-8g72m
+    vms_to_migrate: "{{ my_vms }}" 
 
   tasks:
-
-    - name: Create Network Maps
-      k8s:
-        state: present
-        definition:
-          apiVersion: migrations.openshift.io/v1alpha1
-          kind: NetworkMap
-          metadata:
-            name: network-map-{{ item.source | replace(":", "-") }}
-            namespace: openshift-mtv
-          spec:
-            source:
-              provider: "{{ source_provider }}"
-            destination:
-              provider: "{{ destination_provider }}"
-            map:
-              - source: "{{ item.source }}"
-                destination: "{{ item.destination }}"
-      loop: "{{ network_maps }}"
-
-    - name: Create Storage Map
-      k8s:
-        state: present
-        definition:
-          apiVersion: migrations.openshift.io/v1alpha1
-          kind: StorageMap
-          metadata:
-            name: storage-map
-            namespace: openshift-mtv
-          spec:
-            source:
-              provider: "{{ source_provider }}"
-            destination:
-              provider: "{{ destination_provider }}"
-            map:
-              - source: "{{ storage_maps[0].source }}"
-                destination: "{{ storage_maps[0].destination }}"
 
     - name: Create Migration Plans
       k8s:
@@ -69,11 +26,11 @@
               source: "{{ source_provider }}"
               destination: "{{ destination_provider }}"
             map:
-              network: network-map-{{ network_maps[0].source | replace(":", "-") }}
-              storage: storage-map
+              network: "{{ network_map_name }}"
+              storage: "{{ storage_map_name }}"
             vms:
               - name: "{{ item }}"
-                namespace: ""  # Fill in if your VM is in a named folder/namespace
+                namespace: ""  # Optional: set this if VMs live in a vSphere folder
             targetNamespace: "{{ item }}-namespace"
             warm: false
       loop: "{{ vms_to_migrate }}"
