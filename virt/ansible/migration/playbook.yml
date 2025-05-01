@@ -22,8 +22,12 @@
           spec:
             description: Migration plan for VM {{ item }}
             provider:
-              source: "{{ source_provider }}"
-              destination: "{{ destination_provider }}"
+              source:
+                name: "{{ source_provider }}"
+                namespace: openshift-mtv
+              destination:
+                name: "{{ destination_provider }}"
+                namespace: openshift-mtv
             map:
               network:
                 name: "{{ network_map_name }}"
