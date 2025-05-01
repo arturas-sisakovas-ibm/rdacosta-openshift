@@ -1,22 +1,37 @@
-- name: Obtain SSO token with using username/password credentials
-  ovirt.ovirt.ovirt_auth:
-   url: https://rhvm.zero-effort.net/ovirt-engine/api
-   username: admin@internal
-   insecure: true
-   password: "{{ ovirt_password }}"
+# - name: Obtain SSO token with using username/password credentials
+#   ovirt.ovirt.ovirt_auth:
+#    url: https://rhvm.zero-effort.net/ovirt-engine/api
+#    username: admin@internal
+#    insecure: true
+#    password: "{{ ovirt_password }}"
 
-- name: Get VMs
+# - name: Get VMs
+#   register: result
+#   redhat.rhv.ovirt_vm_info:
+#     auth: "{{ ovirt_auth }}"
+#     pattern: name=*
+
+# - name: Display VMs
+#   loop: "{{ result['ovirt_vms'] }}"
+#   loop_control:
+#     label: "{{ item['name'] }}"
+#   ansible.builtin.debug:
+#     msg: "{{ item['name'] }}"
+#
+- name: Gather all VMs on the ESXi host
+  community.vmware.vmware_vm_info:
+    hostname: "192.168.1.40"
+    username: "root"
+    password: "{{ vmware_password }}"
+    validate_certs: no
   register: result
-  redhat.rhv.ovirt_vm_info:
-    auth: "{{ ovirt_auth }}"
-    pattern: name=*
 
 - name: Display VMs
-  loop: "{{ result['ovirt_vms'] }}"
-  loop_control:
-    label: "{{ item['name'] }}"
   ansible.builtin.debug:
-    msg: "{{ item['name'] }}"
+    msg: "{{ item.guest_name }}"
+  loop: "{{ result['virtual_machines'] }}"
+  loop_control:
+    label: "{{ item['guest_name'] }}"
 
 - name: Deploy Virt Plan
   redhat.openshift.k8s:

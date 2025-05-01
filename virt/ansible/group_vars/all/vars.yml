@@ -1,16 +1,3 @@
-# Standard post-provisioning vars
-my_user: ansible
-my_timezone: Africa/Johannesburg
-my_org: zero-effort
-
-# IPA Client role vars
-ipaadmin_principal: admin
-ipaclient_domain: zero-effort.net
-ipaclient_servers: belfast.zero-effort.net
-ipareplica_servers: killington.zero-effort.net
-ipaclient_mkhomedir: false
-ipaclient_force_join: true
-
 # OpenShift vars
 my_ocp_api: https://api.ocp4.zero-effort.net:6443
 
