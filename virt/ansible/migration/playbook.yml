@@ -7,13 +7,10 @@
     destination_provider: host
     network_map_name: vmware-9ht5w
     storage_map_name: vmware-8g72m
-    vms_to_migrate: "{{ vms_to_migrate_raw.split(',') | map('trim') | list }}"
-
+    vms_to_migrate: ["vmx", "vmy"]
 
   tasks:
-
     - name: Create Migration Plans
-      loop: "{{ vms_to_migrate }}"
       k8s:
         state: present
         definition:
@@ -28,11 +25,16 @@
               source: "{{ source_provider }}"
               destination: "{{ destination_provider }}"
             map:
-              network: "{{ network_map_name }}"
-              storage: "{{ storage_map_name }}"
+              network:
+                name: "{{ network_map_name }}"
+                namespace: openshift-mtv
+              storage:
+                name: "{{ storage_map_name }}"
+                namespace: openshift-mtv
             vms:
               - name: "{{ item }}"
-                namespace: ""  # Optional: folder or namespace in vCenter
+                namespace: ""
             targetNamespace: "{{ item }}-namespace"
             warm: false
+      loop: "{{ vms_to_migrate }}"
 
