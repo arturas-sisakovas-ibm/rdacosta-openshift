@@ -29,6 +29,5 @@ entries:
     name: webserver
     type: application
     urls:
-    - https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/helm-charts/webserver-0.1.0.tgz
-    https://gitlab.com/rgdacosta/openshift/-/raw/8be96582e44399ce835b4cf97449efd584138b50/helm-charts/webserver-0.1.0.tgz
+    - https://gitlab.com/rgdacosta/openshift/-/raw/8be96582e44399ce835b4cf97449efd584138b50/helm-charts/webserver-0.1.0.tgz
     version: 0.1.0
