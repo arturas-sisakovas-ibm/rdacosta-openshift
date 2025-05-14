@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webserver-headless
+  labels:
+    app: webserver
+spec:
+  clusterIP: None
+  selector:
+    app: webserver
+  ports:
+    - port: 80
+      name: http
+      targetPort: 8080
+

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: webserver
+spec:
+  serviceName: webserver-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers:
+      - name: webserver
+        image: quay.io/rdacosta/my_httpd:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: html
+          mountPath: /var/www/html
+  volumeClaimTemplates:
+  - metadata:
+      name: html
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+
