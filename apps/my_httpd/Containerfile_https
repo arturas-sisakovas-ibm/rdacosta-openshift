@@ -16,7 +16,8 @@ RUN dnf install -y httpd mod_ssl openssl && \
     sed -i -e "s/ErrorLog.*/ErrorLog \/dev\/stderr/" /etc/httpd/conf/httpd.conf && \
     sed -i -e "s/CustomLog.*/CustomLog \/dev\/stdout combined/" /etc/httpd/conf/httpd.conf && \
     chgrp -R root /var/log/httpd /var/run/httpd /etc/pki/tls/private/localhost.key /var/www/html && \
-    chmod -R g=u /var/log/httpd /var/run/httpd /etc/pki/tls/private/localhost.key /var/www/html
+    chmod -R g=u /var/log/httpd /var/run/httpd /etc/pki/tls/private/localhost.key /var/www/html && \
+    echo "The application is healthy" > /var/www/html/healthz
 
 WORKDIR /var/www/html
 
