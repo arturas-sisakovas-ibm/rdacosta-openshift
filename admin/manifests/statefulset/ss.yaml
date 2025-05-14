@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: webserver
 spec:
-  serviceName: webserver-headless
+  serviceName: headless
   replicas: 3
   selector:
     matchLabels:
