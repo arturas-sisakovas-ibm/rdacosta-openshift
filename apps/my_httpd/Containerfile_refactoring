@@ -1,0 +1,6 @@
+FROM quay.io/rdacosta/my_httpd:broken
+
+RUN chgrp -R root /var/run/httpd /var/log/httpd && \
+    chmod -R g=u /var/run/httpd /var/log/httpd && \
+    sed -ie 's/^Listen 80/Listen 8080/g' /etc/httpd/conf/httpd.conf
+

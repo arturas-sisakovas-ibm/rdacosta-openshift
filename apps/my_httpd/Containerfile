@@ -9,8 +9,8 @@ RUN dnf install -y httpd && \
     sed -i -e "s/^#ServerName.*/ServerName localhost/g" /etc/httpd/conf/httpd.conf && \
     sed -i -e "s/ErrorLog.*/ErrorLog \/dev\/stderr/" /etc/httpd/conf/httpd.conf && \
     sed -i -e "s/CustomLog.*/CustomLog \/dev\/stdout combined/" /etc/httpd/conf/httpd.conf && \
-    chgrp -R root /var/log/httpd /var/run/httpd && \
-    chmod -R g=u /var/log/httpd /var/run/httpd
+    chgrp -R root /var/log/httpd /var/run/httpd /var/www/html && \
+    chmod -R g=u /var/log/httpd /var/run/httpd /var/www/html
 
 WORKDIR /var/www/html
 

@@ -1,0 +1,5 @@
+ARG IMAGE=registry.access.redhat.com/ubi9/ubi:latest
+
+FROM $IMAGE
+
+RUN dnf install -y procps
