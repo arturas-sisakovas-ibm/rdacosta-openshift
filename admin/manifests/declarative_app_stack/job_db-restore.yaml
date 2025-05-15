@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-restore-job
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: db-restore
+        image: quay.io/rdacosta/mysql_git:latest
+        command:
+          - /bin/bash
+          - -c
+          - |
+            set -e
+            echo "Cloning dump..."
+            git clone --depth=1 https://gitlab.com/rgdacosta/openshift /tmp/repo
+            cd /tmp/repo/apps/world-sql-db
+            echo "Waiting for DB to be ready..."
+            for i in {1..30}; do
+              if mysqladmin ping -h db -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --silent; then
+                echo "DB ready!"
+                break
+              fi
+              echo "Waiting for DB ($i/30)..."
+              sleep 2
+            done
+            echo "Restoring dump..."
+            mysql -h db -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < world.sql
+            echo "Done!"
+        envFrom:
+        - secretRef:
+            name: db-config
+

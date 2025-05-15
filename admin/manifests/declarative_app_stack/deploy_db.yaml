@@ -4,57 +4,16 @@ metadata:
   name: db
   labels:
     app: db
-    app.kubernetes.io/component: db
-    app.kubernetes.io/instance: db
-    app.kubernetes.io/name: db
-    app.kubernetes.io/part-of: world
-    app.openshift.io/runtime: mysql-database
-    app.openshift.io/runtime-namespace: world
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: db
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
   template:
     metadata:
       labels:
         app: db
-        deployment: db
     spec:
-      initContainers:
-      - name: restore-db
-        image: quay.io/rdacosta/mysql_git:latest
-        command:
-          - /bin/bash
-          - -c
-          - |
-            set -e
-            echo "Cloning repo..."
-            git clone --depth=1 https://gitlab.com/rgdacosta/openshift /tmp/repo
-            cd /tmp/repo/apps/world-sql-db
-            echo "Waiting for MySQL to be ready..."
-            for i in {1..30}; do
-              if mysqladmin ping -h 127.0.0.1 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --silent; then
-                echo "MySQL is ready!"
-                break
-              fi
-              echo "Still waiting for MySQL to be ready ($i/30)..."
-              sleep 2
-            done
-            echo "Restoring database..."
-            mysql -h 127.0.0.1 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < world.sql
-            echo "Database restore completed!"
-        envFrom:
-        - secretRef:
-            name: db-config
-        volumeMounts:
-        - mountPath: /var/lib/mysql
-          name: db-pvc
       containers:
       - name: db
         image: quay.io/rdacosta/mysql-57-rhel7:latest
@@ -64,25 +23,17 @@ spec:
             name: db-config
         ports:
         - containerPort: 3306
-          protocol: TCP
         volumeMounts:
         - mountPath: /var/lib/mysql
           name: db-pvc
         livenessProbe:
-          failureThreshold: 3
+          tcpSocket:
+            port: 3306
           initialDelaySeconds: 10
-          periodSeconds: 10
-          successThreshold: 1
-          tcpSocket:
-            port: 3306
-          timeoutSeconds: 1
         readinessProbe:
-          failureThreshold: 3
-          periodSeconds: 10
-          successThreshold: 1
           tcpSocket:
             port: 3306
-          timeoutSeconds: 1
+          initialDelaySeconds: 10
         resources:
           limits:
             cpu: 250m
@@ -90,9 +41,6 @@ spec:
           requests:
             cpu: 100m
             memory: 128Mi
-      restartPolicy: Always
-      dnsPolicy: ClusterFirst
-      terminationGracePeriodSeconds: 30
       volumes:
       - name: db-pvc
         persistentVolumeClaim:
