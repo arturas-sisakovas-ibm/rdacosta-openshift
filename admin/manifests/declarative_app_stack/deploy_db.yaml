@@ -28,13 +28,13 @@ spec:
     spec:
       initContainers:
       - name: restore-db
-        image: registry.access.redhat.com/ubi9/ubi:latest
+        image: quay.io/rdacosta/mysql-57-rhel7:latest
         command:
           - /bin/bash
           - -c
           - |
             set -e
-            microdnf install -y git mysql mysql-community-client
+            echo "Cloning repo..."
             git clone --depth=1 https://gitlab.com/rgdacosta/openshift /tmp/repo
             cd /tmp/repo/apps/world-sql-db
             echo "Waiting for MySQL to be ready..."
@@ -97,4 +97,3 @@ spec:
       - name: db-pvc
         persistentVolumeClaim:
           claimName: db-pvc
-
