@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-galera-config
+data:
+  cluster_address: |
+    $(if [[ "$POD_NAME" == "mariadb-galera-0" ]]; then echo "gcomm://"; else echo "gcomm://mariadb-galera-0.mariadb-galera.mariadb-galera.svc.cluster.local"; fi)

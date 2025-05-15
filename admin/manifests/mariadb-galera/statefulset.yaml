@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb-galera
+spec:
+  serviceName: mariadb-galera
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mariadb-galera
+  template:
+    metadata:
+      labels:
+        app: mariadb-galera
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+      - name: mariadb-galera
+        image: bitnami/mariadb-galera:latest
+        imagePullPolicy: Always
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-galera-secret
+              key: mariadb-root-password
+        - name: MARIADB_GALERA_MARIABACKUP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-galera-secret
+              key: mariadb-galera-mariabackup-password
+        - name: MARIADB_GALERA_CLUSTER_NAME
+          value: "galera-cluster"
+        - name: MARIADB_GALERA_CLUSTER_ADDRESS
+          value: "gcomm://mariadb-galera-0.mariadb-galera.mariadb-galera.svc.cluster.local,mariadb-galera-1.mariadb-galera.mariadb-galera.svc.cluster.local,mariadb-galera-2.mariadb-galera.mariadb-galera.svc.cluster.local"
+        - name: MARIADB_GALERA_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        ports:
+        - containerPort: 3306
+          name: mysql
+        - containerPort: 4567
+          name: galera
+        - containerPort: 4568
+          name: ist
+        - containerPort: 4444
+          name: sst
+        readinessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - |
+              /opt/bitnami/mariadb/bin/mariadb-admin ping -h 127.0.0.1 -uroot -p${MARIADB_ROOT_PASSWORD}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - |
+              /opt/bitnami/mariadb/bin/mariadb-admin ping -h 127.0.0.1 -uroot -p${MARIADB_ROOT_PASSWORD}
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        volumeMounts:
+        - name: data
+          mountPath: /bitnami/mariadb
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: ocs-external-storagecluster-ceph-rbd
+      resources:
+        requests:
+          storage: 5Gi
+      volumeMode: Filesystem
