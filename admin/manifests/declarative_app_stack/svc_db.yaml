@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: db
+    app.kubernetes.io/component: db
+    app.kubernetes.io/instance: db
+    app.kubernetes.io/name: db
+    app.kubernetes.io/part-of: world
+    app.openshift.io/runtime-version: latest
+  name: db
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: 3306-tcp
+    port: 3306
+    protocol: TCP
+    targetPort: 3306
+  selector:
+    app: db
+    deployment: db
+  sessionAffinity: None
+  type: ClusterIP
