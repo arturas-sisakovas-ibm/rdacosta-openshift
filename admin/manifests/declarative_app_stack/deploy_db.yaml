@@ -28,7 +28,7 @@ spec:
     spec:
       initContainers:
       - name: restore-db
-        image: quay.io/rdacosta/mysql-57-rhel7:latest
+        image: quay.io/rdacosta/mysql_git:latest
         command:
           - /bin/bash
           - -c
