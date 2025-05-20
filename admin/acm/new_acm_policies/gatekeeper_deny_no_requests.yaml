@@ -1,0 +1,120 @@
+---
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredresources
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredResources
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredresources
+
+        violation[{"msg": msg}] {
+          container := input_containers[_]
+          not has_required_resources(container.resources)
+          msg := sprintf("container '%v' is missing required cpu/memory requests or limits", [container.name])
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.template.spec.containers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.template.spec.initContainers[_]
+        }
+
+        has_required_resources(resources) {
+          resources.requests.cpu
+          resources.requests.memory
+          resources.limits.cpu
+          resources.limits.memory
+        }
+
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-deny-no-requests-and-limits
+  namespace: policies
+spec:
+  disabled: false
+  remediationAction: enforce
+  severity: high
+  policy-templates:
+    - objectDefinition:
+        apiVersion: templates.gatekeeper.sh/v1beta1
+        kind: ConstraintTemplate
+        metadata:
+          name: k8srequiredresources
+        spec:
+          crd:
+            spec:
+              names:
+                kind: K8sRequiredResources
+          targets:
+            - target: admission.k8s.gatekeeper.sh
+              rego: |
+                package k8srequiredresources
+
+                violation[{"msg": msg}] {
+                  container := input_containers[_]
+                  not has_required_resources(container.resources)
+                  msg := sprintf("container '%v' is missing required cpu/memory requests or limits", [container.name])
+                }
+
+                input_containers[c] {
+                  c := input.review.object.spec.template.spec.containers[_]
+                }
+
+                input_containers[c] {
+                  c := input.review.object.spec.template.spec.initContainers[_]
+                }
+
+                has_required_resources(resources) {
+                  resources.requests.cpu
+                  resources.requests.memory
+                  resources.limits.cpu
+                  resources.limits.memory
+                }
+    - objectDefinition:
+        apiVersion: constraints.gatekeeper.sh/v1beta1
+        kind: K8sRequiredResources
+        metadata:
+          name: require-resources
+        spec:
+          match:
+            kinds:
+              - apiGroups: ["apps"]
+                kinds: ["Deployment"]
+            excludedNamespaces:
+              - "kube-system"
+              - "openshift-*"
+
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: all-managed-clusters
+  namespace: policies
+spec:
+  clusterSets:
+    - default
+
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: bind-policy-deny-no-requests-and-limits
+  namespace: policies
+placementRef:
+  name: all-managed-clusters
+  kind: Placement
+  apiGroup: cluster.open-cluster-management.io
+subjects:
+  - name: policy-deny-no-requests-and-limits
+    kind: Policy
+    apiGroup: policy.open-cluster-management.io
