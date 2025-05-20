@@ -1,125 +1,142 @@
----
-apiVersion: templates.gatekeeper.sh/v1beta1
-kind: ConstraintTemplate
-metadata:
-  name: k8srequiredresources
-spec:
-  crd:
-    spec:
-      names:
-        kind: K8sRequiredResources
-  targets:
-    - target: admission.k8s.gatekeeper.sh
-      rego: |
-        package k8srequiredresources
-
-        violation[{"msg": msg}] {
-          container := input_containers[_]
-          not has_required_resources(container.resources)
-          msg := sprintf("container '%v' is missing required cpu/memory requests or limits", [container.name])
-        }
-
-        input_containers[c] {
-          c := input.review.object.spec.template.spec.containers[_]
-        }
-
-        input_containers[c] {
-          c := input.review.object.spec.template.spec.initContainers[_]
-        }
-
-        has_required_resources(resources) {
-          resources.requests.cpu
-          resources.requests.memory
-          resources.limits.cpu
-          resources.limits.memory
-        }
-
----
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: policy-deny-no-requests-and-limits
-  namespace: policies
+  name: policy-gatekeeper-resource-requirements
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
 spec:
-  disabled: false
   remediationAction: enforce
-  severity: high
+  disabled: false
   policy-templates:
     - objectDefinition:
-        apiVersion: templates.gatekeeper.sh/v1beta1
-        kind: ConstraintTemplate
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
         metadata:
-          name: k8srequiredresources
+          name: policy-gatekeeper-resource-requirements-template
         spec:
-          crd:
-            spec:
-              names:
-                kind: K8sRequiredResources
-          targets:
-            - target: admission.k8s.gatekeeper.sh
-              rego: |
-                package k8srequiredresources
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: templates.gatekeeper.sh/v1beta1
+                kind: ConstraintTemplate
+                metadata:
+                  name: resourcerequirements
+                spec:
+                  crd:
+                    spec:
+                      names:
+                        kind: ResourceRequirements
+                  targets:
+                    - target: admission.k8s.gatekeeper.sh
+                      rego: |
+                        package ocp.resources
 
-                violation[{"msg": msg}] {
-                  container := input_containers[_]
-                  not has_required_resources(container.resources)
-                  msg := sprintf("container '%v' is missing required cpu/memory requests or limits", [container.name])
-                }
+                        import data.lib.konstraint
+                        import data.lib.openshift
 
-                input_containers[c] {
-                  c := input.review.object.spec.template.spec.containers[_]
-                }
+                        violation[{"msg": msg}] {
+                          openshift.is_workload_kind
+                          container := openshift.containers[_]
 
-                input_containers[c] {
-                  c := input.review.object.spec.template.spec.initContainers[_]
-                }
+                          not container.resources
+                          msg := konstraint.format(sprintf("Container '%s' has no resource requests or limits defined", [container.name]))
+                        }
 
-                has_required_resources(resources) {
-                  resources.requests.cpu
-                  resources.requests.memory
-                  resources.limits.cpu
-                  resources.limits.memory
-                }
+                        violation[{"msg": msg}] {
+                          openshift.is_workload_kind
+                          container := openshift.containers[_]
+
+                          not has_field(container.resources, "limits")
+                          msg := konstraint.format(sprintf("Container '%s' has no resource limits defined", [container.name]))
+                        }
+
+                        violation[{"msg": msg}] {
+                          openshift.is_workload_kind
+                          container := openshift.containers[_]
+
+                          not has_field(container.resources, "requests")
+                          msg := konstraint.format(sprintf("Container '%s' has no resource requests defined", [container.name]))
+                        }
+
+                        has_field(obj, field) {
+                          obj[field]
+                        }
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: constraints.gatekeeper.sh/v1beta1
+                kind: ResourceRequirements
+                metadata:
+                  name: resourcerequirements
+                spec:
+                  match:
+                    kinds:
+                      - apiGroups:
+                          - apps.openshift.io
+                          - apps
+                        kinds:
+                          - DeploymentConfig
+                          - DaemonSet
+                          - Deployment
+                          - StatefulSet
     - objectDefinition:
-        apiVersion: constraints.gatekeeper.sh/v1beta1
-        kind: K8sRequiredResources
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
         metadata:
-          name: require-resources
+          name: policy-gatekeeper-resource-audit
         spec:
-          match:
-            kinds:
-              - apiGroups: ["apps"]
-                kinds: ["Deployment"]
-            excludedNamespaces:
-              - "kube-system"
-              - "openshift-*"
-
----
-apiVersion: apps.open-cluster-management.io/v1
-kind: PlacementRule
-metadata:
-  name: all-managed-clusters
-  namespace: policies
-spec:
-  clusterSelector:
-    matchExpressions:
-      - key: name
-        operator: In
-        values:
-          - local-cluster
-
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: constraints.gatekeeper.sh/v1beta1
+                kind: ResourceRequirements
+                metadata:
+                  name: resourcerequirements
+                status:
+                  totalViolations: 0
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: policy-gatekeeper-resource-admission
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: mustnothave
+              objectDefinition:
+                apiVersion: v1
+                kind: Event
+                metadata:
+                  namespace: openshift-gatekeeper-system
+                  annotations:
+                    constraint_action: deny
+                    constraint_kind: ResourceRequirements
+                    constraint_name: resourcerequirements
+                    event_type: violation
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
-  name: bind-policy-deny-no-requests-and-limits
-  namespace: policies
+  name: binding-policy-gatekeeper-resource-requirements
 placementRef:
-  name: all-managed-clusters
-  kind: PlacementRule
-  apiGroup: apps.open-cluster-management.io
+  name: placement-policy-gatekeeper-resource-requirements
+  kind: Placement
+  apiGroup: cluster.open-cluster-management.io
 subjects:
-  - name: policy-deny-no-requests-and-limits
+  - name: policy-gatekeeper-resource-requirements
     kind: Policy
     apiGroup: policy.open-cluster-management.io
-
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: placement-policy-gatekeeper-resource-requirements
+spec:
+  clusterSets:
+    - default
