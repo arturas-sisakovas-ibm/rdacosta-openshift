@@ -13,14 +13,18 @@ spec:
       rego: |
         package k8srequiredresources
 
-        all_containers := [c | c := input.review.object.spec.template.spec.containers[_]]
-        all_initcontainers := [c | c := input.review.object.spec.template.spec.initContainers[_]]
-        containers := all_containers ++ all_initcontainers
-
         violation[{"msg": msg}] {
-          container := containers[_]
+          container := input_containers[_]
           not has_required_resources(container.resources)
           msg := sprintf("container '%v' is missing required cpu/memory requests or limits", [container.name])
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.template.spec.containers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.template.spec.initContainers[_]
         }
 
         has_required_resources(resources) {
@@ -34,7 +38,7 @@ spec:
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: enforce-deployments-have-resources
+  name: policy-deny-no-requests-and-limits
   namespace: policies
 spec:
   disabled: false
@@ -56,14 +60,18 @@ spec:
               rego: |
                 package k8srequiredresources
 
-                all_containers := [c | c := input.review.object.spec.template.spec.containers[_]]
-                all_initcontainers := [c | c := input.review.object.spec.template.spec.initContainers[_]]
-                containers := all_containers ++ all_initcontainers
-
                 violation[{"msg": msg}] {
-                  container := containers[_]
+                  container := input_containers[_]
                   not has_required_resources(container.resources)
                   msg := sprintf("container '%v' is missing required cpu/memory requests or limits", [container.name])
+                }
+
+                input_containers[c] {
+                  c := input.review.object.spec.template.spec.containers[_]
+                }
+
+                input_containers[c] {
+                  c := input.review.object.spec.template.spec.initContainers[_]
                 }
 
                 has_required_resources(resources) {
@@ -100,14 +108,13 @@ spec:
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
-  name: bind-enforce-deployments-have-resources
+  name: bind-policy-deny-no-requests-and-limits
   namespace: policies
 placementRef:
   name: all-managed-clusters
   kind: Placement
   apiGroup: cluster.open-cluster-management.io
 subjects:
-  - name: enforce-deployments-have-resources
+  - name: policy-deny-no-requests-and-limits
     kind: Policy
     apiGroup: policy.open-cluster-management.io
-
