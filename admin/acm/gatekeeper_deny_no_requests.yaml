@@ -13,13 +13,17 @@ spec:
       rego: |
         package k8srequiredresources
 
+        all_containers := [c | c := input.review.object.spec.template.spec.containers[_]]
+        all_initcontainers := [c | c := input.review.object.spec.template.spec.initContainers[_]]
+        containers := all_containers ++ all_initcontainers
+
         violation[{"msg": msg}] {
-          container := input.review.object.spec.template.spec.containers[_]
-          not has_requests(container.resources)
-          msg := sprintf("container <%v> is missing resource requests or limits", [container.name])
+          container := containers[_]
+          not has_required_resources(container.resources)
+          msg := sprintf("container '%v' is missing required cpu/memory requests or limits", [container.name])
         }
 
-        has_requests(resources) {
+        has_required_resources(resources) {
           resources.requests.cpu
           resources.requests.memory
           resources.limits.cpu
@@ -30,7 +34,7 @@ spec:
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: deny-deployments-no-resources
+  name: enforce-deployments-have-resources
   namespace: policies
 spec:
   disabled: false
@@ -52,19 +56,22 @@ spec:
               rego: |
                 package k8srequiredresources
 
+                all_containers := [c | c := input.review.object.spec.template.spec.containers[_]]
+                all_initcontainers := [c | c := input.review.object.spec.template.spec.initContainers[_]]
+                containers := all_containers ++ all_initcontainers
+
                 violation[{"msg": msg}] {
-                  container := input.review.object.spec.template.spec.containers[_]
-                  not has_requests(container.resources)
-                  msg := sprintf("container <%v> is missing resource requests or limits", [container.name])
+                  container := containers[_]
+                  not has_required_resources(container.resources)
+                  msg := sprintf("container '%v' is missing required cpu/memory requests or limits", [container.name])
                 }
 
-                has_requests(resources) {
+                has_required_resources(resources) {
                   resources.requests.cpu
                   resources.requests.memory
                   resources.limits.cpu
                   resources.limits.memory
                 }
-
     - objectDefinition:
         apiVersion: constraints.gatekeeper.sh/v1beta1
         kind: K8sRequiredResources
@@ -80,31 +87,27 @@ spec:
               - "openshift-*"
 
 ---
-apiVersion: apps.open-cluster-management.io/v1
-kind: PlacementRule
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
 metadata:
-  name: place-on-all-clusters
+  name: all-managed-clusters
   namespace: policies
 spec:
-  clusterSelector:
-    matchExpressions:
-      - key: name
-        operator: In
-        values:
-          - local-cluster
+  clusterSets:
+    - default
 
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
-  name: bind-deny-deployments-no-resources
+  name: bind-enforce-deployments-have-resources
   namespace: policies
 placementRef:
-  name: place-on-all-clusters
-  kind: PlacementRule
-  apiGroup: apps.open-cluster-management.io
+  name: all-managed-clusters
+  kind: Placement
+  apiGroup: cluster.open-cluster-management.io
 subjects:
-  - name: deny-deployments-no-resources
+  - name: enforce-deployments-have-resources
     kind: Policy
     apiGroup: policy.open-cluster-management.io
 
