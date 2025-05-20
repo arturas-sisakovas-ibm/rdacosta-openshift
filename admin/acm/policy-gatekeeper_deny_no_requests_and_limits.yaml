@@ -126,17 +126,24 @@ metadata:
   name: binding-policy-gatekeeper-resource-requirements
 placementRef:
   name: placement-policy-gatekeeper-resource-requirements
-  kind: Placement
-  apiGroup: cluster.open-cluster-management.io
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
 subjects:
   - name: policy-gatekeeper-resource-requirements
     kind: Policy
     apiGroup: policy.open-cluster-management.io
 ---
-apiVersion: cluster.open-cluster-management.io/v1beta1
-kind: Placement
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
 metadata:
   name: placement-policy-gatekeeper-resource-requirements
 spec:
-  clusterSets:
-    - default
+  clusterConditions:
+    - type: ManagedClusterConditionAvailable
+      status: "True"
+  clusterSelector:
+    matchExpressions:
+      - key: name
+        operator: In
+        values:
+          - local-cluster
