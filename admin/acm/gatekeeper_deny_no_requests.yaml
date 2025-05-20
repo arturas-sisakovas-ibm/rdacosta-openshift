@@ -80,7 +80,7 @@ spec:
               - "openshift-*"
 
 ---
-apiVersion: policy.open-cluster-management.io/v1
+apiVersion: apps.open-cluster-management.io/v1
 kind: PlacementRule
 metadata:
   name: place-on-all-clusters
@@ -102,7 +102,7 @@ metadata:
 placementRef:
   name: place-on-all-clusters
   kind: PlacementRule
-  apiGroup: policy.open-cluster-management.io
+  apiGroup: apps.open-cluster-management.io
 subjects:
   - name: deny-deployments-no-resources
     kind: Policy
