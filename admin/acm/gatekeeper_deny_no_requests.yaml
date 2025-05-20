@@ -1,0 +1,110 @@
+---
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredresources
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredResources
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredresources
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.template.spec.containers[_]
+          not has_requests(container.resources)
+          msg := sprintf("container <%v> is missing resource requests or limits", [container.name])
+        }
+
+        has_requests(resources) {
+          resources.requests.cpu
+          resources.requests.memory
+          resources.limits.cpu
+          resources.limits.memory
+        }
+
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: deny-deployments-no-resources
+  namespace: policies
+spec:
+  disabled: false
+  remediationAction: enforce
+  severity: high
+  policy-templates:
+    - objectDefinition:
+        apiVersion: templates.gatekeeper.sh/v1beta1
+        kind: ConstraintTemplate
+        metadata:
+          name: k8srequiredresources
+        spec:
+          crd:
+            spec:
+              names:
+                kind: K8sRequiredResources
+          targets:
+            - target: admission.k8s.gatekeeper.sh
+              rego: |
+                package k8srequiredresources
+
+                violation[{"msg": msg}] {
+                  container := input.review.object.spec.template.spec.containers[_]
+                  not has_requests(container.resources)
+                  msg := sprintf("container <%v> is missing resource requests or limits", [container.name])
+                }
+
+                has_requests(resources) {
+                  resources.requests.cpu
+                  resources.requests.memory
+                  resources.limits.cpu
+                  resources.limits.memory
+                }
+
+    - objectDefinition:
+        apiVersion: constraints.gatekeeper.sh/v1beta1
+        kind: K8sRequiredResources
+        metadata:
+          name: require-resources
+        spec:
+          match:
+            kinds:
+              - apiGroups: ["apps"]
+                kinds: ["Deployment"]
+            excludedNamespaces:
+              - "kube-system"
+              - "openshift-*"
+
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: place-on-all-clusters
+  namespace: policies
+spec:
+  clusterSelector:
+    matchExpressions:
+      - key: name
+        operator: In
+        values:
+          - local-cluster
+
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: bind-deny-deployments-no-resources
+  namespace: policies
+placementRef:
+  name: place-on-all-clusters
+  kind: PlacementRule
+  apiGroup: policy.open-cluster-management.io
+subjects:
+  - name: deny-deployments-no-resources
+    kind: Policy
+    apiGroup: policy.open-cluster-management.io
+
