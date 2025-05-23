@@ -1,0 +1,13 @@
+spec:
+  template:
+    spec:
+      volumes:
+        - name: world-db
+          persistentVolumeClaim:
+            claimName: world-db
+      containers:
+        - name: db
+          volumeMounts:
+            - name: world-db
+              mountPath: /var/lib/mysql
+
