@@ -1,0 +1,20 @@
+Purpose:
+========
+To demonstrate ACS's ability to detect suspicious runtime behaviour, like unexpected binaries or process execution inside containers. This helps students understand the value of live threat detection even after an image has passed pre-deployment checks.
+
+Why should I listen?
+====================
+Students often think a clean image means a secure container. But once deployed, even a benign container can be hijacked or run rogue commands. Runtime detection helps catch zero-day attacks, crypto miners, and in-container privilege escalations.
+
+Prereqs:
+========
+ACS Sensor is successfully installed on the OpenShift cluster.
+
+ACS Central is running and accessible.
+
+roxctl is installed and working.
+
+A test namespace (e.g. runtime-demo) is available.
+
+
+

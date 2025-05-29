@@ -1,0 +1,26 @@
+========
+Purpose:
+========
+To show how ACS can detect and block Kubernetes workloads that request privileged mode, which effectively gives the container full access to the host — a major security risk.
+
+====================
+Why should I listen?
+====================
+Privileged containers can:
+
+Access host devices and kernel modules
+
+Bypass container isolation
+
+Become a rootkit vector in multi-tenant clusters
+
+This demo reinforces the concept that least privilege also applies to containers — and that it should be enforced declaratively with policies.
+
+========
+Prereqs:
+========
+
+ACS Sensor and Central installed and healthy
+
+A test namespace (e.g. priv-demo)
+

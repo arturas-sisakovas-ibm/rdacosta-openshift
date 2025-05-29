@@ -1,0 +1,69 @@
+====================================
+CLI: Create namespace and deploy pod
+====================================
+oc create ns runtime-demo
+
+oc apply -f busyboxpod.yaml
+
+================================================
+Web Console: Add a Runtime Policy in ACS Central
+================================================
+
+Go to Platform Configuration → Policy Management
+
+Click + New Policy
+
+Name: Disallowed Process Execution
+
+Categories: Security Best Practices, Runtime Behaviour
+
+Lifecycle Stage: Runtime
+
+Policy Criteria:
+
+Process name: sh, wget, curl, or anything else considered suspicious
+
+Namespace: runtime-demo
+
+Enforcement: Set to Inform
+
+Click Create
+
+========================
+CLI: Trigger a violation
+========================
+
+oc exec -n runtime-demo busybox -- wget http://example.com
+
+===============================
+Web Console: View Runtime Alert
+===============================
+
+Go to Violations → Violations in ACS Central
+
+Filter by cluster/namespace runtime-demo
+
+See alert: Process Execution Violation
+
+Click into the alert to view:
+
+Container ID
+
+Process tree
+
+Node and namespace
+
+Suggested remediation
+
+================
+Closing remarks:
+================
+
+Would an image scanner have caught this? (Answer: No)
+
+What if this was a crypto miner starting a curl script and piping it to a shell?
+
+Runtime visibility is a blind spot in many clusters—ACS closes that gap.
+
+
+

@@ -1,0 +1,19 @@
+========
+Purpose:
+========
+To demonstrate how ACS learns which binaries typically run inside a container and how you can lock this "process baseline" to detect and block anything that deviates — effectively creating an allowlist of binaries per workload.
+
+====================
+Why should I listen?
+====================
+This is the closest thing to AppArmor or SELinux policies in Kubernetes-native form. It empowers platform teams to lock down known-good behaviour per workload, drastically limiting the blast radius of zero-days or container escapes.
+
+========
+Prereqs:
+========
+
+Completion of enable_runtime_detection
+
+ACS Sensor installed and healthy
+
+BusyBox or any test pod running with a known startup behaviour

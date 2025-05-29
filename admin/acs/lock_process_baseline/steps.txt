@@ -1,0 +1,76 @@
+==================================
+CLI: Verify busybox pod is running
+==================================
+
+oc get pods -n runtime-demo
+
+*** ACS needs a minute or 2 to learn about the allowed processes. ***
+
+================================================
+Web Console: Lock the Process Baseline in ACS UI
+================================================
+Navigate to Risk → Deployments
+
+Find the busybox deployment under the runtime-demo namespace
+
+Click into it → Baselines tab
+
+Review the observed binaries
+
+Click Lock Baseline
+
+This freezes the process list — no new binaries should run now.
+
+===========================================================
+Web Console: Create a Runtime Policy to Alert on Deviations
+===========================================================
+Go to Platform Configuration → Policy Management
+
+Click + New Policy
+
+Name: Process Outside Baseline
+Lifecycle Stage: Runtime
+Severity: High
+Categories: Security Best Practices
+Policy Criteria:
+  - Process not in baseline = true
+  - Namespace = runtime-demo
+Enforcement: Inform (start with this)
+
+===============================
+CLI: Simulate unexpected binary
+===============================
+oc exec -n runtime-demo busybox -- wget http://example.com
+
+=================================
+Web Console: Review the Violation
+=================================
+Go to Violations → Violations
+
+Filter by:
+
+Deployment: busybox
+
+Lifecycle Stage: Runtime
+
+See the entry:
+
+“Unexpected process execution: wget”
+
+Trace the container, node, and process tree
+
+================
+Closing remarks:
+================
+
+How do you ensure only known-good binaries run in prod?
+
+What happens if someone adds curl to a container via exec or bind-mount?
+
+Show how ACS would catch it even if the image was clean.
+
+Students see ACS's automatic baseline
+
+They understand how to lock it and get alerts on deviations
+
+They realise this is a Kubernetes-native form of workload hardening

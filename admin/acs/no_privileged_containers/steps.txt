@@ -1,0 +1,54 @@
+====================================
+CLI: Create namespace and deploy pod
+====================================
+oc create ns priv-demo
+
+oc apply -f privileged-pod.yaml
+
+===================================================================
+Web Console: Create ACS Policy to Detect use of elevated privileges
+===================================================================
+In ACS Central, go to:
+
+Platform Configuration → Policy Management
+
+Click + New Policy
+
+Fill in the policy:
+
+Name: Privileged Containers
+Description: Detect when a container runs in privileged mode
+Lifecycle Stage: Deploy
+Categories: Security Best Practices
+Severity: High
+Policy Criteria:
+  - Privileged container = true
+  - Namespace = priv-demo
+Enforcement: Enforce 
+
+Save the policy
+
+===========================
+CLI: Test Admission Control
+===========================
+
+oc delete pod naughty
+oc apply -f privileged-pod.yaml
+
+===============
+Closing remarks
+===============
+
+Why might a developer ask for privileged mode?
+
+What would happen if a compromised pod had privileged access?
+
+How do we enforce this at scale, without relying on admission controllers we build ourselves?
+
+Let them see how ACS provides policy as code, not just visual warnings.
+
+Students see a privileged container rejected by ACS
+
+They grasp the risk of privilege escalation
+
+They understand how ACS can serve as a Kubernetes-native admission controller

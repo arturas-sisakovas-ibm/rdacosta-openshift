@@ -1,0 +1,23 @@
+========
+Purpose:
+========
+To demonstrate how ACS automatically learns and enforces network communication patterns between Kubernetes workloads and alerts on unexpected traffic — like lateral movement or unauthorized external access.
+
+====================
+Why should I listen?
+====================
+Kubernetes networking is open by default, meaning any pod can talk to any other pod. If an attacker gets in, they can pivot across the cluster. ACS helps you visualise, learn, and enforce network boundaries — a critical step in zero trust and microsegmentation strategies.
+
+========
+Prereqs:
+========
+ACS Sensor is successfully installed on the OpenShift cluster.
+
+ACS Central is running and accessible.
+
+2 pods that can communicate
+
+A test namespace (e.g. net-demo) is available.
+
+
+

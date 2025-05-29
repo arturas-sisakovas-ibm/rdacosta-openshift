@@ -1,0 +1,33 @@
+========
+Purpose:
+========
+To demonstrate how ACS can require all container images to be signed using a trusted signature source (e.g. Cosign, Red Hat signatures), and block unsigned or tampered images from being deployed.
+
+====================
+Why should I listen?
+====================
+Unsigned images can:
+
+Be modified by attackers after scanning
+
+Be pulled from unauthorised or untrusted sources
+
+Introduce supply chain risks
+
+This demo helps students understand the software supply chain attack surface — and how ACS acts as a gatekeeper to prevent it.
+
+========
+Prereqs:
+========
+
+ACS Sensor and Central installed
+
+OpenShift cluster with internet access
+
+cosign installed on your workstation (optional, for signature creation)
+
+A signed image from a known source (or simulate one)
+
+Namespace: sig-demo
+
+

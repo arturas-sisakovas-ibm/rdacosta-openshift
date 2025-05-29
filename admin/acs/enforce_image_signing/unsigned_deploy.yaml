@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unsigned-app
+  namespace: sig-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unsigned-app
+  template:
+    metadata:
+      labels:
+        app: unsigned-app
+    spec:
+      containers:
+        - name: app
+          image: busybox
+          command: ["sleep", "3600"]
+

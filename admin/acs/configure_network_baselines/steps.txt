@@ -1,0 +1,71 @@
+====================================
+CLI: Create namespace and deploy pod
+====================================
+oc create ns net-demo
+
+oc apply -f backend.yaml
+
+oc apply -f frontend.yaml
+
+==========================================
+CLI: Trigger network traffic from frontend 
+==========================================
+
+oc exec -n net-demo frontend -- curl backend
+
+==================================
+Web Console: View Network Baseline 
+==================================
+
+In ACS Central UI, go to:
+
+Network Graph
+
+Select net-demo namespace
+
+Observe:
+
+Frontend → Backend communication line
+
+Traffic flows marked as baseline
+
+Click the edge to view:
+
+Ports
+
+Protocols
+
+==================================
+Web Console: Lock Network Baseline 
+==================================
+
+Go to Network Graph → Network Baseline
+
+Click the Lock icon
+
+This prevents new network flows from being silently accepted
+
+Any unexpected communication will now raise a violation
+
+===========================
+CLI: Simulate the violation
+===========================
+
+oc apply -f rogue.yaml
+oc exec -n net-demo rogue -- curl backend
+
+================
+Closing remarks:
+================
+
+How would you normally detect lateral movement in a Kubernetes cluster?
+
+How does this compare to traditional IDS or east-west firewalls?
+
+Then show how ACS gives visibility and lets you lock it down.
+
+Students understand network visibility in Kubernetes is non-trivial
+
+They experience how ACS learns and locks network patterns
+
+They see violations when a new pod attempts unauthorized access

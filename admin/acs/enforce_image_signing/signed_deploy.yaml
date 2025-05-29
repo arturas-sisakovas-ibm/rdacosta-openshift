@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signed-app
+  namespace: sig-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: signed-app
+  template:
+    metadata:
+      labels:
+        app: signed-app
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/sigstore/sample-container:latest 
+          command: ["sleep", "3600"]
+

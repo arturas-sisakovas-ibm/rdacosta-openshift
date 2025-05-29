@@ -1,0 +1,57 @@
+====================================
+CLI: Create namespace and deploy pod
+====================================
+oc create ns sig-demo
+
+oc apply -f unsigned_deploy.yaml
+
+==========================================================
+Web Console: Create an ACS Policy to Block Unsigned Images
+==========================================================
+In ACS Central → Policy Management, click + New Policy
+
+Enter the following:
+
+Name: Require Signed Container Images
+Lifecycle Stage: Deploy
+Description: Prevent deployment of images that are not signed
+Severity: Critical
+Enforcement: Enforce
+Categories: Software Supply Chain
+Policy Criteria:
+  - Image is NOT signed
+  - Namespace = sig-demo 
+
+Save the policy
+
+ACS will now evaluate signature metadata as part of the admission control pipeline.
+
+==========================
+CLI: Redeploy application 
+==========================
+
+oc delete deployment unsigned-app
+oc apply -f unsigned-deploy.yaml
+
+Error from server (Forbidden): admission webhook "admission.stackrox.io" denied the request: image busybox does not meet policy 'Require Signed Container Images'
+
+==========================================
+CLI: Deploy application using signed image
+==========================================
+oc apply -f signed-deploy.yaml
+
+===============
+Closing remarks
+===============
+
+What happens if someone pushes a new tag to an image you already trust?
+
+Can image scanning alone prevent someone from pulling a modified version?
+
+Then show how ACS verifies the signature metadata, acting as a secure supply chain gate.
+
+ACS prevents deployment of unsigned images
+
+Students understand the role of signatures in image provenance
+
+They see how ACS integrates signature verification into admission control
