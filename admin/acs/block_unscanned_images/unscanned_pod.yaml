@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weird-app
+  namespace: scan-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weird-app
+  template:
+    metadata:
+      labels:
+        app: weird-app
+    spec:
+      containers:
+        - name: app
+          image: alpine/git:v2.26.2
+          command: ["sleep", "3600"]
+

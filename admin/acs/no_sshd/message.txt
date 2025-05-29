@@ -1,0 +1,26 @@
+========
+Purpose:
+========
+To demonstrate how ACS detects when a pod is running a suspicious service — in this case, an SSH daemon, which could allow unauthorised remote access or lateral movement within the cluster.
+
+====================
+Why should I listen?
+====================
+Running an SSH server inside a container is rarely legitimate in production. It often indicates:
+
+A misconfigured base image
+
+An attacker planting a backdoor
+
+Use of containers as persistent footholds
+
+This demo shows how ACS helps detect dangerous behaviour, not just bad configuration.
+
+========
+Prereqs:
+========
+ACS Sensor and Central installed
+
+A test namespace (e.g. ssh-demo)
+
+Ability to deploy a container image with OpenSSH server (e.g. rastasheep/ubuntu-sshd)

@@ -1,0 +1,24 @@
+========
+Purpose:
+========
+To demonstrate how ACS can prevent the deployment of images that have not been scanned — ensuring that every workload is subject to vulnerability analysis before going live.
+
+====================
+Why should I listen?
+====================
+If an image isn’t scanned, you have zero visibility into its CVEs.
+
+This is a key gap in the "Shift Left" security mindset.
+
+Enforcing scanning ensures every image in your environment is known, inspected, and tracked.
+
+This demo shows how to tie image scanning to deployment gatekeeping.
+
+========
+Prereqs:
+========
+ACS Central and Sensor working
+
+Namespace: scan-demo
+
+An image not present in the ACS image registry (e.g. new custom image or obscure public one)

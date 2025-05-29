@@ -1,0 +1,65 @@
+====================================
+CLI: Create namespace and deploy pod
+====================================
+oc create ns ssh-demo
+
+oc apply -f sshd-pod.yaml
+
+===================================================================
+Web Console: Create an ACS Policy to Detect SSH Daemons
+===================================================================
+In ACS Central, go to Policy Management
+
+Click + New Policy
+
+Fill in the following:
+
+Name: SSH Daemon Detected
+Lifecycle Stage: Runtime
+Description: Detects containers running SSH daemons like sshd
+Severity: Critical
+Enforcement: Inform
+Categories: Threat Detection
+Policy Criteria:
+  - Process Name = sshd
+  - Namespace = ssh-demo
+Save the policy. 
+
+==================================
+Web Console: View the Alert in ACS 
+==================================
+As soon as the pod starts and the sshd process is detected by the Sensor, a runtime violation will be triggered.
+
+Go to Violations → Violations
+
+Filter by:
+
+Namespace: ssh-demo
+
+  Lifecycle Stage: Runtime
+
+Click into the alert to view:
+
+  Process details
+
+  Deployment and pod name
+
+  Node on which it was detected
+
+  Suggested remediation
+
+===============
+Closing remarks
+===============
+
+Is SSH ever needed inside a container?
+
+What does it mean if a previously clean image suddenly starts listening on port 22?
+
+Emphasise how ACS inspects running process trees, not just container metadata.
+
+Violation triggered by the appearance of sshd
+
+Students see runtime visibility in action
+
+Reinforces the idea of in-container behavioural analysis

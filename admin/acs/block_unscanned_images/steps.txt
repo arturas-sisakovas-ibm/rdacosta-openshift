@@ -1,0 +1,64 @@
+====================================
+CLI: Create namespace and deploy pod
+====================================
+oc create ns scan-demo
+
+oc apply -f unscanned-image.yaml
+
+===========================================
+Web Console: Confirm the Image is Unscanned
+===========================================
+In ACS Central:
+
+Navigate to Vulnerability Management → Images
+
+Search for alpine/git
+
+If it shows as "Not Scanned", you're ready 
+
+======================================================
+Web Console: Create a Policy to Block Unscanned Images
+======================================================
+In Policy Management → + New Policy
+
+Fill out the policy like so:
+
+Name: Block Unscanned Images
+Description: Do not allow deployment of images that haven’t been scanned
+Lifecycle Stage: Deploy
+Severity: Critical
+Enforcement: Enforce
+Categories: Vulnerability Management
+Policy Criteria:
+  - Image is NOT scanned
+  - Namespace = scan-demo
+Save and enable the policy.
+
+==========================================
+CLI: Redeploy the app to trigger the block
+==========================================
+
+oc delete deployment weird-app
+oc apply -f unscanned-image.yaml
+
+You should now get:
+
+Error from server (Forbidden): admission webhook "admission.stackrox.io" denied the request
+
+===============
+Closing remarks
+===============
+
+What do you know about this image?
+
+Would you let this run in your prod cluster with zero visibility?
+
+Who’s responsible if this has a remote code execution vulnerability?
+
+Then show how ACS enforces scan-before-deploy best practices.
+
+ACS blocks unscanned image deployments
+
+Students learn how image visibility links to secure supply chain
+
+You reinforce DevSecOps accountability at the deploy gate
