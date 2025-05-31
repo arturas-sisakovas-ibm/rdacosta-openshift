@@ -7,7 +7,7 @@
     "start": "node app.js"
   },
   "keywords": [
-    "mysql",
+    "mysql2",
     "database",
     "node.js"
   ],
