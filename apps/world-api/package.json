@@ -7,16 +7,16 @@
     "start": "node app.js"
   },
   "keywords": [
-    "mysql2",
+    "mysql",
     "database",
     "node.js"
   ],
   "author": "Ricardo da Costa",
   "license": "MIT",
   "dependencies": {
-    "mysql": "^2.18.1",
-    "express": "^4.17.1",
-    "axios": "^1.6.0"
+    "mysql2": "^3.14.1",
+    "express": "^4.18.2",
+    "axios": "^1.8.0"
   }
 }
 
