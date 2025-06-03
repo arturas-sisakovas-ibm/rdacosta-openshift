@@ -1,0 +1,9 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: central
+          env:
+            - name: ROX_VULN_MGMT_LEGACY_SNOOZE
+              value: "true"
+

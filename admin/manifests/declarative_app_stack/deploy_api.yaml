@@ -33,6 +33,8 @@ spec:
       - envFrom:
         - secretRef:
             name: api-config
+        - secretRef:
+            name: db-config
         image: quay.io/rdacosta/world_api:latest 
         imagePullPolicy: Always
         livenessProbe:
