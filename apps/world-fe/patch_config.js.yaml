@@ -1,0 +1,17 @@
+spec:
+  template:
+    spec:
+      volumes:
+      - name: config-js
+        configMap:
+          name: fe-config
+          items:
+          - key: config.js
+            path: config.js
+      containers:
+      - name: fe
+        volumeMounts:
+        - name: config-js
+          mountPath: /opt/app-root/src/config.js
+          subPath: config.js
+

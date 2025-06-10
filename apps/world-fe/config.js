@@ -1,1 +1,2 @@
-window.WORLD_API = "${WORLD_API}";
+var API_SVC = "${API_SVC}";
+

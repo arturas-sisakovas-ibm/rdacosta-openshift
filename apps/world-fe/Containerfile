@@ -1,6 +1,12 @@
 FROM registry.redhat.io/rhel9/nginx-124
 
-COPY index.html style.css app.js background.jpg index.html /opt/app-root/src/
+COPY config.js \
+     index.html \
+     style.css \
+     app.js \
+     background.jpg \
+     /opt/app-root/src/
 
 USER 1001
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
+
