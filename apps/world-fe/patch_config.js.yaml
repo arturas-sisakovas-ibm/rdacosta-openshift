@@ -8,9 +8,8 @@ spec:
           items:
           - key: config.js
             path: config.js
-
       containers:
-      - name: frontend
+      - name: fe
         volumeMounts:
         - name: config-js
           mountPath: /opt/app-root/src/config.js
