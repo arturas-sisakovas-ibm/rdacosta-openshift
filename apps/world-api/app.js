@@ -1,3 +1,5 @@
+const cors = require('cors');
+const app = express();
 const mysql = require('mysql2');
 const express = require('express');
 const cityCountryRoutes = require('./routes/cityCountry');
@@ -13,6 +15,8 @@ const pool = mysql.createPool({
   database: process.env.MYSQL_DATABASE,
   connectionLimit: 10
 });
+
+app.use(cors());
 
 app.get('/city', cityCountryRoutes.city(pool));
 app.get('/country', cityCountryRoutes.country(pool));
