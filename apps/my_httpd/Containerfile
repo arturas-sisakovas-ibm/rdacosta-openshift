@@ -20,7 +20,8 @@ COPY index.html .
 LABEL description="My httpd container application" \
       io.k8s.description="My httpd container application" \
       io.openshift.expose-services="${HTTP_PORT}:http" \
-      io.openshift.tags="httpd, web server, apache, apache2"
+      io.openshift.tags="httpd, web server, apache, apache2" \
+      app_type=prod
 
 EXPOSE ${HTTP_PORT}
 

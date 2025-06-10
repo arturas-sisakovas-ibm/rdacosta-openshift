@@ -1,9 +1,5 @@
 document.getElementById('submitBtn').addEventListener('click', async () => {
-  let apiUrl = window.WORLD_API || "";
-  if (apiUrl.startsWith("http://api:")) {
-    const parts = apiUrl.split(':');
-    const port = parts[2];
-    apiUrl = `http://${window.location.hostname}:${port}`;
+  apiUrl = `http://${API_SVC}:8080`;
   }
 
   const queryType = document.getElementById('queryType').value;
