@@ -8,5 +8,5 @@ COPY config.js \
      /opt/app-root/src/
 
 USER 1001
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+ENTRYPOINT nginx -g daemon off
 
