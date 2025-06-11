@@ -1,6 +1,5 @@
 document.getElementById('submitBtn').addEventListener('click', async () => {
-  const apiUrl = `/api`;
-
+  const apiUrl     = '/api';
   const queryType  = document.getElementById('queryType').value;
   const queryInput = document.getElementById('queryInput').value.trim();
   const resultDiv  = document.getElementById('result');
@@ -11,10 +10,10 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   }
 
   const encodedQuery = encodeURIComponent(queryInput);
-  const queryUrl = `${apiUrl}/${queryType}?name=${encodedQuery}`;
+  const queryUrl     = `${apiUrl}/${queryType}?name=${encodedQuery}`;
 
   try {
-    const response = await fetch(queryUrl, { mode: 'cors' });
+    const response = await fetch(queryUrl);
     const data     = await response.json();
     resultDiv.style.display = 'block';
 
