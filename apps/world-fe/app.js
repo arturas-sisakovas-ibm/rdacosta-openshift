@@ -1,5 +1,5 @@
 document.getElementById('submitBtn').addEventListener('click', async () => {
-  const apiUrl = `http://${API_SVC}:8080`;
+  const apiUrl = `/api`;
 
   const queryType  = document.getElementById('queryType').value;
   const queryInput = document.getElementById('queryInput').value.trim();
@@ -11,7 +11,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   }
 
   const encodedQuery = encodeURIComponent(queryInput);
-  const queryUrl     = `${apiUrl}/${queryType}?name=${encodedQuery}`;
+  const queryUrl = `${apiUrl}/${queryType}?name=${encodedQuery}`;
 
   try {
     const response = await fetch(queryUrl, { mode: 'cors' });
