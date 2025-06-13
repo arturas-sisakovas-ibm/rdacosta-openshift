@@ -65,7 +65,8 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
-      securityContext: {}
+      securityContext:
+        readOnlyRootFilesystem: true
       terminationGracePeriodSeconds: 30
       volumes:
       - configMap:
