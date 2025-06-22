@@ -1,0 +1,201 @@
+---
+# NOTE:
+#   This playbook requires the 'target_ns' and 'vm_name' variables
+#   to be defined in the job template
+
+- name: Configure MTV for the migration from OVA
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    provider: vsphere-ova
+    storage_map_name: vsphere-ova-storage-map
+    network_map_name: vsphere-ova-network-map
+    ova_url: utility.lab.example.com:/exports-ocp4/ova
+    forklift_url: forklift-inventory-openshift-mtv.apps.ocp4.example.com/providers/ova
+    ns: openshift-mtv
+    bearer_token: '{{ lookup("env", "K8S_AUTH_API_KEY") }}'
+
+  tasks:
+
+    - name: Create a Secret manifest for the vsphere-ova provider
+      redhat.openshift.k8s:
+        validate_certs: false
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: '{{ provider }}-secret'
+            namespace: "{{ ns }}"
+            labels:
+              createdForProviderType: ova
+              createdForResourceType: providers
+          type: Opaque
+          stringData:
+            insecureSkipVerify: "true"
+            url: "{{ ova_url }}"
+
+    - name: Create the vsphere-ova provider
+      redhat.openshift.k8s:
+        validate_certs: false
+        state: present
+        wait: true
+        wait_condition:
+          type: Ready
+          status: "True"
+        definition:
+          apiVersion: forklift.konveyor.io/v1beta1
+          kind: Provider
+          metadata:
+            name: "{{ provider }}"
+            namespace: "{{ ns }}"
+          spec:
+            type: ova
+            url: "{{ ova_url }}"
+            secret:
+              name: '{{ provider }}-secret'
+              namespace: "{{ ns }}"
+
+    - name: List provider details
+      uri:
+        url: https://{{forklift_url}}
+        method: GET
+        validate_certs: no
+        headers:
+          Authorization: Bearer {{ bearer_token }}
+      register: provider_details
+
+    - name: Set Provider UID fact
+      set_fact:
+        provider_uid: "{{ provider_details.json[0].uid }}"
+
+    - name: Get VMs
+      uri:
+        url: https://{{forklift_url}}/{{provider_uid}}/vms
+        method: GET
+        validate_certs: no
+        headers:
+          Authorization: Bearer {{ bearer_token }}
+      register: vms
+
+    - name: Set VM UID
+      set_fact:
+        vm_uid: "{{ vms.json[:] | selectattr('name', 'equalto', vm_name) | map(attribute='id') }}"
+
+    - name: Get VM details
+      uri:
+        url: https://{{forklift_url}}/{{provider_uid}}/vms/{{vm_uid[0]}}
+        method: GET
+        validate_certs: no
+        headers:
+          Authorization: Bearer {{ bearer_token }}
+      register: vm_details
+
+    - name: Set network ID
+      set_fact:
+        network_id: "{{ vm_details.json.networks[:] | map(attribute='ID') | list }}"
+
+
+    - name: Create NetworkMap
+      redhat.openshift.k8s:
+        validate_certs: false
+        state: present
+        definition:
+          apiVersion: forklift.konveyor.io/v1beta1
+          kind: NetworkMap
+          metadata:
+            name: "{{ network_map_name }}"
+            namespace: "{{ ns }}"
+          spec:
+            map:
+              - destination:
+                  type: pod
+                source:
+                  id: "{{ network_id[0] }}"
+              - destination:
+                  name: vm-private-net
+                  namespace: default
+                  type: multus
+                source:
+                  id: "{{ network_id[1] }}"
+            provider:
+              destination:
+                name: host
+                namespace: "{{ ns }}"
+              source:
+                name: "{{ provider }}"
+                namespace: "{{ ns }}"
+
+    - name: Create StorageMap
+      redhat.openshift.k8s:
+        validate_certs: false
+        state: present
+        definition:
+          apiVersion: forklift.konveyor.io/v1beta1
+          kind: StorageMap
+          metadata:
+            name: "{{ storage_map_name }}"
+            namespace: "{{ ns }}"
+          spec:
+            map:
+              - destination:
+                  storageClass: ocs-external-storagecluster-ceph-rbd-virtualization
+                source:
+                  name: Dummy storage for source provider {{ provider }}
+            provider:
+              destination:
+                name: host
+                namespace: "{{ ns }}"
+              source:
+                name: "{{ provider }}"
+                namespace: "{{ ns }}"
+
+    - name: Create the Migration Plan
+      redhat.openshift.k8s:
+        validate_certs: false
+        state: present
+        definition:
+          apiVersion: forklift.konveyor.io/v1beta1
+          kind: Plan
+          metadata:
+            name: "{{ vm_name }}-migration-plan"
+            namespace: "{{ ns }}"
+          spec:
+            provider:
+              source:
+                name: "{{ provider }}"
+                namespace: "{{ ns }}"
+              destination:
+                name: host
+                namespace: "{{ ns }}"
+            map:
+              network:
+                name: "{{ network_map_name }}"
+                namespace: "{{ ns }}"
+              storage:
+                name: "{{ storage_map_name }}"
+                namespace: "{{ ns }}"
+            targetNamespace: "{{ target_ns }}"
+            vms:
+              - name: "{{ vm_name }}"
+
+    - name: Start the migration
+      redhat.openshift.k8s:
+        validate_certs: false
+        state: present
+        wait: true
+        wait_condition:
+          type: Succeeded
+          status: "True"
+        wait_timeout: 600
+        definition:
+          apiVersion: forklift.konveyor.io/v1beta1
+          kind: Migration
+          metadata:
+            name: "{{ vm_name }}-migration"
+            namespace: "{{ ns }}"
+          spec:
+            plan:
+              name: "{{ vm_name }}-migration-plan"
+              namespace: "{{ ns }}"
