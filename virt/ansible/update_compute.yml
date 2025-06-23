@@ -17,4 +17,4 @@
             cpu:
               cores: "{{ my_cpu_cores }}"
             memory: 
-              guest: "{{ my_memory }}Gi"
+              guest: {{ my_memory }}Gi
