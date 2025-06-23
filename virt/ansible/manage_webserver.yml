@@ -1,0 +1,112 @@
+- name: Manage webservices
+  hosts: "{{ my_host | mandatory('You must specify a host to target') }}"
+  gather_facts: false
+  become: false
+
+  vars:
+
+    my_services:
+      - http
+      - https
+
+    my_content: |
+      Hello from {{ inventory_hostname }}
+
+      This content is served by {{ my_package }}
+
+  tasks:
+
+    - name: Ensure needed variables are defined
+      tags:
+        - always
+      ansible.builtin.assert:
+        that:
+          - my_package is defined
+          - (my_package == "httpd") or (my_package == "nginx" )
+        success_msg: |
+
+          ✅ The needed variables are set, proceeding ✅
+
+        fail_msg: |
+
+          ❌ OH NO! We need to set my_package to either httpd or nginx ❌
+
+    - name: Ensure webserver is setup
+      become: true
+      tags:
+        - install
+        - setup
+        - never
+      block:
+
+      - name: Ensure {{ my_package }} is installed
+        ansible.builtin.dnf:
+          name: "{{ my_package }}"
+          state: installed
+
+      - name: Ensure {{ my_package }} is started and enabled
+        ansible.builtin.systemd:
+          name: "{{ my_package }}"
+          enabled: true
+          state: started
+
+      - name: Ensure service is allowed in firewalld
+        loop: "{{ my_services }}"
+        ansible.posix.firewalld:
+          service: "{{ item }}"
+          immediate: true
+          permanent: true
+          state: enabled
+
+      - name: Ensure stub content is installed for httpd
+        when: my_package == "httpd"
+        ansible.builtin.copy:
+          content: "{{ my_content }}"
+          dest: /var/www/html/index.html
+
+      - name: Ensure stub content is installed for nginx
+        when: my_package == "nginx"
+        ansible.builtin.copy:
+          content: "{{ my_content }}"
+          dest: /usr/share/nginx/html/index.html
+
+    - name: Ensure webserver is uninstalled
+      become: true
+      tags:
+        - uninstall
+        - remove
+        - teardown
+        - never
+      block:
+
+      - name: Ensure {{ my_package }} is stopped and disabled
+        ignore_errors: true
+        ansible.builtin.systemd:
+          name: "{{ my_package }}"
+          enabled: false
+          state: stopped
+
+      - name: Ensure {{ my_package }} is removed
+        ansible.builtin.dnf:
+          name: "{{ my_package }}"
+          state: absent
+
+      - name: Ensure service is removed from firewall
+        loop: "{{ my_services }}"
+        ansible.posix.firewalld:
+          service: "{{ item }}"
+          immediate: true
+          permanent: true
+          state: disabled
+
+      - name: Ensure stub content is removed from httpd
+        when: my_package == "httpd"
+        ansible.builtin.file:
+          state: absent
+          dest: /var/www/html/index.html
+
+      - name: Ensure stub content is removed from nginx
+        when: my_package == "nginx"
+        ansible.builtin.file:
+          state: absent
+          dest: /usr/share/nginx/html/index.html
