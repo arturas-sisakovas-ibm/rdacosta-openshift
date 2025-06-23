@@ -14,5 +14,6 @@
         state: present
         spec:
           domain:
+            devices: {}
             cpu:
               cores: 2 
