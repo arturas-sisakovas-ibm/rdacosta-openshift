@@ -47,7 +47,7 @@ spec:
       domain:
         cpu:
           cores: 1
-          sockets: "{{ my_cpu_count | default('1') }}"
+          sockets: {{ my_cpu_count | default('1') }}
           threads: 1
         devices:
           disks:
@@ -73,7 +73,7 @@ spec:
         machine:
           type: pc-q35-rhel9.4.0
         memory:
-          guest: "{{ my_memory_size | default('2Gi') }}"
+          guest: {{ my_memory_size | default('2Gi') }}
         resources: {}
       networks:
       - name: default
