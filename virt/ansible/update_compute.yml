@@ -18,6 +18,5 @@
               domain:
                 cpu:
                   cores: "{{ my_cpu_cores }}"
-                resources:
-                  requests:
-                    memory: "{{ my_memory }}Gi"
+                memory: 
+                  guest: "{{ my_memory }}"Gi
