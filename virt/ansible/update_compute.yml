@@ -13,9 +13,11 @@
         namespace: "{{ my_namespace }}"
         state: present
         spec:
-          domain:
-            devices: {}
-            cpu:
-              cores: "{{ my_cpu_cores | int }}"
-            memory:
-              guest: "{{ my_memory }}Gi"
+          template:
+            spec:
+              domain:
+                devices: {}
+                cpu:
+                  cores: "{{ my_cpu_cores | int }}"
+                memory:
+                  guest: "{{ my_memory }}Gi"
