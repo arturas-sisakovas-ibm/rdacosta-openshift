@@ -10,8 +10,10 @@
       - https
 
     my_content: |
+      <title>Ansible test page</title>
       Hello from {{ inventory_hostname }}
-
+      <br>
+      <br>
       This content is served by {{ my_package }}
 
   tasks:
