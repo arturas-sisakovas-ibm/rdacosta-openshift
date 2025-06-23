@@ -86,8 +86,8 @@ spec:
       - cloudInitNoCloud:
           userData: |-
             #cloud-config
-            user: cloud-user
-            password: redhatocp
+            user: {{ my_user | default('cloud-user') }}
+            password: {{ my_password | default('redhatocp') }}
             chpasswd: { expire: False }
             yum_repos:
               baseos:
