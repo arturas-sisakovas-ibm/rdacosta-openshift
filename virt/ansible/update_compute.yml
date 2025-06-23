@@ -15,6 +15,6 @@
         spec:
           domain:
             cpu:
-              cores: "{{ my_cpu_cores }}"
+              cores: "{{ my_cpu_cores | int }}"
             memory: 
               guest: "{{ my_memory }}Gi"
