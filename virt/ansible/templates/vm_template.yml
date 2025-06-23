@@ -33,6 +33,7 @@ spec:
         kubevirt.io/domain: {{ my_vm }}
         kubevirt.io/size: small
         network.kubevirt.io/headlessService: headless
+        app: {{ my_vm }}
     spec:
       accessCredentials:
       - sshPublicKey:
