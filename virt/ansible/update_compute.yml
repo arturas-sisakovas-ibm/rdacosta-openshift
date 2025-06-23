@@ -13,10 +13,8 @@
         namespace: "{{ my_namespace }}"
         state: present
         spec:
-          template:
-            spec:
-              domain:
-                cpu:
-                  cores: "{{ my_cpu_cores }}"
-                memory: 
-                  guest: "{{ my_memory }}Gi"
+          domain:
+            cpu:
+              cores: "{{ my_cpu_cores }}"
+            memory: 
+              guest: "{{ my_memory }}Gi"
