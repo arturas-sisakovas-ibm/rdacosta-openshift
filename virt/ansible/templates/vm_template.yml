@@ -2,25 +2,25 @@ apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
   labels:
-    app: "{{ my_vm }}"
+    app: {{ my_vm }}
     kubevirt.io/dynamic-credentials-support: "true"
-  name: "{{ my_vm }}"
-  namespace: "{{ my_namespace | default('vms') }}"
+  name: {{ my_vm }}
+  namespace: {{ my_namespace | default('vms') }}
 spec:
   dataVolumeTemplates:
   - apiVersion: cdi.kubevirt.io/v1beta1
     kind: DataVolume
     metadata:
       creationTimestamp: null
-      name: "{{ my_vm }}"
+      name: {{ my_vm }}
     spec:
       source:
         http:
-          url: "{{ my_image | default('http://utility:8080/openshift4/images/rhel9.qcow2') }}"
+          url: {{ my_image | default('http://utility:8080/openshift4/images/rhel9.qcow2') }}
       storage:
         resources:
           requests:
-            storage: "{{ my_disk_size | default('10Gi') }}"
+            storage: {{ my_disk_size | default('10Gi') }}Gi
   running: true
   template:
     metadata:
@@ -30,7 +30,7 @@ spec:
         vm.kubevirt.io/workload: server
       creationTimestamp: null
       labels:
-        kubevirt.io/domain: "{{ my_vm }}"
+        kubevirt.io/domain: {{ my_vm }}
         kubevirt.io/size: small
         network.kubevirt.io/headlessService: headless
     spec:
@@ -42,7 +42,7 @@ spec:
               - cloud-user
           source:
             secret:
-              secretName: "{{ my_ssh_secret | default('ssh-pub-key') }}"
+              secretName: {{ my_ssh_secret | default('ssh-pub-key') }}
       architecture: amd64
       domain:
         cpu:
@@ -73,7 +73,7 @@ spec:
         machine:
           type: pc-q35-rhel9.4.0
         memory:
-          guest: {{ my_memory_size | default('2Gi') }}
+          guest: {{ my_memory_size | default('2') }}Gi
         resources: {}
       networks:
       - name: default
@@ -81,7 +81,7 @@ spec:
       terminationGracePeriodSeconds: 180
       volumes:
       - dataVolume:
-          name: "{{ my_vm }}"
+          name: {{ my_vm }}
         name: rootdisk
       - cloudInitNoCloud:
           userData: |-
