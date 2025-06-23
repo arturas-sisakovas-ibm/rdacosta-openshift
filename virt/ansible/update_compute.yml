@@ -16,6 +16,6 @@
           domain:
             devices: {}
             cpu:
-              cores: "{{ my_cpu_cores | int }}"
+              cores: !!int "{{ my_cpu_cores | int }}"
             memory:
               guest: "{{ my_memory }}Gi"
