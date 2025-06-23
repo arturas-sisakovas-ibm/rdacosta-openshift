@@ -1,0 +1,39 @@
+---
+- name: Remove VM
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure token is obtained
+      register: openshift_auth_results
+      redhat.openshift.openshift_auth:
+        username: "{{ my_ocp_user }}"
+        password: "{{ my_ocp_pass }}"
+        host: "{{ my_ocp_api }}"
+        state: present
+
+    - name: Ensure VM is removed
+      redhat.openshift.k8s:
+        host: "{{ my_ocp_api }}"
+        api_key: "{{ openshift_auth_results['openshift_auth']['api_key'] }}"
+        name: "{{ my_vm | mandatory('You must specify the VM to remove using the variable my_vm') }}"
+        namespace: "{{ my_namespace | default('vms') }}"
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        state: absent
+
+    - name: Ensure VM service is removed
+      redhat.openshift.k8s:
+        host: "{{ my_ocp_api }}"
+        api_key: "{{ openshift_auth_results['openshift_auth']['api_key'] }}"
+        name: "{{ my_vm | mandatory('You must specify the VM to remove') }}"
+        namespace: "{{ my_namespace | default('vms') }}"
+        api_version: v1
+        kind: Service
+        state: absent
+
+
+

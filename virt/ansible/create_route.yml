@@ -1,5 +1,5 @@
 ---
-- name: Create VM
+- name: Create route 
   hosts: localhost
   gather_facts: false
   become: false
@@ -7,6 +7,6 @@
 
   tasks:
 
-    - name: Ensure VM exists
+    - name: Ensure app route exists
       redhat.openshift.k8s:
-        template: templates/vm_template.yml
+        template: templates/route.yml

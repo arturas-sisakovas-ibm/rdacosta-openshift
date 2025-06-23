@@ -1,0 +1,16 @@
+---
+- name: Remove service 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure service is removed
+      redhat.openshift.k8s:
+        name: "{{ my_vm | mandatory('You must specify the VM to remove') }}"
+        namespace: "{{ my_namespace | default('vms') }}"
+        api_version: v1
+        kind: Service
+        state: absent

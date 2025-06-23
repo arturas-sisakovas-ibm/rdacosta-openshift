@@ -1,0 +1,16 @@
+---
+- name: Remove route 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure route is removed
+      redhat.openshift.k8s:
+        name: "{{ my_route | mandatory('You must specify the route to remove') }}"
+        namespace: "{{ my_namespace | mandatory('You must specify the namespce where the route resides') }}"
+        api_version: v1
+        kind: Route
+        state: absent

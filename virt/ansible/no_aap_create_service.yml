@@ -1,0 +1,38 @@
+---
+- name: Deploy VM
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure required variables are set 
+      ansible.builtin.assert:
+        that:
+          - my_vm is defined 
+          - my_vm | length > 0 
+        fail_msg: |
+
+          ***********************************************
+          You must specify a value for the variable my_vm 
+          ***********************************************
+        success_msg: |
+
+          **********************************
+          Conditions satisfied - proceeding
+          **********************************
+
+    - name: Ensure token is obtained
+      register: openshift_auth_results
+      redhat.openshift.openshift_auth:
+        host: "{{ my_ocp_api }}"
+        username: "{{ my_ocp_user }}"
+        password: "{{ my_ocp_pass }}"
+        state: present
+
+    - name: Ensure VM service exists
+      redhat.openshift.k8s:
+        host: "{{ my_ocp_api }}"
+        api_key: "{{ openshift_auth_results['openshift_auth']['api_key'] }}"
+        definition: "{{ my_svc_definition }}"

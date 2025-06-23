@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: "{{ my_route | mandatory('You must specify a route name') }}"
+  namespace: "{{ my_namespace | mandatory('You must specify a namespace') }}"
+spec:
+  host: "{{ my_hostname | mandatory('You must specify a hostname') }}"
+  to:
+    kind: Service
+    name: "{{ my_svc | mandatory('You must specify a service name') }}"
+    weight: 100
+  port:
+    targetPort: http
+  # Uncomment the following block if you need an edge terminated route at
+  # tls:
+  #   termination: edge
+  #   insecureEdgeTerminationPolicy: Redirect
