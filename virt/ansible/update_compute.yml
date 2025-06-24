@@ -12,13 +12,16 @@
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
         state: present
+        annotations:
+          kubemacpool.io/inject-mac: "false"
         spec:
           domain:
             devices: {}
             cpu:
-              cores: "{{ my_cpu_cores }}"
-              sockets: "{{ my_cpu_sockets }}"
-              threads: "{{ my_cpu_threads }}"
+              cores: "{{ my_cpu_cores | default(omit) }}"
+              sockets: "{{ my_cpu_sockets | default(omit) }}"
+              threads: "{{ my_cpu_threads | default(omit) }}"
             memory:
-              guest: "{{ my_memory }}Gi"
+              guest: "{{ my_memory | default(omit) }}Gi"
+
 
