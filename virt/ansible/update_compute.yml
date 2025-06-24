@@ -8,18 +8,21 @@
   tasks:
 
     - name: Update CPU cores and guest memory
-      redhat.openshift_virtualization.kubevirt_vm:
+#      redhat.openshift_virtualization.kubevirt_vm:
+#      community.kubevirt.kubevirt_vm:
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
         state: present
-        spec:
-          domain:
-            devices: {}
-            memory:
-              guest: "{{ my_memory | default(omit) }}Gi"
-            cpu:
-              cores: "{{ my_cpu_cores | default(omit) }}"
-              sockets: "{{ my_cpu_sockets | default(omit) }}"
-              threads: "{{ my_cpu_threads | default(omit) }}"
+        cpu_cores: "{{ my_cpu_cores | default(omit) }}"
+        memory: "{{ my_memory | default(omit) }}Gi"
+        # spec:
+        #   domain:
+        #     devices: {}
+        #     memory:
+        #       guest: "{{ my_memory | default(omit) }}Gi"
+        #     cpu:
+        #       cores: "{{ my_cpu_cores | default(omit) }}"
+        #       sockets: "{{ my_cpu_sockets | default(omit) }}"
+        #       threads: "{{ my_cpu_threads | default(omit) }}"
 
 
