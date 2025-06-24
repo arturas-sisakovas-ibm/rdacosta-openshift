@@ -2,6 +2,6 @@ collections:
   - name: ansible.posix
   - name: community.general
   - name: freeipa.ansible_freeipa
-  #  - name: redhat.openshift
+  - name: redhat.openshift
   - name: redhat.openshift_virtualization
   - name: community.kubevirt
