@@ -1,0 +1,36 @@
+- name: Obtain SSO token with using username/password credentials
+  ovirt.ovirt.ovirt_auth:
+   url: https://rhvm.zero-effort.net/ovirt-engine/api
+   username: admin@internal
+   insecure: true
+   password: "{{ ovirt_password }}"
+
+- name: Get VMs
+  register: result
+  redhat.rhv.ovirt_vm_info:
+    auth: "{{ ovirt_auth }}"
+    pattern: name=*
+
+- name: Display VMs
+  loop: "{{ result['ovirt_vms'] }}"
+  loop_control:
+    label: "{{ item['name'] }}"
+  ansible.builtin.debug:
+    msg: "{{ item['name'] }}"
+
+- name: Deploy Virt Plan
+  loop: "{{ result['ovirt_vms'] }}"
+  loop_control:
+    loop_var: vm
+    label: "{{ item['name'] }}"
+  redhat.openshift.k8s:
+    state: present
+    definition: "{{ my_plan }}"
+
+- name: Create a Migration manifest to run the Plan CR
+  loop: "{{ result['ovirt_vms'] }}"
+  loop_control:
+    label: "{{ item['name'] }}"
+  redhat.openshift.k8s:
+    state: present
+    definition: "{{ my_run_plan }}"

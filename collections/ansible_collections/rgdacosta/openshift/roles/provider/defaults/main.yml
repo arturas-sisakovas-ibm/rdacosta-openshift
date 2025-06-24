@@ -1,0 +1,64 @@
+---
+# defaults file for providers
+
+
+rhv_provider_secret: |
+  apiVersion: v1
+  data:
+    insecureSkipVerify: "{{ my_tls | default('true') | b64encode }}"
+    password: "{{ ovirt_password | b64encode }}" 
+    url: "{{ my_provider_api | default('https://rhvm.zero-effort.net/ovirt-engine/api') | b64encode }}"
+    user: "{{ ovirt_user | default('admin@internal') | b64encode }}"
+  kind: Secret
+  metadata:
+    labels:
+      createdForProviderType: ovirt
+      createdForResourceType: providers
+    name: "{{ my_provider | default('redhat-virtualization') }}"
+    namespace: "{{ my_namespace | default('openshift-mtv') }}"
+  type: Opaque
+
+vmware_provider_secret: |
+  apiVersion: v1
+  data:
+    insecureSkipVerify: "{{ my_tls | default('true') | b64encode }}"
+    password: "{{ vmware_password | b64encode }}"
+    url: "{{ my_provider_api | defaults('https://esxi.zero-effort.net/sdk') }}" 
+    user: "{{ vmware_user | default('root') | b64encode }}"
+  kind: Secret
+  metadata:
+    labels:
+      createdForProviderType: vsphere
+      createdForResourceType: providers
+    name: "{{ my_provider | default('vmware') }}" 
+    namespace: openshift-mtv
+  type: Opaque
+
+rhv_source_provider: |
+  apiVersion: forklift.konveyor.io/v1beta1
+  kind: Provider
+  metadata:
+    name: "{{ my_provider | default('redhat-virtualization') }}"
+    namespace: "{{ my_namespace | default('openshift-mtv') }}"
+  spec:
+    secret:
+      name: "{{ my_provider_creds | default('redhat-virtualization') }}"
+      namespace: "{{ my_namespace | default('openshift-mtv') }}"
+    type: ovirt
+    url: "{{ my_provider_api | default('https://rhvm.zero-effort.net/ovirt-engine/api') }}"
+
+vmware_source_provider: |
+  apiVersion: forklift.konveyor.io/v1beta1
+  kind: Provider
+  metadata:
+    name: "{{ my_provider | default('vmware') }}"
+    namespace: "{{ my_namespace | default('openshift-mtv') }}"
+  spec:
+    secret:
+      name: "{{ my_provider_creds | default('vmware') }}"
+      namespace: "{{ my_namespace | default('openshift-mtv') }}"
+    settings:
+      sdkEndpoint: esxi
+      vddkInitImage: "{{ my_vddk_image | default('quay.io/rdacosta/vddk:latest') }}"
+    type: vsphere
+    url: "{{ my_provider_api | defaults('https://esxi.zero-effort.net/sdk') }}"

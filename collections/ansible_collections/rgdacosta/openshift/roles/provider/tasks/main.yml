@@ -1,0 +1,13 @@
+---
+# tasks file for providers
+
+- name: Create provider secret
+  redhat.openshift.k8s:
+    state: present
+    definition: "{{ my_provider_secret }}"
+      
+- name: Deploy source provider
+  redhat.openshift.k8s:
+    state: present
+    definition: "{{ my_source_provider }}"
+
