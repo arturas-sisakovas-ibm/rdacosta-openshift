@@ -14,5 +14,5 @@
     - name: Ensure route name is displayed
       ansible.builtin.debug: |
 
-        🚀 🚀 🚀 Your application is available at http://{{ my_hostname }} and/or https://{{ my_hostname }}
+          🚀 🚀 🚀 Your application is available at http://{{ my_hostname }} and/or https://{{ my_hostname }}
 
