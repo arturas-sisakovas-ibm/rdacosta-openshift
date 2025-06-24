@@ -1,9 +1,4 @@
 ---
-apiVersion: kubevirt.io/v1
-kind: VirtualMachine
-metadata:
-  name: {{ my_vm }}
-  namespace: {{ my_namespace | default('vms') }}
 spec:
   dataVolumeTemplates:
     - metadata:
@@ -17,7 +12,7 @@ spec:
             - ReadWriteMany
           resources:
             requests:
-              storage: {{ my_size | default('10') }}Gi
+              storage: {{ my_size | default('10Gi') }}
   template:
     spec:
       domain:
@@ -30,4 +25,3 @@ spec:
         - name: {{ my_disk | default('extra_disk') }}
           dataVolume:
             name: {{ my_disk | default('extra_disk') }}
-

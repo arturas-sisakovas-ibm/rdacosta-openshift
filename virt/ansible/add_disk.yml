@@ -7,6 +7,16 @@
 
   tasks:
 
-    - name: Ensure disk is added
+    - name: Add extra disk (SCSI) 
       redhat.openshift.k8s:
-        template: templates/add_disk.j2
+        state: patched
+        kind:       VirtualMachine
+        api_version: kubevirt.io/v1
+        name:       "{{ my_vm }}"
+        namespace:  "{{ my_namespace }}"
+        merge_type: strategic-merge
+        patch:      "{{ lookup('template', 'templates/add_disk.j2') }}"
+      wait: true
+      wait_condition:
+        type: Ready
+        status: "True"
