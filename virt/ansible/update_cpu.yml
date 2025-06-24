@@ -9,4 +9,4 @@
 
     - name: Ensure CPU is updated
       redhat.openshift.k8s:
-        template: templates/update_cpu.yml
+        template: templates/update_cpu.j2

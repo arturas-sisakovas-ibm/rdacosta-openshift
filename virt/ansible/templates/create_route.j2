@@ -11,7 +11,6 @@ spec:
     weight: 100
   port:
     targetPort: http
-  # Uncomment the following block if you need an edge terminated route at
-  # tls:
-  #   termination: edge
-  #   insecureEdgeTerminationPolicy: Redirect
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

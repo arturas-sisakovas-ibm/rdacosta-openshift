@@ -1,5 +1,5 @@
 ---
-- name: Create VM
+- name: Add disk to VM 
   hosts: localhost
   gather_facts: false
   become: false
@@ -7,6 +7,6 @@
 
   tasks:
 
-    - name: Ensure VM exists
+    - name: Ensure disk is added
       redhat.openshift.k8s:
-        template: templates/create_vm.j2
+        template: templates/add_disk.j2

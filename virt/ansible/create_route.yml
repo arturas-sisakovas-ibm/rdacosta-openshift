@@ -9,7 +9,7 @@
 
     - name: Ensure app route exists
       redhat.openshift.k8s:
-        template: templates/route.yml
+        template: templates/create_route.j2
 
     - name: Ensure route name is displayed
       ansible.builtin.debug: |

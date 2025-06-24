@@ -9,4 +9,4 @@
 
     - name: Ensure VM service exists
       redhat.openshift.k8s:
-        template: templates/vm_service.yml
+        template: templates/create_service.j2

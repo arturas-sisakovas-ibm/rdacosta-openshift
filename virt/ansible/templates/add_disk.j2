@@ -1,0 +1,33 @@
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: {{ my_vm }}
+  namespace: {{ my_namespace | default('vms') }}
+spec:
+  dataVolumeTemplates:
+    - metadata:
+        name: {{ my_disk | default('extra_disk') }}
+      spec:
+        source:
+          blank: {}
+        storage:
+          storageClassName: "{{ my_storageclass | default('ocs-external-storagecluster-ceph-rbd-virtualization') }}"
+          accessModes:
+            - ReadWriteMany
+          resources:
+            requests:
+              storage: {{ my_size | default('10Gi') }}
+  template:
+    spec:
+      domain:
+        devices:
+          disks:
+            - name: {{ my_disk | default('extra_disk') }}
+              disk:
+                bus: scsi
+      volumes:
+        - name: {{ my_disk | default('extra_disk') }}
+          dataVolume:
+            name: {{ my_disk | default('extra_disk') }}
+
