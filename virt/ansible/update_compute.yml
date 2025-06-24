@@ -15,8 +15,10 @@
         spec:
           domain:
             devices: {}
-            # cpu:
-            #   cores: "{{ my_cpu_cores }}"
+            cpu:
+              cores: "{{ my_cpu_cores }}"
+              sockets: "{{ my_cpu_sockets }}"
+              threads: "{{ my_cpu_threads }}"
             memory:
               guest: "{{ my_memory }}Gi"
 
