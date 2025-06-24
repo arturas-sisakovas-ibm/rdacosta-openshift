@@ -10,12 +10,12 @@
     - name: Add extra disk (SCSI) 
       redhat.openshift.k8s:
         state: patched
-        kind:       VirtualMachine
+        kind: VirtualMachine
         api_version: kubevirt.io/v1
-        name:       "{{ my_vm }}"
-        namespace:  "{{ my_namespace }}"
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
         merge_type: strategic-merge
-        patch:      "{{ lookup('template', 'templates/add_disk.j2') }}"
+        template: templates/add_disk.j2
         wait: true
         wait_condition:
           type: Ready
