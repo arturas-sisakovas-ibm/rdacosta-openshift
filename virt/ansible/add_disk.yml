@@ -16,7 +16,7 @@
         namespace:  "{{ my_namespace }}"
         merge_type: strategic-merge
         patch:      "{{ lookup('template', 'templates/add_disk.j2') }}"
-      wait: true
-      wait_condition:
-        type: Ready
-        status: "True"
+        wait: true
+        wait_condition:
+          type: Ready
+          status: "True"
