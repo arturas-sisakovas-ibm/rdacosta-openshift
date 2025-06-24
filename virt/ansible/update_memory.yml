@@ -1,0 +1,20 @@
+---
+- name: Update compute resources 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Update guest memory
+      redhat.openshift_virtualization.kubevirt_vm:
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        state: present
+        spec:
+          domain:
+            memory:
+              guest: "{{ my_memory | default(omit) }}Gi"
+
+
