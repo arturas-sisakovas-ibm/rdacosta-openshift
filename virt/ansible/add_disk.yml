@@ -14,7 +14,7 @@
         api_version: kubevirt.io/v1
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
-        merge_type: strategic-merge
+        apply: true  
         template: templates/add_disk.j2
         wait: true
         wait_condition:
