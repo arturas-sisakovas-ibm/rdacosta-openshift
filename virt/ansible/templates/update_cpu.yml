@@ -1,0 +1,13 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: {{ my_vm }}
+  namespace: {{ my_namespace | default('vms') }}
+spec:
+  template:
+    spec:
+      domain:
+        cpu:
+          cores: {{ my_cpu_cores | default(omit) }}
+          sockets: {{ my_cpu_sockets | default(omit) }}
+          threads: {{ my_cpu_threads | default(omit) }}

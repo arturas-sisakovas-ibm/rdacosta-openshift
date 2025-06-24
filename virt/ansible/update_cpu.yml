@@ -1,0 +1,12 @@
+---
+- name: Update CPU 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure CPU is updated
+      redhat.openshift.k8s:
+        template: templates/update_cpu.yml
