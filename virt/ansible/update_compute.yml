@@ -8,8 +8,8 @@
   tasks:
 
     - name: Update CPU cores and guest memory
-#      redhat.openshift_virtualization.kubevirt_vm:
-#      community.kubevirt.kubevirt_vm:
+      # redhat.openshift_virtualization.kubevirt_vm:
+      community.kubevirt.kubevirt_vm:
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
         state: present
