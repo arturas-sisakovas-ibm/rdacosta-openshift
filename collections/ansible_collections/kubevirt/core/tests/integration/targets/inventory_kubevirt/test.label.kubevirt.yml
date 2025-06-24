@@ -1,6 +1,0 @@
----
-plugin: kubevirt.core.kubevirt
-namespaces:
-  - default
-create_groups: true
-label_selector: app=test

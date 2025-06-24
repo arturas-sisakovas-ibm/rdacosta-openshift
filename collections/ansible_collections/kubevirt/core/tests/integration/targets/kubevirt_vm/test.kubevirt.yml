@@ -1,5 +1,0 @@
----
-plugin: kubevirt.core.kubevirt
-namespaces:
-  - default
-network_name: bridge-network
