@@ -8,9 +8,7 @@
   tasks:
 
     - name: Ensure VM is removed
-      redhat.openshift.k8s:
+      redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ my_vm | mandatory('You must specify the VM to remove using the variable my_vm') }}"
         namespace: "{{ my_namespace | default('vms') }}"
-        api_version: kubevirt.io/v1
-        kind: VirtualMachine
         state: absent
