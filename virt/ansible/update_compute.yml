@@ -7,15 +7,23 @@
 
   tasks:
 
-    - name: Update CPU cores and guest memory
+    # - name: Update CPU cores and guest memory
+    #   redhat.openshift_virtualization.kubevirt_vm:
+    #     name: "{{ my_vm }}"
+    #     namespace: "{{ my_namespace }}"
+    #     state: present
+    #     spec:
+    #       domain:
+    #         devices: {}
+    #         cpu:
+    #           cores: !!int "{{ my_cpu_cores }}"
+    #         memory:
+    #           guest: "{{ my_memory }}Gi"
+
+    - name: Resize CPU & guest-RAM
       redhat.openshift_virtualization.kubevirt_vm:
-        name: "{{ my_vm }}"
-        namespace: "{{ my_namespace }}"
-        state: present
-        spec:
-          domain:
-            devices: {}
-            cpu:
-              cores: !!int "{{ my_cpu_cores }}"
-            memory:
-              guest: "{{ my_memory }}Gi"
+        name:       "{{ my_vm }}"
+        namespace:  "{{ my_namespace }}"
+        state:      present
+        cpu_cores:  "{{ my_cpu_cores }}"    # module handles int conversion
+        memory_guest: "{{ my_memory }}Gi"   # places it under domain.memory.guest
