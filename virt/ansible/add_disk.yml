@@ -1,22 +1,22 @@
 ---
-- name: Add disk to VM 
+- name: Add disk to VM
   hosts: localhost
   gather_facts: false
-  become: false
-  force_handlers: true
 
   tasks:
+    - name: Ensure patch is rendered into a list 
+      set_fact:
+        my_patch: "{{ lookup('template','templates/add_disk.j2') | from_json }}"
 
-    - name: Append disk to VM via JSON Patch
+    - name: Ensure patch is applied 
       kubernetes.core.k8s_json_patch:
-        state: patched
         api_version: kubevirt.io/v1
         kind: VirtualMachine
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
-        patch_type: json
-        patch: "{{ lookup('template','templates/add_disk.j2') }}"
+        patch: "{{ my_patch }}"
         wait: true
         wait_condition:
           type: Ready
           status: "True"
+
