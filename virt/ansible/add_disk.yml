@@ -9,14 +9,14 @@
 
     - name: Append disk to VM via JSON Patch
       kubernetes.core.k8s_json_patch:
-        state:       patched
+        state: patched
         api_version: kubevirt.io/v1
-        kind:        VirtualMachine
-        name:        "{{ my_vm }}"
-        namespace:   "{{ my_namespace }}"
-        patch_type:  json
-        patch:       "{{ lookup('template', 'templates/add_disk.j2') | from_json }}"
-        wait:        true
+        kind: VirtualMachine
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        patch_type: json
+        patch: {{ lookup('template', 'templates/add_disk.j2') | from_json }}
+        wait: true
         wait_condition:
-          type:   Ready
+          type: Ready
           status: "True"
