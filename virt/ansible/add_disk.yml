@@ -15,7 +15,7 @@
         name:        "{{ my_vm }}"
         namespace:   "{{ my_namespace }}"
         patch_type:  json
-        patch:       "{{ lookup('template', 'templates/add_disk_patch.j2') | from_json }}"
+        patch:       "{{ lookup('template', 'templates/add_disk.j2') | from_json }}"
         wait:        true
         wait_condition:
           type:   Ready
