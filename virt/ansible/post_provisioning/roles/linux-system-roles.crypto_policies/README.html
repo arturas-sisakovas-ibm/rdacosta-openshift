@@ -1,0 +1,123 @@
+<h1 id="crypto_policies">crypto_policies</h1>
+<p><img src="https://github.com/linux-system-roles/crypto_policies/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>This Ansible role manages system-wide crypto policies.</p>
+
+<p>This concept is well adopted since Red Hat Enterprise Linux 8 and in Fedora.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The system-wide crypto policies are implemented and tested on RHEL 8/CentOS 8<br />
+and Fedora.</p>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<p>By default, this role will just report system status as described in the<br />
+following section.</p>
+
+<ul>
+  <li><code>crypto_policies_policy</code></li>
+</ul>
+
+<p>Use this variable to specify the desired crypto policy on the target system,<br />
+which can be either the base policy or a base policy with subpolicies<br />
+as accepted by the <code>update-crypto-policies</code> tool. For example <code>FUTURE</code> or<br />
+<code>DEFAULT:NO-SHA1:GOST</code>. The specified base policy and subpolicies<br />
+must be available on the target system.</p>
+
+<p>The default value is <code>null</code> meaning the configuration is not changed and<br />
+the role will just collect the facts below.</p>
+
+<p>The list of available base policies on the target system can be found in the<br />
+<code>crypto_policies_available_policies</code> variable and the list of available<br />
+subpolicies can be found in the <code>crypto_policies_available_subpolicies</code> variable.</p>
+
+<ul>
+  <li><code>crypto_policies_reload</code></li>
+</ul>
+
+<p>By default (<code>true</code>), updating crypto policies forces reload of some of<br />
+the daemons affected by crypto policies in the system. Setting <code>false</code><br />
+prevents this behavior and is helpful if the role is executed during system<br />
+enrollment or some other follow-up tasks is expected to do it later.</p>
+
+<ul>
+  <li><code>crypto_policies_reboot_ok</code></li>
+</ul>
+
+<p>Crypto policies can not know all the custom applications using crypto<br />
+libraries that are affected by change of crypto policies so it is recommended<br />
+to reboot after changing crypto policies to make sure all of the services<br />
+and applications will read the new configuration files. By default (<code>false</code>),<br />
+if reboot is required, this role will set <code>crypto_policies_reboot_required</code><br />
+variable as described below and it is up to the user of the role to reboot<br />
+the system afterwards, for example after applying some other changes that might<br />
+need reboot. If there are no other tasks in the playbook that require reboot,<br />
+you can set this value to <code>true</code> and this role will handle the reboot for you,<br />
+when needed.</p>
+
+<h3 id="variables-exported-by-the-role">Variables Exported by the Role</h3>
+
+<ul>
+  <li><code>crypto_policies_active</code></li>
+</ul>
+
+<p>This fact contains the currently active policy name in the format as accepted<br />
+by <code>crypto_policies_policy</code> variable above.</p>
+
+<ul>
+  <li><code>crypto_policies_available_policies</code></li>
+</ul>
+
+<p>This is a list of all base policies available on the target system.<br />
+Custom policy files can be installed by copying the <code>.pol</code> files into<br />
+<code>/etc/crypto-policies/policies</code> directory (not implemented in this role yet).</p>
+
+<ul>
+  <li><code>crypto_policies_available_subpolicies</code></li>
+</ul>
+
+<p>This is a list of all subpolicies available on the target system.<br />
+Custom subpolicies can be installed by copying the <code>.pmod</code> files into<br />
+<code>/etc/crypto-policies/policies/modules</code> directory (not implemented in this<br />
+role yet).</p>
+
+<ul>
+  <li><code>crypto_policies_available_modules</code></li>
+</ul>
+
+<p>Deprecated alias to <code>crypto_policies_available_subpolicies</code>.</p>
+
+<ul>
+  <li><code>crypto_policies_reboot_required</code></li>
+</ul>
+
+<p>Default <code>false</code> - if <code>true</code>, this means a reboot is needed to apply<br />
+the changes made by the role</p>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>None.</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+
+<p>The following playbook configures the system to the default crypto policy<br />
+level without SHA1. The update is done without reboot (which is recommended<br />
+to do by the user afterwards).</p>
+
+<pre><code class="language-yaml">- hosts: all
+  roles:
+    role: rhel-system-roles.crypto_policies
+    vars:
+      crypto_policies_policy: "DEFAULT:NO-SHA1"
+      crypto_policies_reload: false
+
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>MIT, see the file LICENSE for more information.</p>
+
+<h2 id="author-information">Author Information</h2>
+
+<p>Jakub Jelen, 2020</p>

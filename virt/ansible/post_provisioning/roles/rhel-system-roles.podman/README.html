@@ -1,0 +1,324 @@
+<h1 id="podman">podman</h1>
+<p><img src="https://github.com/linux-system-roles/podman/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>This role manages <code>podman</code> configuration, containers, and systemd services which<br />
+run <code>podman</code> containers.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The role requires podman version 4.2 or later.</p>
+
+<p>The role requires the following collections:</p>
+<ul>
+  <li><code>containers.podman</code></li>
+  <li><code>fedora.linux_system_roles</code><br />
+Use this to install the collections:
+    <pre><code>ansible-galaxy collection install -vv -r meta/collection-requirements.yml
+</code></pre>
+  </li>
+</ul>
+
+<h3 id="users-groups-subuid-subgid">Users, groups, subuid, subgid</h3>
+
+<p>Users and groups specified in <code>podman_run_as_user</code>, <code>podman_run_as_group</code>, and<br />
+specified in a kube spec as <code>run_as_user</code> and <code>run_as_group</code> have the following<br />
+restrictions:</p>
+<ul>
+  <li>They must be already present on the system - the role will not create the<br />
+users or groups - the role will exit with an error if a non-existent user or<br />
+group is specified</li>
+  <li>They must already exist in <code>/etc/subuid</code> and <code>/etc/subgid</code> - the role will<br />
+exit with an error if a specified user is not present in <code>/etc/subuid</code>, or if<br />
+a specified group is not in <code>/etc/subgid</code></li>
+</ul>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<h3 id="podman_kube_specs">podman_kube_specs</h3>
+
+<p>This is a <code>list</code>.  Each element of the list is a <code>dict</code> describing a podman<br />
+pod and corresponding systemd unit to manage.  The format of the <code>dict</code> is<br />
+mostly like the <a href="https://docs.ansible.com/ansible/latest/collections/containers/podman/podman_play_module.html#ansible-collections-containers-podman-podman-play-module">podman_play<br />
+module</a><br />
+except for the following:</p>
+
+<ul>
+  <li><code>state</code> - default is <code>created</code>.  This takes 3 values:
+    <ul>
+      <li><code>started</code> - Create the pods and systemd services, and start them running</li>
+      <li><code>created</code> - Create the pods and systemd services, but do not start them</li>
+      <li><code>absent</code> - Remove the pods and systemd services</li>
+    </ul>
+  </li>
+  <li><code>run_as_user</code> - Use this to specify a per-pod user.  If you do not<br />
+specify this, then the global default <code>podman_run_as_user</code> value will be used.<br />
+Otherwise, <code>root</code> will be used.  NOTE: The user must already exist - the role<br />
+will not create.  The user must be present in <code>/etc/subuid</code>.</li>
+  <li><code>run_as_group</code> - Use this to specify a per-pod group.  If you do not<br />
+specify this, then the global default <code>podman_run_as_group</code> value will be<br />
+used.  Otherwise, <code>root</code> will be used.  NOTE: The group must already exist -<br />
+the role will not create.  The group must be present in <code>/etc/subgid</code>.</li>
+  <li><code>systemd_unit_scope</code> - The scope to use for the systemd unit.  If you do not<br />
+specify this, then the global default <code>podman_systemd_unit_scope</code> will be<br />
+used.  Otherwise, the scope will be <code>system</code> for root containers, and <code>user</code><br />
+for user containers.</li>
+  <li><code>kube_file_src</code> - This is the name of a file on the controller node which will<br />
+be copied to <code>kube_file</code> on the managed node.  This is a file in Kubernetes<br />
+YAML format.  Do not specify this if you specify <code>kube_file_content</code>.<br />
+<code>kube_file_content</code> takes precedence over <code>kube_file_src</code>.</li>
+  <li><code>kube_file_content</code> - This is either a string in Kubernetes YAML format, or a<br />
+<code>dict</code> in Kubernetes YAML format.  It will be used as the contents of<br />
+<code>kube_file</code> on the managed node.  Do not specify this if you specify<br />
+<code>kube_file_src</code>. <code>kube_file_content</code> takes precedence over <code>kube_file_src</code>.</li>
+  <li><code>kube_file</code> - This is the name of a file on the managed node that contains the<br />
+Kubernetes specification of the container/pod.  You typically do not have to specify<br />
+this unless you need to somehow copy this file to the managed node outside of the<br />
+role.  If you specify either <code>kube_file_src</code> or <code>kube_file_content</code>, you<br />
+do not have to specify this.  It is highly recommended to omit <code>kube_file</code> and<br />
+instead specify either <code>kube_file_src</code> or <code>kube_file_content</code> and let the role<br />
+manage the file path and name.
+    <ul>
+      <li>The file basename will be the <code>metadata.name</code> value from the K8s yaml, with a<br />
+<code>.yml</code> suffix appended to it.</li>
+      <li>The directory will be <code>/etc/containers/ansible-kubernetes.d</code> for system services.</li>
+      <li>The directory will be <code>$HOME/.config/containers/ansible-kubernetes.d</code> for user services.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>For example, if you have</p>
+<pre><code class="language-yaml">    podman_kube_specs:
+      - state: started
+        kube_file_content:
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: myappname
+</code></pre>
+<p>This will be copied to the file <code>/etc/containers/ansible-kubernetes.d/myappname.yml</code> on<br />
+the managed node.</p>
+
+<h3 id="podman_create_host_directories">podman_create_host_directories</h3>
+
+<p>This is a boolean, default value is <code>false</code>.  If <code>true</code>, the role will ensure<br />
+host directories specified in host mounts in <code>volumes.hostPath</code> specifications<br />
+in the Kubernetes YAML given in <code>podman_kube_specs</code>.  NOTE: Directories must be<br />
+specified as absolute paths (for root containers), or paths relative to the home<br />
+directory (for non-root containers), in order for the role to manage them.<br />
+Anything else will be assumed to be some other sort of volume and will be<br />
+ignored. The role will apply its default ownership/permissions to the<br />
+directories. If you need to set ownership/permissions, see<br />
+<code>podman_host_directories</code>.</p>
+
+<h3 id="podman_host_directories">podman_host_directories</h3>
+
+<p>This is a <code>dict</code>.  When using <code>podman_create_host_directories</code>, this tells the<br />
+role what permissions/ownership to apply to automatically created host<br />
+directories.  Each key is the absolute path of host directory to manage. The<br />
+value is in the format of the parameters to the <a href="https://docs.ansible.com/ansible/latest/collections/ansible/builtin/file_module.html#ansible-collections-ansible-builtin-file-module">file<br />
+module</a>.<br />
+If you do not specify a value, the role will use its built-in default values. If<br />
+you want to specify a value to be used for all host directories, use the special<br />
+key <code>DEFAULT</code>.</p>
+
+<pre><code class="language-yaml">podman_host_directories:
+  "/var/lib/data":
+    owner: dbuser
+    group: dbgroup
+    mode: "0600"
+  DEFAULT:
+    owner: root
+    group: root
+    mode: "0644"
+</code></pre>
+<p>The role will use <code>dbuser:dbgroup</code> <code>0600</code> for <code>/var/lib/data</code>, and <code>root:root</code><br />
+<code>0644</code> for all other host directories created by the role.</p>
+
+<h3 id="podman_firewall">podman_firewall</h3>
+
+<p>This is a <code>list</code> of <code>dict</code> in the same format as used by the<br />
+<code>redhat.rhel_system_roles.firewall</code> role.  Use this to specify ports that you<br />
+want the role to manage in the firewall.</p>
+
+<pre><code class="language-yaml">podman_firewall:
+  - port: 8080/tcp
+</code></pre>
+
+<h3 id="podman_selinux_ports">podman_selinux_ports</h3>
+
+<p>This is a <code>list</code> of <code>dict</code> in the same format as used by the<br />
+<code>redhat.rhel_system_roles.selinux</code> role.  Use this if you want the role to<br />
+manage the SELinux policy for ports used by the role.</p>
+
+<pre><code class="language-yaml">podman_selinux_ports:
+  - ports: 8080
+    protocol: tcp
+    setype: http_port_t
+</code></pre>
+
+<h3 id="podman_run_as_user">podman_run_as_user</h3>
+
+<p>This is the name of the user to use for all rootless containers.  You can also<br />
+specify per-container username with <code>run_as_user</code> in <code>podman_kube_specs</code>.  NOTE:<br />
+The user must already exist - the role will not create.  The user must be<br />
+present in <code>/etc/subuid</code>.</p>
+
+<h3 id="podman_run_as_group">podman_run_as_group</h3>
+
+<p>This is the name of the group to use for all rootless containers.  You can also<br />
+specify per-container group name with <code>run_as_group</code> in <code>podman_kube_specs</code>.<br />
+NOTE: The group must already exist - the role will not create.  The group must<br />
+be present in <code>/etc/subgid</code>.</p>
+
+<h3 id="podman_systemd_unit_scope">podman_systemd_unit_scope</h3>
+
+<p>This is systemd scope to use by default for all systemd units.  You can also<br />
+specify per-container scope with <code>systemd_unit_scope</code> in <code>podman_kube_specs</code>. By<br />
+default, rootless containers will use <code>user</code> and root containers will use<br />
+<code>system</code>.</p>
+
+<h3 id="podman_containers_conf">podman_containers_conf</h3>
+
+<p>These are the containers.conf(5) settings, provided as a <code>dict</code>.  These settings<br />
+will be provided in a drop-in file in the <code>containers.conf.d</code> directory.  If<br />
+running as root (see <code>podman_run_as_user</code>), the system settings will be managed,<br />
+otherwise, the user settings will be managed.  See the man page for the<br />
+directory locations.</p>
+
+<pre><code class="language-yaml">podman_containers_conf:
+  containers:
+    default_sysctls:
+      - net.ipv4.ping_group_range=0 1000
+      - user.max_ipc_namespaces=125052
+</code></pre>
+
+<h3 id="podman_registries_conf">podman_registries_conf</h3>
+
+<p>These are the containers-registries.conf(5) settings, provided as a <code>dict</code>.<br />
+These settings will be provided in a drop-in file in the <code>registries.conf.d</code><br />
+directory.  If running as root (see <code>podman_run_as_user</code>), the system settings<br />
+will be managed, otherwise, the user settings will be managed.  See the man page<br />
+for the directory locations.</p>
+
+<pre><code class="language-yaml">podman_registries_conf:
+  aliases:
+    myregistry: registry.example.com
+</code></pre>
+
+<h3 id="podman_storage_conf">podman_storage_conf</h3>
+
+<p>These are the containers-storage.conf(5) settings, provided as a <code>dict</code>.  If<br />
+running as root (see <code>podman_run_as_user</code>), the system settings will be managed,<br />
+otherwise, the user settings will be managed.  See the man page for the file<br />
+locations.</p>
+
+<pre><code class="language-yaml">podman_storage_conf:
+  storage:
+    runroot: /var/big/partition/container/storage
+</code></pre>
+
+<h3 id="podman_policy_json">podman_policy_json</h3>
+
+<p>These are the containers-policy.json(5) settings, provided as a <code>dict</code>.  If<br />
+running as root (see <code>podman_run_as_user</code>), the system settings will be managed,<br />
+otherwise, the user settings will be managed.  See the man page for the file<br />
+locations.</p>
+
+<pre><code class="language-yaml">podman_policy_json:
+  default:
+    type: insecureAcceptAnything
+</code></pre>
+
+<h2 id="variables-exported-by-the-role">Variables Exported by the Role</h2>
+
+<p>None</p>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>None.</p>
+
+<h2 id="example-playbooks">Example Playbooks</h2>
+
+<p>Create rootless container with volume mount:</p>
+<pre><code class="language-yaml">- hosts: all
+  vars:
+    podman_create_host_directories: true
+    podman_firewall:
+      - port: 8080-8081/tcp
+        state: enabled
+      - port: 12340/tcp
+        state: enabled
+    podman_selinux_ports:
+      - ports: 8080-8081
+        setype: http_port_t
+    podman_kube_specs:
+      - state: started
+        run_as_user: dbuser
+        run_as_group: dbgroup
+        kube_file_content:
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: db
+          spec:
+            containers:
+              - name: db
+                image: quay.io/db/db:stable
+                ports:
+                  - containerPort: 1234
+                    hostPort: 12340
+                volumeMounts:
+                  - mountPath: /var/lib/db:Z
+                    name: db
+            volumes:
+              - name: db
+                hostPath:
+                  path: /var/lib/db
+      - state: started
+        run_as_user: webapp
+        run_as_group: webapp
+        kube_file_src: /path/to/webapp.yml
+  roles:
+    - rhel-system-roles.podman
+</code></pre>
+
+<p>Create container running as root with Podman volume:</p>
+<pre><code class="language-yaml">- hosts: all
+  vars:
+    podman_firewall:
+      - port: 8080/tcp
+        state: enabled
+    podman_kube_specs:
+      - state: started
+        kube_file_content:
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: ubi8-httpd
+          spec:
+            containers:
+              - name: ubi8-httpd
+                image: registry.access.redhat.com/ubi8/httpd-24
+                ports:
+                  - containerPort: 8080
+                    hostPort: 8080
+                volumeMounts:
+                  - mountPath: /var/www/html:Z
+                    name: ubi8-html
+            volumes:
+              - name: ubi8-html
+                persistentVolumeClaim:
+                  claimName: ubi8-html-volume
+  roles:
+    - rhel-system-roles.podman
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>MIT.</p>
+
+<h2 id="author-information">Author Information</h2>
+
+<p>Based on <code>podman-container-systemd</code> by Ilkka Tengvall <a href="mailto:ilkka.tengvall@iki.fi">ilkka.tengvall@iki.fi</a>.</p>
+
+<p>Authors: Thom Carlin, Rich Megginson, Adam Miller, Valentin Rothberg</p>

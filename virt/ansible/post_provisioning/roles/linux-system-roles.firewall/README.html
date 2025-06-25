@@ -1,0 +1,692 @@
+<h1 id="firewall">firewall</h1>
+<p><img src="https://github.com/linux-system-roles/firewall/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>This role configures the firewall on machines that are using firewalld.</p>
+
+<p>For the configuration the role uses the firewalld client interface<br />
+which is available in RHEL-7 and later.</p>
+
+<h2 id="supported-distributions">Supported Distributions</h2>
+<ul>
+  <li>RHEL-7+, CentOS-7+</li>
+  <li>Fedora</li>
+</ul>
+
+<h2 id="limitations">Limitations</h2>
+
+<h3 id="configuration-over-network">Configuration over Network</h3>
+
+<p>The configuration of the firewall could limit access to the machine over the<br />
+network. Therefore it is needed to make sure that the SSH port is still<br />
+accessible for the ansible server.</p>
+
+<h3 id="the-error-case">The Error Case</h3>
+
+<p>WARNING: If the configuration failed or if the firewall configuration limits<br />
+access to the machine in a bad way, it is most likely be needed to get<br />
+physical access to the machine to fix the issue.</p>
+
+<h2 id="ansible-facts">Ansible Facts</h2>
+
+<h2 id="gathering-firewall-ansible-facts">Gathering firewall ansible facts</h2>
+
+<p>To gather the firewall system role’s ansible facts, <br />
+call the system role with no arguments e.g.</p>
+<pre><code class="language-yaml">vars:
+  firewall:
+</code></pre>
+
+<p>Another option is to gather a more detailed version of the<br />
+ansible facts by using the detailed argument e.g.</p>
+<pre><code class="language-yaml">vars:
+  firewall:
+    detailed: true
+</code></pre>
+
+<pre><code>WARNING: `firewall_config` uses considerably more memory (+ ~165KB) when `detailed=True`.
+For reference, by default, `firewall_config` takes ~3KB when converted to a string.
+</code></pre>
+
+<h2 id="available-ansible-facts">Available ansible facts</h2>
+
+<h3 id="firewall_config">firewall_config</h3>
+
+<p>This ansible fact shows the permanent configuration of<br />
+of firewalld on the managed node in dictionary format.<br />
+The top level of the fact is made up of three keys:</p>
+<ul>
+  <li><code>default</code></li>
+  <li><code>custom</code></li>
+  <li><code>default_zone</code></li>
+</ul>
+
+<p>Each dictionaries custom and default have the keys:</p>
+<ul>
+  <li><code>zones</code></li>
+  <li><code>services</code></li>
+  <li><code>icmptypes</code></li>
+  <li><code>helpers</code></li>
+  <li><code>ipsets</code></li>
+  <li><code>policies</code> (if supported by remote host’s firewalld installation)</li>
+</ul>
+
+<p>Each of the keys contains a list of elements present in <br />
+permanent configuration for each respective option.</p>
+
+<p><code>custom</code> will have a list of subdictionaries for each key,<br />
+providing a more detailed description.</p>
+
+<p><code>default</code> will have only the names of each setting,<br />
+unless the detailed option is supplied, in which case<br />
+it will be structured in the same manner as custom.</p>
+
+<p><code>default_zone</code> contains the configured default zone<br />
+for the managed node’s firewalld installation. It<br />
+is a string value.</p>
+
+<p>JSON representation of the structure of firewall_config fact:</p>
+<pre><code class="language-json">{
+  "default": {...},
+  "custom": {...},
+  "default_zone": "public",
+}
+</code></pre>
+
+<h4 id="default">default</h4>
+
+<p>The default subdictionary of firewall_config contains the default<br />
+configuration for the managed node’s firewalld configuration. <br />
+This subdictionary only changes with changes to the managed node’s <br />
+firewalld installation.</p>
+
+<p>default without detailed parameter set to true</p>
+<pre><code class="language-json">"default": {
+  "zones": ["public",...],
+  "services": ["amanda_client",...],
+  "icmptypes": [...],
+  "helpers": [...],
+  "ipsets": [...],
+  "policies": [...],
+}
+</code></pre>
+
+<p>default when parameter set to true</p>
+<pre><code class="language-json">"default": {
+  "zones": {
+    "public": {
+      ...
+    },
+    ...
+  },
+  "services": {
+    "amanda_client":{
+      ...
+    },
+    ...
+  },
+  "icmptypes": {
+    ...
+  },
+  "helpers": {
+    ...
+  },
+  "ipsets": {
+    ...
+  },
+  "policies": {
+    ...
+  },
+}
+</code></pre>
+
+<h4 id="custom">custom</h4>
+
+<p>The custom subdictionary contains any differences from the default<br />
+firewalld configuration. This includes a repeat for a default<br />
+element if that element has been modified in any way, and any new<br />
+elements introduced in addition to the defaults.</p>
+
+<p>This subdictionary will be modified by any changes to the<br />
+firewalld installation done locally or remotely via the <br />
+firewall system role.</p>
+
+<p>If the managed nodes firewalld settings are not different from the defaults,<br />
+the custom key and subdictionary will not be present in firewall_config.<br />
+Additionally, if any of firewalld’s settings have not changed from the default,<br />
+there will not be a key-value pair for that setting in custom.</p>
+
+<p>Below is the state of the custom subdictionary where at least one<br />
+permanent change was made to each setting:</p>
+<pre><code class="language-json">"custom": {
+  "zones": {
+    "custom_zone": {
+      ...
+    },
+    ...
+  },
+  "services": {
+    "custom_service": {
+      ...
+    },
+    ...
+  },
+  "icmptypes": {
+    "custom": {
+      ...
+    },
+    ...
+  },
+  "helpers": {
+    ...
+  },
+  "ipsets": {
+    ...
+  },
+  "policies": {
+    ...
+  },
+}
+</code></pre>
+
+<h2 id="variables">Variables</h2>
+
+<p>The firewall role uses the variable <code>firewall</code> to specify the parameters.  This variable is a <code>list</code> of <code>dict</code> values.  Each <code>dict</code> value is comprised of one or more keys listed below. These are the variables that can be passed to the role:</p>
+
+<h3 id="zone">zone</h3>
+
+<p>Name of the zone that should be modified. If it is not set, the default zone<br />
+will be used. It will have an effect on these variables: <code>service</code>, <code>port</code>,<br />
+<code>source_port</code>, <code>forward_port</code>, <code>masquerade</code>, <code>rich_rule</code>, <code>source</code>, <code>interface</code>,<br />
+<code>icmp_block</code>, <code>icmp_block_inversion</code>, and <code>target</code>.</p>
+
+<p>You can also use this to add/remove user-created zones.  Specify the <code>zone</code><br />
+variable with no other variables, and use <code>state: present</code> to add the zone, or<br />
+<code>state: absent</code> to remove it.</p>
+
+<pre><code class="language-yaml">zone: public
+</code></pre>
+
+<h3 id="service">service</h3>
+
+<p>Name of a service or service list to add or remove inbound access to. The<br />
+service needs to be defined in firewalld.</p>
+
+<pre><code class="language-yaml">service: ftp
+service: [ftp,tftp]
+</code></pre>
+
+<h6 id="user-defined-services">User defined services</h6>
+
+<p>You can use <code>service</code> with <code>state: present</code> to add a service, along<br />
+with any of the options <code>short</code>, <code>description</code>, <code>port</code>, <code>source_port</code>, <code>protocol</code>,<br />
+<code>helper_module</code>, or <code>destination</code> to initialize and add options to the service e.g.</p>
+<pre><code class="language-yaml">firewall:
+  # Adds custom service named customservice,
+  # defines the new services short to be "Custom Service",
+  # sets its description to "Custom service for example purposes,
+  # and adds the port 8080/tcp
+  - service: customservice
+    short: Custom Service
+    description: Custom service for example purposes
+    port: 8080/tcp
+    state: present
+    permanent: true
+</code></pre>
+
+<p>Existing services can be modified in the same way as you would create a service.<br />
+<code>short</code>, <code>description</code>, and <code>destination</code> can be reassigned this way, while <code>port</code>,<br />
+<code>source port</code>, <code>protocol</code>, and <code>helper_module</code> will add the specified options if they<br />
+did not exist previously without removing any previous elements. e.g.</p>
+<pre><code class="language-yaml">firewall:
+  # changes ftp's description, and adds the port 9090/tcp if it was not previously present
+  - service: ftp
+    description: I am modifying the builtin service ftp's description as an example
+    port: 9090/tcp
+    state: present
+    permanent: true
+</code></pre>
+
+<p>You can remove a <code>service</code> or specific <code>port</code>, <code>source_port</code>, <code>protocol</code>, <code>helper_module</code><br />
+elements (or <code>destination</code> attributes) by using <code>service</code> with <code>state: absent</code> with any<br />
+of the removable attributes listed. e.g.</p>
+<pre><code class="language-yaml">firewall:
+  # Removes the port 8080/tcp from customservice if it exists.
+  # DOES NOT REMOVE CUSTOM SERVICE
+  - service: customservice
+    port: 8080/tcp
+    state: absent
+    permanent: true
+  # Removes the service named customservice if it exists
+  - service: customservice
+    state: absent
+    permanent: true
+</code></pre>
+
+<p>NOTE: <code>permanent: true</code> needs to be specified in order to define, modify, or remove<br />
+a service. This is so anyone using <code>service</code> with <code>state: present/absent</code> acknowledges<br />
+that this will affect permanent firewall configuration. Additionally,<br />
+defining services for runtime configuration is not supported by firewalld</p>
+
+<p>For more information about custom services, see https://firewalld.org/documentation/man-pages/firewalld.service.html</p>
+
+<h3 id="port">port</h3>
+
+<p>Port or port range or a list of them to add or remove inbound access to. It<br />
+needs to be in the format <code>&lt;port&gt;[-&lt;port&gt;]/&lt;protocol&gt;</code>.</p>
+
+<pre><code>port: '443/tcp'
+port: ['443/tcp','443/udp']
+</code></pre>
+
+<h3 id="source_port">source_port</h3>
+
+<p>Port or port range or a list of them to add or remove source port access to. It<br />
+needs to be in the format <code>&lt;port&gt;[-&lt;port&gt;]/&lt;protocol&gt;</code>.</p>
+
+<pre><code>source_port: '443/tcp'
+source_port: ['443/tcp','443/udp']
+</code></pre>
+
+<h3 id="forward_port">forward_port</h3>
+
+<p>Add or remove port forwarding for ports or port ranges for a zone. It takes two<br />
+different formats:</p>
+<ul>
+  <li>string or a list of strings in the format like <code>firewall-cmd
+--add-forward-port</code> e.g. <code>&lt;port&gt;[-&lt;port&gt;]/&lt;protocol&gt;;[&lt;to-port&gt;];[&lt;to-addr&gt;]</code></li>
+  <li>dict or list of dicts in the format like <code>ansible.posix.firewalld</code>:</li>
+</ul>
+
+<pre><code class="language-yaml">forward_port:
+  port: &lt;port&gt;
+  proto: &lt;protocol&gt;
+  [toport: &lt;to-port&gt;]
+  [toaddr: &lt;to-addr&gt;]
+</code></pre>
+<p>examples</p>
+<pre><code class="language-yaml">forward_port: '447/tcp;;1.2.3.4'
+forward_port: ['447/tcp;;1.2.3.4','448/tcp;;1.2.3.5']
+forward_port:
+  - 447/tcp;;1.2.3.4
+  - 448/tcp;;1.2.3.5
+forward_port:
+  - port: 447
+    proto: tcp
+    toaddr: 1.2.3.4
+  - port: 448
+    proto: tcp
+    toaddr: 1.2.3.5
+</code></pre>
+<p><code>port_forward</code> is an alias for <code>forward_port</code>.  Its use is deprecated and will<br />
+be removed in an upcoming release.</p>
+
+<h3 id="masquerade">masquerade</h3>
+
+<p>Enable or disable masquerade on the given zone.</p>
+
+<pre><code>masquerade: false
+</code></pre>
+
+<h3 id="rich_rule">rich_rule</h3>
+
+<p>String or list of rich rule strings. For the format see (Syntax for firewalld<br />
+rich language<br />
+rules)[https://firewalld.org/documentation/man-pages/firewalld.richlanguage.html]</p>
+
+<pre><code>rich_rule: rule service name="ftp" audit limit value="1/m" accept
+</code></pre>
+
+<h3 id="source">source</h3>
+
+<p>List of source address or address range strings.  A source address or address<br />
+range is either an IP address or a network IP address with a mask for IPv4 or<br />
+IPv6. For IPv4, the mask can be a network mask or a plain number. For IPv6 the<br />
+mask is a plain number.</p>
+
+<pre><code>source: 192.0.2.0/24
+</code></pre>
+
+<h3 id="interface">interface</h3>
+
+<p>String or list of interface name strings.</p>
+
+<pre><code class="language-yaml">interface: eth2
+</code></pre>
+
+<p>This role handles interface arguments similar to<br />
+how firewalld’s cli, <code>firewall-cmd</code> does, i.e.<br />
+manages the interface through NetworkManager if possible,<br />
+and handles the interface binding purely through firewalld<br />
+otherwise.</p>
+
+<pre><code>WARNING: Neither firewalld nor this role throw any
+errors if the interface name specified is not
+tied to any existing network interface. This can cause confusion
+when attempting to add an interface via PCI device ID,
+for which you should use the parameter `interface_pci_id`
+instead of the `interface` parameter.
+
+Allow interface named '8086:15d7' in dmz zone
+
+firewall:
+  - zone: dmz
+    interface: 8086:15d7
+    state: enabled
+
+The above will successfully add a nftables/iptables rule
+for an interface named `8086:15d7`, but no traffic should/will
+ever match to an interface with this name.
+
+TLDR - When using this parameter, please stick only to using
+logical interface names that you know exist on the device to 
+avoid confusing behavior.
+</code></pre>
+
+<h3 id="interface_pci_id">interface_pci_id</h3>
+
+<p>String or list of interface PCI device IDs.<br />
+Accepts PCI IDs if the wildcard <code>XXXX:YYYY</code> applies<br />
+where:</p>
+<ul>
+  <li>XXXX: Hexadecimal, corresponds to Vendor ID</li>
+  <li>YYYY: Hexadecimal, corresponds to Device ID</li>
+</ul>
+
+<pre><code class="language-yaml"># PCI id for Intel Corporation Ethernet Connection
+interface_pci_id: 8086:15d7
+</code></pre>
+
+<p>Only accepts PCI devices IDs that correspond to a named network interface,<br />
+and converts all PCI device IDs to their respective logical interface names.</p>
+
+<p>If a PCI id corresponds to more than one logical interface name,<br />
+all interfaces with the PCI id specified will have the play applied.</p>
+
+<p>A list of PCI devices with their IDs can be retrieved using <code>lcpci -nn</code>.<br />
+For more information on PCI device IDs, see the linux man page at:<br />
+https://man7.org/linux/man-pages/man5/pci.ids.5.html</p>
+
+<h3 id="icmp_block">icmp_block</h3>
+
+<p>String or list of ICMP type strings to block.  The ICMP type names needs to be<br />
+defined in firewalld configuration.</p>
+
+<pre><code>icmp_block: echo-request
+</code></pre>
+
+<h3 id="icmp_block_inversion">icmp_block_inversion</h3>
+
+<p>ICMP block inversion bool setting.  It enables or disables inversion of ICMP<br />
+blocks for a zone in firewalld.</p>
+
+<pre><code>icmp_block_inversion: true
+</code></pre>
+
+<h3 id="target">target</h3>
+
+<p>The firewalld zone target.  If the state is set to <code>absent</code>,this will reset the<br />
+target to default.  Valid values are “default”, “ACCEPT”, “DROP”, “%%REJECT%%”.</p>
+
+<pre><code>target: ACCEPT
+</code></pre>
+<h3 id="short">short</h3>
+
+<p>Short description, only usable when adding or modifying a service.<br />
+See <code>service</code> for more usage information.</p>
+
+<pre><code class="language-yaml">short: WWW (HTTP)
+</code></pre>
+
+<h3 id="description">description</h3>
+
+<p>Description for a service, only usable when adding a new service or<br />
+modifying an existing service.<br />
+See <code>service</code> for more information</p>
+
+<pre><code class="language-yaml">description: Your description goes here
+</code></pre>
+
+<h3 id="destination">destination</h3>
+
+<p>list of destination addresses, option only implemented for user defined services.<br />
+Takes 0-2 addresses, allowing for one IPv4 address and one IPv6 address or address range.</p>
+
+<ul>
+  <li>IPv4 format: <code>x.x.x.x[/mask]</code></li>
+  <li>IPv6 format: <code>x:x:x:x:x:x:x:x[/mask]</code> (<code>x::x</code> works when abbreviating one or more subsequent IPv6 segments where x = 0)</li>
+</ul>
+
+<pre><code class="language-yaml">destination:
+  - 1.1.1.0/24
+  - AAAA::AAAA:AAAA
+</code></pre>
+
+<h3 id="helper_module">helper_module</h3>
+
+<p>Name of a connection tracking helper supported by firewalld.</p>
+
+<pre><code class="language-yaml"># Both properly specify nf_conntrack_ftp
+helper_module: ftp
+helper_module: nf_conntrack_ftp
+</code></pre>
+<h3 id="timeout">timeout</h3>
+
+<p>The amount of time in seconds a setting is in effect. The timeout is usable if</p>
+
+<ul>
+  <li>state is set to <code>enabled</code></li>
+  <li>firewalld is running and <code>runtime</code> is set</li>
+  <li>setting is used with services, ports, source ports, forward ports, masquerade,<br />
+rich rules or icmp blocks</li>
+</ul>
+
+<pre><code>timeout: 60
+state: enabled
+service: https
+</code></pre>
+
+<h3 id="state">state</h3>
+
+<p>Enable or disable the entry.</p>
+
+<pre><code>state: 'enabled' | 'disabled' | 'present' | 'absent'
+</code></pre>
+<p>NOTE: <code>present</code> and <code>absent</code> are only used for <code>zone</code>, <code>target</code>, and <code>service</code> operations,<br />
+and cannot be used for any other operation.</p>
+
+<p>NOTE: <code>zone</code> - use <code>state: present</code> to add a zone, and <code>state: absent</code> to remove<br />
+a zone, when zone is the only variable e.g.</p>
+<pre><code>firewall:
+  - zone: my-new-zone
+    state: present
+</code></pre>
+<p>NOTE: <code>target</code> - you can also use <code>state: present</code> to add a target - <code>state:
+absent</code> will reset the target to the default.</p>
+
+<p>NOTE: <code>service</code> - to see how to manage services, see the service section.</p>
+
+<h3 id="runtime">runtime</h3>
+<p>Enable changes in runtime configuration. If <code>runtime</code> parameter is not provided, the default will be set to <code>True</code>.</p>
+
+<pre><code>runtime: true
+</code></pre>
+
+<h3 id="permanent">permanent</h3>
+
+<p>Enable changes in permanent configuration. If <code>permanent</code> parameter is not provided, the default will be set to <code>True</code>.</p>
+
+<pre><code>permanent: true
+</code></pre>
+
+<p>The permanent and runtime settings are independent, so you can set only the runtime, or only the permanent.  You cannot<br />
+set both permanent and runtime to <code>false</code>.</p>
+
+<h3 id="previous">previous</h3>
+
+<p>If you want to completely wipe out all existing firewall configuration, add<br />
+<code>previous: replaced</code> to the <code>firewall</code> list. This will cause all existing<br />
+configuration to be removed and replaced with your given configuration.  This is<br />
+useful if you have existing machines that may have existing firewall<br />
+configuration, and you want to make all of the firewall configuration the same<br />
+across all of the machines.</p>
+
+<h2 id="examples-of-options">Examples of Options</h2>
+<p>By default, any changes will be applied immediately, and to the permanent settings. If you want the changes to apply immediately but not permanently, use <code>permanent: false</code>. Conversely, use <code>runtime: false</code>.</p>
+
+<p>Permit TCP traffic for port 80 in default zone, in addition to any existing<br />
+configuration:</p>
+
+<pre><code class="language-yaml">firewall:
+  - port: 80/tcp
+    state: enabled
+</code></pre>
+
+<p>Remove all existing firewall configuration, and permit TCP traffic for port 80<br />
+in default zone:</p>
+
+<pre><code class="language-yaml">firewall:
+  - previous: replaced
+  - port: 80/tcp
+    state: enabled
+</code></pre>
+
+<p>Do not permit TCP traffic for port 80 in default zone:</p>
+
+<pre><code class="language-yaml">firewall:
+  - port: 80/tcp
+    state: disabled
+</code></pre>
+
+<p>Add masquerading to dmz zone:</p>
+
+<pre><code class="language-yaml">firewall:
+  - masquerade: true
+    zone: dmz
+    state: enabled
+</code></pre>
+
+<p>Remove masquerading to dmz zone:</p>
+
+<pre><code class="language-yaml">firewall:
+  - masquerade: false
+    zone: dmz
+    state: enabled
+</code></pre>
+
+<p>Allow interface eth2 in trusted zone:</p>
+
+<pre><code class="language-yaml">firewall:
+  - interface: eth2
+    zone: trusted
+    state: enabled
+</code></pre>
+
+<p>Don’t allow interface eth2 in trusted zone:</p>
+
+<pre><code class="language-yaml">firewall:
+  - interface: eth2
+    zone: trusted
+    state: disabled
+</code></pre>
+
+<p>Permit traffic in default zone for https service:</p>
+
+<pre><code class="language-yaml">firewall:
+  - service: https
+    state: enabled
+</code></pre>
+
+<p>Do not permit traffic in default zone for https service:</p>
+
+<pre><code class="language-yaml">firewall:
+  - service: https
+    state: disabled
+</code></pre>
+
+<p>Allow interface with PCI device ID ‘8086:15d7’ in dmz zone</p>
+<pre><code class="language-yaml">firewall:
+  - zone: dmz
+    interface_pci_id: 8086:15d7
+    state: enabled
+</code></pre>
+
+<h2 id="example-playbooks">Example Playbooks</h2>
+
+<p>Erase all existing configuration, and enable ssh service:</p>
+
+<pre><code class="language-yaml">---
+- name: Erase existing config and enable ssh service
+  hosts: myhost
+
+  vars:
+    firewall:
+      - previous: replaced
+      - service: ssh
+        state: enabled
+  roles:
+    - rhel-system-roles.firewall
+</code></pre>
+
+<p>With this playbook you can make sure that the tftp service is disabled in the firewall:</p>
+
+<pre><code class="language-yaml">---
+- name: Make sure tftp service is disabled
+  hosts: myhost
+
+  vars:
+    firewall:
+      - service: tftp
+        state: disabled
+  roles:
+    - rhel-system-roles.firewall
+</code></pre>
+
+<p>It is also possible to combine several settings into blocks:</p>
+
+<pre><code class="language-yaml">---
+- name: Configure firewall
+  hosts: myhost
+
+  vars:
+    firewall:
+      - {service: [tftp,ftp],
+         port: ['443/tcp','443/udp'],
+         state: enabled}
+      - {forward_port: [eth2;447/tcp;;1.2.3.4,
+                        eth2;448/tcp;;1.2.3.5],
+          state: enabled}
+      - {zone: internal, service: tftp, state: enabled}
+      - {service: tftp, state: enabled}
+      - {port: '443/tcp', state: enabled}
+      - {forward_port: 'eth0;445/tcp;;1.2.3.4', state: enabled}
+         state: enabled}
+  roles:
+    - rhel-system-roles.firewall
+</code></pre>
+
+<p>The block with several services, ports, etc. will be applied at once. If there is something wrong in the block it will fail as a whole.</p>
+
+<pre><code class="language-yaml">---
+- name: Configure external zone in firewall
+  hosts: myhost
+
+  vars:
+    firewall:
+      - {zone: external,
+         service: [tftp,ftp],
+         port: ['443/tcp','443/udp'],
+         forward_port: ['447/tcp;;1.2.3.4',
+                        '448/tcp;;1.2.3.5'],
+         state: enabled}
+  roles:
+    - rhel-system-roles.firewall
+
+</code></pre>
+
+<h1 id="authors">Authors</h1>
+
+<p>Thomas Woerner</p>
+
+<h1 id="license">License</h1>
+
+<p>GPLv2+</p>

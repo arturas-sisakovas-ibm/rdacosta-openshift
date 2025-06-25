@@ -1,0 +1,16 @@
+- name: Post provision datacenter servers 
+  hosts: "{{ my_host }}"
+  become: true
+
+  roles:
+    - rhel-system-roles.firewall
+    - rhel-system-roles.timesync
+    - rhel-system-roles.network
+    - rhel-system-roles.storage
+    - rhel-system-roles.tlog
+    - rhel-system-roles.selinux
+    - rhel-system-roles.cockpit
+    - rhel-system-roles.metrics
+    - rhel-system-roles.journald
+    - rhel-system-roles.sshd
+    - rhel-system-roles.certificate

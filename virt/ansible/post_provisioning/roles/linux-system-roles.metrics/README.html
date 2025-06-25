@@ -1,0 +1,195 @@
+<h1 id="metrics">metrics</h1>
+<p><img src="https://github.com/linux-system-roles/metrics/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>An ansible role which configures performance analysis services for the managed<br />
+host.  This (optionally) includes a list of remote systems to be monitored<br />
+by the managed host.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>Performance Co-Pilot (PCP) v5+. All of the packages are available<br />
+from the standard repositories on Fedora, CentOS 8, and RHEL 8.  On RHEL<br />
+7 and RHEL 6, you will need to enable the Optional repository/channel<br />
+on the managed host.</p>
+
+<p>The role can optionally use Grafana v6+ (<code>metrics_graph_service</code>) and<br />
+Redis v5+ (<code>metrics_query_service</code>) on Fedora, CentOS 8, RHEL 8 and later.</p>
+
+<p>The role requires the <code>firewall</code> role and the <code>selinux</code> role from the<br />
+<code>fedora.linux_system_roles</code> collection, if <code>metrics_manage_firewall</code><br />
+and <code>metrics_manage_selinux</code> is set to true, respectively.<br />
+(Please see also the variables in the <a href="#role-variables"><code>Role Variables</code></a> section.)</p>
+
+<p>If the <code>metrics</code> is a role from the <code>fedora.linux_system_roles</code><br />
+collection or from the Fedora RPM package, the requirement is already<br />
+satisfied.</p>
+
+<p>Otherwise, please run the following command line to install the collection.</p>
+<pre><code>ansible-galaxy collection install -r meta/collection-requirements.yml
+</code></pre>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<pre><code>metrics_monitored_hosts: []
+</code></pre>
+
+<p>List of remote hosts to be analysed by the managed host.<br />
+These hosts will have metrics recorded on the managed host, so care should be<br />
+taken to ensure sufficient disk space exists below /var/log for each host.</p>
+
+<p>Example:</p>
+
+<pre><code class="language-yaml">metrics_monitored_hosts: ["webserver.example.com", "database.example.com"]
+</code></pre>
+
+<pre><code>metrics_retention_days: 14
+</code></pre>
+
+<p>Retain historical performance data for the specified number of days; after<br />
+this time it will be removed (day by day).</p>
+
+<pre><code>metrics_graph_service: false
+</code></pre>
+
+<p>Boolean flag allowing host to be setup with graphing services.<br />
+Enabling this starts PCP and Grafana servers for visualizing PCP metrics.<br />
+This option requires Grafana v6+ which is available on Fedora, CentOS 8,<br />
+RHEL 8, or later versions of these platforms.</p>
+
+<pre><code>metrics_query_service: false
+</code></pre>
+
+<p>Boolean flag allowing host to be setup with time series query services.<br />
+Enabling this starts PCP and Redis servers for querying recorded PCP metrics.<br />
+This option requires Redis v5+ which is available on Fedora, CentOS 8,<br />
+RHEL 8, or later versions of these platforms.</p>
+
+<pre><code>metrics_into_elasticsearch: false
+</code></pre>
+
+<p>Boolean flag allowing metric values to be exported into Elasticsearch.</p>
+
+<pre><code>metrics_from_elasticsearch: false
+</code></pre>
+
+<p>Boolean flag allowing metrics from Elasticsearch to be made available.</p>
+
+<pre><code>metrics_from_postfix: false
+</code></pre>
+
+<p>Boolean flag allowing metrics from Postfix to be made available.</p>
+
+<pre><code>metrics_from_mssql: false
+</code></pre>
+
+<p>Boolean flag allowing metrics from SQL Server to be made available.<br />
+Enabling this flag requires a ‘trusted’ connection to SQL Server.</p>
+
+<pre><code>metrics_from_bpftrace: false
+</code></pre>
+
+<p>Boolean flag allowing metrics from bpftrace to be made available.</p>
+
+<pre><code>metrics_username: metrics
+metrics_password: metrics
+</code></pre>
+
+<p>Do not use a clear text <code>metrics_password</code>.  Use Ansible Vault to<br />
+encrypt the password.</p>
+
+<p>Mandatory authentication for executing dynamic bpftrace scripts.</p>
+
+<pre><code>metrics_provider: pcp
+</code></pre>
+
+<p>The metrics collector to use to provide metrics.</p>
+
+<p>Currently Performance Co-Pilot is the only supported metrics provider.<br />
+When using the PCP provider these TCP ports will be used - 44321 (pmcd,<br />
+live metric value sampling), 44322 (pmproxy, with metrics_query_service<br />
+or metrics_graph_service), 6379 (redis-server for metrics_query_service)<br />
+and 3000 (grafana-server for metrics_graph_service).</p>
+
+<pre><code>metrics_manage_firewall: false
+</code></pre>
+
+<p>Boolean flag allowing to configure firewall using the firewall role.<br />
+Manage the pmcd port, the pmproxy port, the Grafana port and the Redis<br />
+port depending upon the configuration parameters.<br />
+If the variable is set to false, the <code>metrics role</code> does not manage the<br />
+firewall.</p>
+
+<p>NOTE: <code>metrics_manage_firewall</code> is limited to <em>adding</em> ports.<br />
+It cannot be used for <em>removing</em> ports.<br />
+If you want to remove ports, you will need to use the firewall system<br />
+role directly.</p>
+
+<p>NOTE: the firewall management is not supported on RHEL 6.</p>
+
+<pre><code>metrics_manage_selinux: false
+</code></pre>
+
+<p>Boolean flag allowing to configure selinux using the selinux role.<br />
+Assign the pmcd port, the pmproxy port, the Grafana port and the Redis<br />
+port depending upon the configuration parameters.<br />
+If the variable is set to false, the <code>metrics role</code> does not manage the<br />
+selinux.</p>
+
+<p>Please note that the pmcd and pmproxy services are in the “ephemeral”<br />
+range requiring no special setup and the Grafana port is “unregistered”.<br />
+The Redis port is gated by the redis_port_t SELinux type and may need to<br />
+be further configured, if you require direct access (not required if you<br />
+are accessing it from metrics role tools like Grafana and PCP).<br />
+Use https://github.com/linux-system-roles/selinux to manage port access,<br />
+for SELinux contexts.</p>
+
+<p>NOTE: <code>metrics_manage_selinux</code> is limited to <em>adding</em> policy.<br />
+It cannot be used for <em>removing</em> policy.<br />
+If you want to remove policy, you will need to use the selinux system<br />
+role directly.</p>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>None.</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+
+<p>Basic metric recording setup for each managed host only, with one<br />
+weeks worth of data retained before culling.</p>
+
+<pre><code class="language-yaml">- hosts: all
+  vars:
+    metrics_retention_days: 7
+  roles:
+    - rhel-system-roles.metrics
+</code></pre>
+
+<p>Scalable metric recording, analysis and visualization setup for<br />
+the managed hosts, providing a REST API server with an OpenMetrics<br />
+endpoint, graphs and scalable querying.</p>
+
+<pre><code class="language-yaml">- hosts: all
+  vars:
+    metrics_graph_service: true
+    metrics_query_service: true
+  roles:
+    - rhel-system-roles.metrics
+</code></pre>
+
+<p>Centralized metric recording setup for several remote hosts and<br />
+scalable metric recording, analysis and visualization setup for<br />
+the local host, providing a REST API server with an OpenMetrics<br />
+endpoint, graphs and scalable querying.</p>
+
+<pre><code class="language-yaml">- hosts: monitors
+  vars:
+    metrics_monitored_hosts: [app.example.com, db.example.com, nas.example.com]
+    metrics_graph_service: true
+    metrics_query_service: true
+  roles:
+    - rhel-system-roles.metrics
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>MIT</p>

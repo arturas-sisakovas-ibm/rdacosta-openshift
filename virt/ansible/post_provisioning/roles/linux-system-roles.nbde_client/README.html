@@ -1,0 +1,148 @@
+<h2 id="nbde_client">nbde_client</h2>
+<p><img src="https://github.com/linux-system-roles/nbde_client/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>Ansible role for configuring Network-Bound Disk Encryption clients (e.g. clevis).</p>
+
+<p>This role currently supports <code>clevis</code> as a provider and it uses it for operations like encryption<br />
+and decryption.</p>
+
+<h2 id="supported-distributions">Supported Distributions</h2>
+<ul>
+  <li>RHEL-7+, CentOS-7+</li>
+  <li>Fedora</li>
+</ul>
+
+<h2 id="limitations">Limitations</h2>
+<p>This role can currently create <code>tang</code> bindings. TPM2 is not supported as of now.</p>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<p>These are the variables that can be passed to the role:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th><strong>Variable</strong></th>
+      <th><strong>Default/Choices</strong></th>
+      <th><strong>Description</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>nbde_client_provider</code></td>
+      <td><code>clevis</code></td>
+      <td>identifies the provider for the <code>nbde_client</code> role. We currently support <code>clevis</code>.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_client_bindings</code></td>
+      <td> </td>
+      <td>a list containing binding configurations, which include e.g. devices and slots.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="nbde_client_bindings">nbde_client_bindings</h4>
+
+<p><code>nbde_client_bindings</code> is a list of dictionaries that support the following keys:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th><strong>Name</strong></th>
+      <th><strong>Default/Choices</strong></th>
+      <th><strong>Description</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>device</code></td>
+      <td> </td>
+      <td>specifies the path of the backing device of an encrypted device on the managed host. This device must be already configured as a LUKS device before using the role (<strong>REQUIRED</strong>).</td>
+    </tr>
+    <tr>
+      <td><code>encryption_password</code></td>
+      <td> </td>
+      <td>a valid password or passphrase for opening/unlocking the specified device. Recommend vault encrypting the value. See https://docs.ansible.com/ansible/latest/user_guide/vault.html</td>
+    </tr>
+    <tr>
+      <td><code>encryption_key_src</code></td>
+      <td> </td>
+      <td>either the absolute or relative path, on the control node, of a file containing an encryption key valid for opening/unlocking the specified device.  The role will copy this file to the managed node(s).</td>
+    </tr>
+    <tr>
+      <td><code>state</code></td>
+      <td><strong>present</strong> / absent</td>
+      <td>specifies whether a binding with the configuration described should be added or removed. Setting state to present (the default) means a binding will be added; setting state to absent means a binding will be removed from the device/slot.</td>
+    </tr>
+    <tr>
+      <td><code>slot</code></td>
+      <td><code>1</code></td>
+      <td>specifies the slot to use for the binding.</td>
+    </tr>
+    <tr>
+      <td><code>servers</code></td>
+      <td> </td>
+      <td>specifies a list of servers to bind to. To enable high availability, specify more than one server here.</td>
+    </tr>
+    <tr>
+      <td><code>threshold</code></td>
+      <td><code>1</code></td>
+      <td>specifies the threshold for the Shamir Secret Sharing (SSS) scheme that is put in place when using more than one server. When using multiple servers, threshold indicates how many of those servers should succeed, in terms of decryption, in order to complete the process of recovering the LUKS passphrase to open the device.</td>
+    </tr>
+    <tr>
+      <td><code>password_temporary</code></td>
+      <td><code>false</code></td>
+      <td>If <code>true</code>, the password or passphrase that was provided via the <code>encryption_password</code> or <code>encryption_key</code> arguments will be used to unlock the device and then it will be removed from the LUKS device after the binding operation completes, i.e. it will not be valid anymore. To be used if device has been previously created with a sample password or passphrase (for example by an automated install like kickstart that set up some sort of “default” password), which the role should replace by a stronger one.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Example:</p>
+<pre><code class="language-yaml">nbde_client_bindings:
+  - device: /dev/sda1
+    encryption_key_src: /vault/keyfile
+    state: present
+    slot: 2
+    threshold: 1
+    password_temporary: false
+    servers:
+      - http://server1.example.com
+      - http://server2.example.com
+</code></pre>
+
+<h2 id="example-playbooks">Example Playbooks</h2>
+<h4 id="example-1-high-availability">Example 1: high availability</h4>
+
+<pre><code class="language-yaml">---
+- hosts: all
+  vars:
+    nbde_client_bindings:
+      - device: /dev/sda1
+        # recommend vault encrypting the encryption_password
+        # see https://docs.ansible.com/ansible/latest/user_guide/vault.html
+        encryption_password: password
+        servers:
+          - http://server1.example.com
+          - http://server2.example.com
+  roles:
+    - rhel-system-roles.nbde_client
+</code></pre>
+
+<h4 id="example-2-remove-binding-from-slot-2-in-devsda1">Example 2: remove binding from slot 2 in /dev/sda1</h4>
+<pre><code class="language-yaml">---
+- hosts: all
+  vars:
+    nbde_client_bindings:
+      - device: /dev/sda1
+        # recommend vault encrypting the encryption_password
+        # see https://docs.ansible.com/ansible/latest/user_guide/vault.html
+        encryption_password: password
+        slot: 2
+        state: absent
+  roles:
+    - rhel-system-roles.nbde_client
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>MIT</p>

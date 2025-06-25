@@ -1,0 +1,84 @@
+
+<h1 id="ansible-role-kernel-crash-dump">Ansible Role: Kernel Crash Dump</h1>
+<p><img src="https://github.com/linux-system-roles/kdump/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>An ansible role which configures kdump.</p>
+
+<h2 id="warning">Warning</h2>
+
+<p>The role replaces the kdump configuration of the managed<br />
+host. Previous settings will be lost, even if they are not specified<br />
+in the role variables. Currently, this includes replacing at least the<br />
+following configuration files:</p>
+
+<ul>
+  <li><code>/etc/sysconfig/kdump</code></li>
+  <li><code>/etc/kdump.conf</code></li>
+</ul>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<p><strong>kdump_target</strong>: Can be specified to write vmcore to a location that is not in<br />
+the root file system. If <code>type</code> is <code>raw</code> or a filesystem type, location points<br />
+to a partition (by device node name, label, or uuid). For example:</p>
+
+<pre><code class="language-yaml">kdump_target:
+  type: raw
+  location: /dev/sda1
+</code></pre>
+
+<p>or for an <code>ext4</code> filesystem:</p>
+
+<pre><code class="language-yaml">kdump_target:
+  type: ext4
+  location: "12e3e25f-534e-4007-a40c-e7e080a933ad"
+</code></pre>
+
+<p>If <code>type</code> is <code>ssh</code>, location points to a server:<br />
+example:</p>
+
+<pre><code class="language-yaml">  type: ssh
+  location: user@example.com
+</code></pre>
+
+<p>Similarly for <code>nfs</code>, <code>location</code> points to an nfs server:</p>
+
+<pre><code class="language-yaml">  type: nfs
+  location: nfs.example.com
+</code></pre>
+
+<p>Only the <code>ssh</code> type is considered stable, support for the other types<br />
+is experimental.</p>
+
+<p><strong>kdump_path</strong>: The path to which vmcore will be written. If <code>kdump_target</code> is not<br />
+null, path is relative to that dump target. Otherwise, it must be an absolute<br />
+path in the root file system.</p>
+
+<p><strong>kdump_core_collector</strong>: A command to copy the vmcore. If null, uses <code>makedumpfile</code><br />
+with options depending on the <code>kdump_target.type</code>.</p>
+
+<p><strong>kdump_system_action</strong>:<br />
+  The action that is performed when dumping the core file fails. Can be<br />
+  <code>reboot</code>, <code>halt</code>, <code>poweroff</code>, or <code>shell</code>.</p>
+
+<p><strong>kdump_reboot_ok</strong>: If you run the role on a managed node that does not have<br />
+memory reserved for crash kernel, i.e. the file <code>/sys/kernel/kexec_crash_size</code><br />
+contains <code>0</code>, it might be required to reboot the managed node to configure kdump.</p>
+
+<p>By default, the role does not reboot the managed node. If a managed node<br />
+requires reboot, the role sets the <code>kdump_reboot_required</code> fact and fails, so<br />
+that the user can reboot the managed node when needed. If you want the role to<br />
+reboot the system if required, set this variable to <code>true</code>. You do not need to<br />
+re-execute the role after boot.</p>
+
+<p>Default: <code>false</code></p>
+
+<h2 id="ansible-facts-returned-by-the-role">Ansible Facts Returned by the Role</h2>
+
+<p><strong>kdump_reboot_required</strong>: The role sets this fact if the managed node requires<br />
+reboot to complete kdump configuration. Re-execute the role after boot to ensure<br />
+that kdump is working.</p>
+
+<h2 id="license">License</h2>
+
+<p>MIT</p>

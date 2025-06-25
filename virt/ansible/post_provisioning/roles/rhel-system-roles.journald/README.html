@@ -1,0 +1,67 @@
+<h1 id="journald">Journald</h1>
+<p><img src="https://github.com/linux-system-roles/template/workflows/tox/badge.svg" alt="template" /></p>
+
+<p>This role provides an easy way to configure systemd-journald logging service.</p>
+
+<h2 id="requirements">Requirements</h2>
+<p>This role uses only Ansible built-in modules.</p>
+
+<h2 id="role-variables">Role Variables</h2>
+<p>Role allows system administrator to configure basic systemd-journald settings,<br />
+through following set of variables which form role’s public API.</p>
+
+<ul>
+  <li>
+    <p><code>journald_persistent</code> - boolean variable which governs where journald stores<br />
+log file. When set to <code>true</code> the logs will be stored on disk in<br />
+<code>/var/log/journal/</code>. Defaults to <code>false</code>, i.e. <code>volatile</code> journal storage.</p>
+  </li>
+  <li>
+    <p><code>journald_max_disk_size</code> - integer variable, in megabytes, that governs how<br />
+much disk space can journal files occupy before some of them are deleted.<br />
+No implicit value is configured by the role, hence default sizing calculation<br />
+described in <code>man 5 journald.conf</code> applies.</p>
+  </li>
+  <li>
+    <p><code>journald_max_files</code> - integer variable that governs how many journal files<br />
+can be kept at maximum while respecting max disk size settings for journal.<br />
+No implicit value is configured by default.</p>
+  </li>
+  <li>
+    <p><code>journald_max_file_size</code> - integer variable, in megabytes, describes maximum<br />
+size of single journal file. No implicit configuration is set up by the role.</p>
+  </li>
+  <li>
+    <p><code>journald_per_user</code> - boolean variable, allows to configure whether journald<br />
+should keep log data separate for each user, e.g. allowing unprivileged users<br />
+to read system log from their own user services. Defaults to <code>true</code>. Note that<br />
+per user journal files are available only when <code>journald_persistent: true</code>.</p>
+  </li>
+  <li>
+    <p><code>journald_compression</code> - boolean variable instructs journald to apply<br />
+compression to journald data objects that are bigger then default 512 bytes.<br />
+Defaults to <code>true</code>.</p>
+  </li>
+  <li>
+    <p><code>journald_sync_interval</code> - integer variable, in minutes, configures the<br />
+time span after which journald synchronizes currently used journal file to disk.<br />
+By default role doesn’t alter currently used value.</p>
+  </li>
+</ul>
+
+<h2 id="example-playbook">Example Playbook</h2>
+<pre><code class="language-yaml">- hosts: all
+  vars:
+    journald_persistent: true
+    journald_max_disk_size: 2048
+    journald_per_user: true
+    journald_sync_interval: 1
+  roles:
+    - rhel-system-roles.journald
+</code></pre>
+
+<h2 id="license">License</h2>
+<p>MIT</p>
+
+<h2 id="author-information">Author Information</h2>
+<p>Michal Sekletar</p>

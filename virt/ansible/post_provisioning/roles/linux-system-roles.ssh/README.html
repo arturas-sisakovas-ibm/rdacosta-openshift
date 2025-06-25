@@ -1,0 +1,143 @@
+<h1 id="ssh">ssh</h1>
+<p><img src="https://github.com/linux-system-roles/ssh/workflows/tox/badge.svg" alt="CI Testing" /><br />
+<a href="https://github.com/linux-system-roles/ssh/actions/workflows/ansible-ubuntu.yml"><img src="https://github.com/linux-system-roles/ssh/actions/workflows/ansible-ubuntu.yml/badge.svg" alt="CI Ubuntu" /></a><br />
+<a href="https://github.com/linux-system-roles/ssh/actions/workflows/ansible-debian.yml"><img src="https://github.com/linux-system-roles/ssh/actions/workflows/ansible-debian.yml/badge.svg" alt="CI Debian" /></a></p>
+
+<p>An Ansible role for managing ssh clients configuration.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>This role should work on any system that provides openssh client and is<br />
+supported by ansible. The role was tested on:</p>
+
+<ul>
+  <li>RHEL/CentOS 6, 7, 8, 9</li>
+  <li>Fedora</li>
+  <li>Debian</li>
+  <li>Ubuntu</li>
+</ul>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<p>By default, the role should not modify the system configuration and generate<br />
+global <code>ssh_config</code> that matches OS default (the generated configuration does<br />
+not keep comments and order of the options).</p>
+
+<ul>
+  <li><code>ssh_user</code>:</li>
+</ul>
+
+<p>By default (<code>null</code>) the role will modify the global configuration for all<br />
+users. Other values will be interpreted as a username and the role will<br />
+modify per-user configuration stored under <code>~/.ssh/config</code> of the given user.<br />
+The user needs to exist before invoking this role otherwise it will fail.</p>
+
+<ul>
+  <li><code>ssh_skip_defaults</code>:</li>
+</ul>
+
+<p>By default (<code>auto</code>), the role writes the system-wide configuration file<br />
+<code>/etc/ssh/ssh_config</code> and keeps OS defaults defined there (<em>true</em>). This is<br />
+automatically disabled, when a drop-in configuration file is created<br />
+(<code>ssh_drop_in_name!=null</code>) or when per-user configuration file is created<br />
+(<code>ssh_user!=null</code>).</p>
+
+<ul>
+  <li><code>ssh_drop_in_name</code>:</li>
+</ul>
+
+<p>This defines the name for the drop-in configuration file to be placed in<br />
+system-wide drop-in directory. The name is used in the template<br />
+<code>/etc/ssh/ssh_config.d/{name}.conf</code> to reference the configuration file to<br />
+be modified. If the system does not support drop-in directory, setting this<br />
+option will make the play fail. Default is <code>null</code> if the system does not<br />
+support drop in directory and <code>00-ansible</code> otherwise.</p>
+
+<p>The suggested format is <code>NN-name</code>, where <code>NN</code> is two-digit number used for<br />
+sorting the and <code>name</code> is any descriptive name for the content or the owner<br />
+of the file.</p>
+
+<ul>
+  <li><code>ssh</code>:</li>
+</ul>
+
+<p>A dict containing configuration options and respective values. See example<br />
+below.</p>
+
+<ul>
+  <li><code>ssh_...</code>:</li>
+</ul>
+
+<p>Simple variables consisting of the option name prefixed with <code>ssh_</code> can be<br />
+used rather than a dict above. The simple variable overrides values in dict<br />
+above.</p>
+
+<ul>
+  <li><code>ssh_additional_packages</code>:</li>
+</ul>
+
+<p>This role automatically installs packages needed for most common use cases<br />
+on given platform. If some additional packages need to be installed (for<br />
+example <code>openssh-keysign</code> for host-based authentication), they can be specified<br />
+in this variable.</p>
+
+<ul>
+  <li><code>ssh_config_file</code>:</li>
+</ul>
+
+<p>The configuration file that will be written by this role. The default is<br />
+defined by template <code>/etc/ssh/ssh_config.d/{name}.conf</code> if system has drop-in<br />
+directory or <code>/etc/ssh/ssh_config</code> otherwise. If <code>ssh_user!=null</code>, the<br />
+default is <code>~/.ssh/config</code>.</p>
+
+<ul>
+  <li><code>ssh_config_owner</code>, <code>ssh_config_group</code>, <code>ssh_config_mode</code>:</li>
+</ul>
+
+<p>The owner, group and mode of the created configuration file. The files are<br />
+owned by <code>root:root</code> with mode <code>0644</code> by default, unless<br />
+<code>ssh_user!=null</code>. In that case, the mode is <code>0600</code> and owner and<br />
+group are derived from username given in <code>ssh_user</code> variable.</p>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>none</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+
+<p>The folowing playbook configures the <code>root</code> user ssh configuration in his<br />
+home directory to use compression, control-master multiplexing and enable<br />
+GSSAPI authentication in the “match final all” block. Additionally, it<br />
+creates alias “example” for connecting to the example.com host as a user<br />
+somebody. The last line disables X11 forwarding.</p>
+
+<pre><code class="language-yaml">- hosts: all
+  tasks:
+  - name: "Configure ssh clients"
+    include_role:
+      name: rhel-system-roles.ssh
+    vars:
+      ssh_user: root
+      ssh:
+        Compression: true
+        ControlMaster: auto
+        ControlPath: ~/.ssh/.cm%C
+        Match:
+          - Condition: "final all"
+            GSSAPIAuthentication: yes
+        Host:
+          - Condition: example
+            Hostname: example.com
+            User: somebody
+      ssh_ForwardX11: no
+</code></pre>
+
+<p>More examples are in the <a href="examples"><code>examples/</code></a> directory.</p>
+
+<h2 id="license">License</h2>
+
+<p>LGPLv3, see the file LICENSE for more information.</p>
+
+<h2 id="author-information">Author Information</h2>
+
+<p>Jakub Jelen, 2021 - 2022</p>

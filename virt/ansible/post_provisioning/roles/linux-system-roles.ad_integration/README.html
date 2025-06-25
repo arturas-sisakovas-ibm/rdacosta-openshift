@@ -1,0 +1,214 @@
+<h1 id="direct-ad-integration-role">Direct AD Integration role</h1>
+
+<p>An ansible role which configures direct Active Directory integration.</p>
+
+<h2 id="supported-distributions">Supported Distributions</h2>
+<ul>
+  <li>RHEL7+, CentOS7+</li>
+  <li>Fedora</li>
+</ul>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>It is recommended to use the Administrator user to join with Active Directory. If the Administrator user cannot be used, the normal Active Directory user must have sufficient join permissions.</p>
+
+<p>Time must be in sync with Active Directory servers.  The ad_integration role will use the timesync system role for this if the user specifies <code>ad_integration_manage_timesync</code> to true and provides a value for <code>ad_integration_join_to_dc</code> to use as a timesource.</p>
+
+<p>RHEL8 (and newer) and Fedora no longer support RC4 encryption out of the box, it is recommended to enable AES in Active Directory, if not possible then the AD-SUPPORT crypto policy must be enabled.  The integration role will use the crypto_policies system role for this if the user sets the <code>ad_integration_manage_crypto_policies</code> and <code>ad_integration_allow_rc4_crypto</code> parameters to true.</p>
+
+<p>The Linux system must be able to resolve default AD DNS SRV records.</p>
+
+<p>The following firewall ports must be opened on the AD server side, reachable from the Linux client.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Source Port</th>
+      <th>Destination</th>
+      <th>Protocol</th>
+      <th>Service</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1024:65535</td>
+      <td>53</td>
+      <td>TCP and UDP</td>
+      <td>DNS</td>
+    </tr>
+    <tr>
+      <td>1024:65535</td>
+      <td>389</td>
+      <td>TCP and UDP</td>
+      <td>LDAP</td>
+    </tr>
+    <tr>
+      <td>1024:65535</td>
+      <td>636</td>
+      <td>TCP</td>
+      <td>LDAPS</td>
+    </tr>
+    <tr>
+      <td>1024:65535</td>
+      <td>88</td>
+      <td>TCP and UDP</td>
+      <td>Kerberos</td>
+    </tr>
+    <tr>
+      <td>1024:65535</td>
+      <td>464</td>
+      <td>TCP and UDP</td>
+      <td>Kerberos change/set password (kadmin)</td>
+    </tr>
+    <tr>
+      <td>1024:65535</td>
+      <td>3268</td>
+      <td>TCP</td>
+      <td>LDAP Global Catalog</td>
+    </tr>
+    <tr>
+      <td>1024:65535</td>
+      <td>3269</td>
+      <td>TCP</td>
+      <td>LDAP Global Catalog SSL</td>
+    </tr>
+    <tr>
+      <td>1024:65535</td>
+      <td>123</td>
+      <td>UDP</td>
+      <td>NTP/Chrony(Optional)</td>
+    </tr>
+    <tr>
+      <td>1024:65535</td>
+      <td>323</td>
+      <td>UDP</td>
+      <td>NTP/Chrony (Optional)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<h3 id="required-variables">Required variables</h3>
+
+<h4 id="ad_integration_realm">ad_integration_realm</h4>
+
+<p>Active Directory realm, or domain name to join</p>
+
+<h4 id="ad_integration_password">ad_integration_password</h4>
+
+<p>The password of the user used to authenticate with when joining the machine to the realm.  Do not use cleartext - use Ansible Vault to encrypt the value.</p>
+
+<h3 id="optional-variables">Optional variables</h3>
+
+<h4 id="ad_integration_user">ad_integration_user</h4>
+
+<p>The user name to be used to authenticate with when joining the machine to the realm.</p>
+
+<p>Default: Administrator</p>
+
+<h4 id="ad_integration_join_to_dc">ad_integration_join_to_dc</h4>
+
+<p>an Active Directory domain controller’s hostname (do not use IP address) may be specified to join via that domain controller directly.</p>
+
+<p>Default: Not set</p>
+
+<h4 id="ad_integration_auto_id_mapping">ad_integration_auto_id_mapping</h4>
+
+<p>perform automatic UID/GID mapping for users and groups, set to <code>false</code> to rely on POSIX attributes already present in Active Directory.</p>
+
+<p>Default: true</p>
+
+<h4 id="ad_integration_client_software">ad_integration_client_software</h4>
+
+<p>Only join realms for which we can use the given client software. Possible values include sssd or winbind. Not all values are supported for all realms.</p>
+
+<p>Default: Automatic selection</p>
+
+<h4 id="ad_integration_membership_software">ad_integration_membership_software</h4>
+
+<p>The software to use when joining to the realm. Possible values include samba or adcli. Not all values are supported for all realms.</p>
+
+<p>Default: Automatic selection</p>
+
+<h4 id="ad_integration_computer_ou">ad_integration_computer_ou</h4>
+
+<p>The distinguished name of an organizational unit to create the computer account. It can be relative to the Root DSE, or a complete LDAP DN.</p>
+
+<p>Default: Default AD computer container</p>
+
+<h4 id="ad_integration_manage_timesync">ad_integration_manage_timesync</h4>
+
+<p>If true, the ad_integration role will use redhat.rhel_system_roles.timesync. Requires providing a value for <code>ad_integration_timesync_source</code> to use as a time source.</p>
+
+<p>Default: false</p>
+
+<h4 id="ad_integration_timesync_source">ad_integration_timesync_source</h4>
+
+<p>Hostname or IP address of time source to synchronize the system clock with. Providing this variable automatically sets <code>ad_integration_manage_timesync</code> to true.</p>
+
+<h4 id="ad_integration_manage_crypto_policies">ad_integration_manage_crypto_policies</h4>
+
+<p>If true, the ad_integration role will use redhat.rhel_system_roles.crypto_policies as needed</p>
+
+<p>Default: false</p>
+
+<h4 id="ad_integration_allow_rc4_crypto">ad_integration_allow_rc4_crypto</h4>
+
+<p>If true, the ad_integration role will set the crypto policy allowing RC4 encryption. Providing this variable automatically sets ad_integration_manage_crypto_policies to true</p>
+
+<p>Default: false</p>
+
+<h4 id="ad_integration_manage_dns">ad_integration_manage_dns</h4>
+
+<p>If true, the ad_integration role will use redhat.rhel_system_roles.network to add the provided dns server (see below) with manual DNS configuration to an existing connection. If true then the following variables are required:</p>
+<ul>
+  <li><code>ad_integration_dns_server</code> - DNS server to add</li>
+  <li><code>ad_integration_dns_connection_name</code> - Existing network connection name to configure</li>
+  <li><code>ad_integration_dns_connection_type</code> - Existing network connection type to configure</li>
+</ul>
+
+<h4 id="ad_integration_dns_server">ad_integration_dns_server</h4>
+
+<p>IP address of DNS server to add to existing networking configuration. Only applicable if <code>ad_integration_manage_dns</code> is true</p>
+
+<h4 id="ad_integration_dns_connection_name">ad_integration_dns_connection_name</h4>
+
+<p>The name option identifies the connection profile to be configured by the network role. It is not the name of the networking interface for which the profile applies. Only applicable if <code>ad_integration_manage_dns</code> is true</p>
+
+<h4 id="ad_integration_dns_connection_type">ad_integration_dns_connection_type</h4>
+
+<p>Network connection type such as ethernet, bridge, bond…etc, the network role contains a list of possible values. Only applicable if <code>ad_integration_manage_dns</code> is true</p>
+
+<h4 id="ad_integration_join_parameters">ad_integration_join_parameters</h4>
+
+<p>Additional parameters (as a string) supplied directly to the realm join command.<br />
+Useful if some specific configuration like –user-principal=host/name@REALM or –use-ldaps is needed.<br />
+See man realm for details.<br />
+Example: ad_integration_join_parameters: “–user-principal host/client007@EXAMPLE.COM”</p>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>N/A</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+
+<p>The following is an example playbook to setup direct Active Directory integration with AD domain <code>domain.example.com</code>, the join will be performed with user Administrator using the vault stored password. Prior to the join, the crypto policy for AD SUPPORT with RC4 encryption allowed will be set.</p>
+
+<pre><code class="language-yaml">- hosts: all
+  vars:
+    ad_integration_realm: "domain.example.com"
+    ad_integration_password: !vault | …vault encrypted password…
+    ad_integration_manage_crypto_policies: true
+    ad_integration_allow_rc4_crypto: true
+  roles:
+    - rhel-system-roles.ad_integration
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>MIT.</p>
+
+<h2 id="author-information">Author Information</h2>
+
+<p>Justin Stephenson (jstephen@redhat.com)</p>

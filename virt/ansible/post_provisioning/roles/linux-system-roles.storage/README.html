@@ -1,0 +1,295 @@
+<h1 id="linux-storage-role">Linux Storage Role</h1>
+<p><img src="https://github.com/linux-system-roles/storage/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>This role allows users to configure local storage with minimal input.</p>
+
+<p>As of now, the role supports managing file systems and mount entries on</p>
+<ul>
+  <li>unpartitioned disks</li>
+  <li>lvm (unpartitioned whole-disk physical volumes only)</li>
+</ul>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The role requires the <code>mount</code> module from <code>ansible.posix</code>.  If you are using<br />
+<code>ansible-core</code>, you must install the <code>ansible.posix</code> collection.</p>
+<pre><code>ansible-galaxy collection install -vv -r meta/collection-requirements.yml
+</code></pre>
+<p>If you are using Ansible Engine 2.9, or are using an Ansible bundle which<br />
+includes these collections/modules, you should have to do nothing.</p>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<p><strong>NOTE</strong>: Beginning with version 1.3.0, unspecified parameters are interpreted<br />
+differently for existing and non-existing pools/volumes. For new/non-existent<br />
+pools and volumes, any omitted parameters will use the default value as<br />
+described in <code>defaults/main.yml</code>. For existing pools and volumes, omitted<br />
+parameters will inherit whatever setting the pool or volume already has.<br />
+This means that to change/override role defaults in an existing pool or volume,<br />
+you must explicitly specify the new values/settings in the role variables.</p>
+
+<h4 id="storage_pools"><code>storage_pools</code></h4>
+<p>The <code>storage_pools</code> variable is a list of pools to manage. Each pool contains a<br />
+nested list of <code>volume</code> dicts as described below, as well as the following<br />
+keys:</p>
+
+<h5 id="name"><code>name</code></h5>
+<p>This specifies the name of the pool to manage/create as a string. (One<br />
+example of a pool is an LVM volume group.)</p>
+
+<h5 id="type"><code>type</code></h5>
+<p>This specifies the type of pool to manage.<br />
+Valid values for <code>type</code>: <code>lvm</code>.</p>
+
+<h5 id="disks"><code>disks</code></h5>
+<p>A list which specifies the set of disks to use as backing storage for the pool.<br />
+Supported identifiers include: device node (like <code>/dev/sda</code> or <code>/dev/mapper/mpathb</code>),<br />
+device node basename (like <code>sda</code> or <code>mpathb</code>), /dev/disk/ symlink<br />
+(like <code>/dev/disk/by-id/wwn-0x5000c5005bc37f3f</code>).</p>
+
+<p>For LVM pools this can be also used to add and remove disks to/from an existing pool.<br />
+Disks in the list that are not used by the pool will be added to the pool.<br />
+Disks that are currently used by the pool but not present in the list will be removed<br />
+from the pool only if <code>storage_safe_mode</code> is set to <code>false</code>.</p>
+
+<h5 id="raid_level"><code>raid_level</code></h5>
+<p>When used with <code>type: lvm</code> it manages a volume group with a mdraid array of given level<br />
+on it. Input <code>disks</code> are in this case used as RAID members.<br />
+Accepted values are: <code>linear</code>, <code>raid0</code>, <code>raid1</code>, <code>raid4</code>, <code>raid5</code>, <code>raid6</code>, <code>raid10</code></p>
+
+<h5 id="volumes"><code>volumes</code></h5>
+<p>This is a list of volumes that belong to the current pool. It follows the<br />
+same pattern as the <code>storage_volumes</code> variable, explained below.</p>
+
+<h5 id="encryption"><code>encryption</code></h5>
+<p>This specifies whether the pool will be encrypted using LUKS.<br />
+<strong>WARNING</strong>: Toggling encryption for a pool is a destructive operation, meaning<br />
+             the pool itself will be removed as part of the process of<br />
+             adding/removing the encryption layer.</p>
+
+<h5 id="encryption_password"><code>encryption_password</code></h5>
+<p>This string specifies a password or passphrase used to unlock/open the LUKS volume(s).</p>
+
+<h5 id="encryption_key"><code>encryption_key</code></h5>
+<p>This string specifies the full path to the key file on the managed nodes used to unlock<br />
+the LUKS volume(s).  It is the responsibility of the user of this role to securely copy<br />
+this file to the managed nodes, or otherwise ensure that the file is on the managed<br />
+nodes.</p>
+
+<h5 id="encryption_cipher"><code>encryption_cipher</code></h5>
+<p>This string specifies a non-default cipher to be used by LUKS.</p>
+
+<h5 id="encryption_key_size"><code>encryption_key_size</code></h5>
+<p>This integer specifies the LUKS key size (in bytes).</p>
+
+<h5 id="encryption_luks_version"><code>encryption_luks_version</code></h5>
+<p>This integer specifies the LUKS version to use.</p>
+
+<h4 id="storage_volumes"><code>storage_volumes</code></h4>
+<p>The <code>storage_volumes</code> variable is a list of volumes to manage. Each volume has the following<br />
+variables:</p>
+
+<h5 id="name-1"><code>name</code></h5>
+<p>This specifies the name of the volume.</p>
+
+<h5 id="type-1"><code>type</code></h5>
+<p>This specifies the type of volume on which the file system will reside.<br />
+Valid values for <code>type</code>: <code>lvm</code>, <code>disk</code> or <code>raid</code>.<br />
+The default is determined according to the OS and release (currently <code>lvm</code>).</p>
+
+<h5 id="disks-1"><code>disks</code></h5>
+<p>This specifies the set of disks to use as backing storage for the file system.<br />
+This is currently only relevant for volumes of type <code>disk</code>, where the list<br />
+must contain only a single item.</p>
+
+<h5 id="size"><code>size</code></h5>
+<p>The <code>size</code> specifies the size of the file system. The format for this is intended to<br />
+be human-readable, e.g.: “10g”, “50 GiB”. The size of LVM volumes can be specified as a<br />
+percentage of the pool/VG size, eg: “50%” as of v1.4.2.</p>
+
+<p>When using <code>compression</code> or <code>deduplication</code>, <code>size</code> can be set higher than actual available space,<br />
+e.g.: 3 times the size of the volume, based on duplicity and/or compressibility of stored data.</p>
+
+<p><strong>NOTE</strong>: The requested volume size may be reduced as necessary so the volume can<br />
+          fit in the available pool space, but only if the required reduction is<br />
+          not more than 2% of the requested volume size.</p>
+
+<h5 id="fs_type"><code>fs_type</code></h5>
+<p>This indicates the desired file system type to use, e.g.: “xfs”, “ext4”, “swap”.<br />
+The default is determined according to the OS and release<br />
+(currently <code>xfs</code> for all the supported systems).</p>
+
+<h5 id="fs_label"><code>fs_label</code></h5>
+<p>The <code>fs_label</code> is a string to be used for a file system label.</p>
+
+<h5 id="fs_create_options"><code>fs_create_options</code></h5>
+<p>The <code>fs_create_options</code> specifies custom arguments to <code>mkfs</code> as a string.</p>
+
+<h5 id="mount_point"><code>mount_point</code></h5>
+<p>The <code>mount_point</code> specifies the directory on which the file system will be mounted.</p>
+
+<h5 id="mount_options"><code>mount_options</code></h5>
+<p>The <code>mount_options</code> specifies custom mount options as a string, e.g.: ‘ro’.</p>
+
+<h5 id="raid_level-1"><code>raid_level</code></h5>
+<p>Specifies RAID level. LVM RAID can be created as well.<br />
+“Regular” RAID volume requires type to be <code>raid</code>.<br />
+LVM RAID needs that volume has <code>storage_pools</code> parent with type <code>lvm</code>,<br />
+<code>raid_disks</code> need to be specified as well.<br />
+Accepted values are:</p>
+<ul>
+  <li>for LVM RAID volume: <code>raid0</code>, <code>raid1</code>, <code>raid4</code>, <code>raid5</code>, <code>raid6</code>, <code>raid10</code>, <code>striped</code>, <code>mirror</code></li>
+  <li>for RAID volume: <code>linear</code>, <code>raid0</code>, <code>raid1</code>, <code>raid4</code>, <code>raid5</code>, <code>raid6</code>, <code>raid10</code></li>
+</ul>
+
+<p><strong>WARNING</strong>: Changing <code>raid_level</code> for a volume is a destructive operation, meaning<br />
+             all data on that volume will be lost as part of the process of<br />
+             removing old and adding new RAID. RAID reshaping is currently not<br />
+             supported.</p>
+
+<h5 id="raid_device_count"><code>raid_device_count</code></h5>
+<p>When type is <code>raid</code> specifies number of active RAID devices.</p>
+
+<h5 id="raid_spare_count"><code>raid_spare_count</code></h5>
+<p>When type is <code>raid</code> specifies number of spare RAID devices.</p>
+
+<h5 id="raid_metadata_version"><code>raid_metadata_version</code></h5>
+<p>When type is <code>raid</code> specifies RAID metadata version as a string, e.g.: ‘1.0’.</p>
+
+<h5 id="raid_chunk_size"><code>raid_chunk_size</code></h5>
+<p>When type is <code>raid</code> specifies RAID chunk size as a string, e.g.: ‘512 KiB’.<br />
+Chunk size has to be multiple of 4 KiB.</p>
+
+<h5 id="raid_disks"><code>raid_disks</code></h5>
+<p>Specifies which disks should be used for LVM RAID volume.<br />
+<code>raid_level</code> needs to be specified and volume has to have <code>storage_pools</code> parent with type <code>lvm</code>.<br />
+Accepts sublist of <code>disks</code> of parent <code>storage_pools</code>.<br />
+In case multiple LVM RAID volumes within the same storage pool, the same disk can be used<br />
+in multiple <code>raid_disks</code>.</p>
+
+<h5 id="encryption-1"><code>encryption</code></h5>
+<p>This specifies whether the volume will be encrypted using LUKS.<br />
+<strong>WARNING</strong>: Toggling encryption for a volume is a destructive operation, meaning<br />
+             all data on that volume will be removed as part of the process of<br />
+             adding/removing the encryption layer.</p>
+
+<h5 id="encryption_password-1"><code>encryption_password</code></h5>
+<p>This string specifies a password or passphrase used to unlock/open the LUKS volume.</p>
+
+<h5 id="encryption_key-1"><code>encryption_key</code></h5>
+<p>This string specifies the full path to the key file on the managed nodes used to unlock<br />
+the LUKS volume(s).  It is the responsibility of the user of this role to securely copy<br />
+this file to the managed nodes, or otherwise ensure that the file is on the managed<br />
+nodes.</p>
+
+<h5 id="encryption_cipher-1"><code>encryption_cipher</code></h5>
+<p>This string specifies a non-default cipher to be used by LUKS.</p>
+
+<h5 id="encryption_key_size-1"><code>encryption_key_size</code></h5>
+<p>This integer specifies the LUKS key size (in bits).</p>
+
+<h5 id="encryption_luks_version-1"><code>encryption_luks_version</code></h5>
+<p>This integer specifies the LUKS version to use.</p>
+
+<h5 id="deduplication"><code>deduplication</code></h5>
+<p>This specifies whether the Virtual Data Optimizer (VDO) will be used.<br />
+When set, duplicate data stored on storage volume will be<br />
+deduplicated resulting in more storage capacity.<br />
+Can be used together with <code>compression</code> and <code>vdo_pool_size</code>.<br />
+Volume has to be part of the LVM <code>storage_pool</code>.<br />
+Limit one VDO <code>storage_volume</code> per <code>storage_pool</code>.<br />
+Underlying volume has to be at least 9 GB (bare minimum is around 5 GiB).</p>
+
+<h5 id="compression"><code>compression</code></h5>
+<p>This specifies whether the Virtual Data Optimizer (VDO) will be used.<br />
+When set, data stored on storage volume will be<br />
+compressed resulting in more storage capacity.<br />
+Volume has to be part of the LVM <code>storage_pool</code>.<br />
+Can be used together with <code>deduplication</code> and <code>vdo_pool_size</code>.<br />
+Limit one VDO <code>storage_volume</code> per <code>storage_pool</code>.</p>
+
+<h5 id="vdo_pool_size"><code>vdo_pool_size</code></h5>
+<p>When Virtual Data Optimizer (VDO) is used, this specifies the actual size the volume<br />
+will take on the device. Virtual size of VDO volume is set by <code>size</code> parameter.<br />
+<code>vdo_pool_size</code> format is intended to be human-readable,<br />
+e.g.: “30g”, “50GiB”.<br />
+Default value is equal to the size of the volume.</p>
+
+<h4 id="cached"><code>cached</code></h4>
+<p>This specifies whether the volume should be cached or not.<br />
+This is currently supported only for LVM volumes where dm-cache<br />
+is used.</p>
+
+<h4 id="cache_size"><code>cache_size</code></h4>
+<p>Size of the cache. <code>cache_size</code> format is intended to be human-readable,<br />
+e.g.: “30g”, “50GiB”.</p>
+
+<h4 id="cache_mode"><code>cache_mode</code></h4>
+<p>Mode for the cache. Supported values include <code>writethrough</code> (default) and <code>writeback</code>.</p>
+
+<h4 id="cache_devices"><code>cache_devices</code></h4>
+<p>List of devices that will be used for the cache. These should be either physical volumes or<br />
+drives these physical volumes are allocated on. Generally you want to select fast devices like<br />
+SSD or NVMe drives for cache.</p>
+
+<h4 id="thin"><code>thin</code></h4>
+<p>Whether the volume should be thinly provisioned or not.<br />
+This is supported only for LVM volumes.</p>
+
+<h4 id="thin_pool_name"><code>thin_pool_name</code></h4>
+<p>For <code>thin</code> volumes, this can be used to specify the name of the LVM thin pool that will be used<br />
+for the volume. If the pool with the provided name already exists, the volume will be added to that<br />
+pool. If it doesn’t exist a new pool named <code>thin_pool_name</code> will be created.<br />
+If not specified:</p>
+<ul>
+  <li>if there are no existing thin pools present, a new thin pool will be created with an automatically<br />
+generated name,</li>
+  <li>if there is exactly one existing thin pool, the thin volume will be added to it and</li>
+  <li>if there are multiple thin pools present an exception will be raised.</li>
+</ul>
+
+<h4 id="thin_pool_size"><code>thin_pool_size</code></h4>
+<p>Size for the thin pool. <code>thin_pool_size</code> format is intended to be human-readable,<br />
+e.g.: “30g”, “50GiB”.</p>
+
+<h4 id="storage_safe_mode"><code>storage_safe_mode</code></h4>
+<p>When true (the default), an error will occur instead of automatically removing existing devices and/or formatting.</p>
+
+<h4 id="storage_udevadm_trigger"><code>storage_udevadm_trigger</code></h4>
+<p>When true (the default is false), the role will use udevadm trigger<br />
+to cause udev changes to take effect immediately.  This may help on some<br />
+platforms with “buggy” udev.</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+
+<pre><code class="language-yaml">- hosts: all
+
+  roles:
+    - name: rhel-system-roles.storage
+      storage_pools:
+        - name: app
+          disks:
+            - sdb
+            - sdc
+          volumes:
+            - name: shared
+              size: "100 GiB"
+              mount_point: "/mnt/app/shared"
+              #fs_type: xfs
+              state: present
+            - name: users
+              size: "400g"
+              fs_type: ext4
+              mount_point: "/mnt/app/users"
+      storage_volumes:
+        - name: images
+          type: disk
+          disks: ["mpathc"]
+          mount_point: /opt/images
+          fs_label: images
+
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>MIT</p>

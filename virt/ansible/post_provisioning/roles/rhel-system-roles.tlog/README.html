@@ -1,0 +1,90 @@
+<h1 id="tlog">tlog</h1>
+<p><img src="https://github.com/linux-system-roles/tlog/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>This role configures a system for <a href="https://github.com/scribery">Terminal session recording</a>.<br />
+The role will configure tlog to log recording data to the systemd journal.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>This role is only supported on RHEL8/CentOS8 and Fedora distributions.</p>
+
+<p>This role requires the <code>ini_file</code> module from <code>community.general</code>.  If you are<br />
+using <code>ansible-core</code> you must install that collection.</p>
+<pre><code>ansible-galaxy collection install -vv -r meta/collection-requirements.yml
+</code></pre>
+<p>If you are using Ansible Engine 2.9, or are using an Ansible bundle which<br />
+includes these collections/modules, you should have to do nothing.</p>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<p>Configure session recording with SSSD, the preferred way of managing recorded users or groups.<br />
+This causes the SSSD files provider to be enabled explicitly.</p>
+
+<ul>
+  <li><code>tlog_use_sssd</code> (default: <code>true</code>)</li>
+</ul>
+
+<p>Configure SSSD recording scope - <code>all</code> / <code>some</code> / <code>none</code>:</p>
+
+<ul>
+  <li><code>tlog_scope_sssd</code> (default: <code>none</code>)</li>
+</ul>
+
+<p>YAML list of users to be recorded:</p>
+
+<ul>
+  <li><code>tlog_users_sssd</code> (default: <code>[]</code>)</li>
+</ul>
+
+<p>YAML list of groups to be recorded:</p>
+
+<ul>
+  <li><code>tlog_groups_sssd</code> (default: <code>[]</code>)</li>
+</ul>
+
+<p>YAML list of users to be excluded from recording (only applicable when<br />
+scope=all):</p>
+
+<ul>
+  <li><code>tlog_exclude_users_sssd</code> (default: <code>[]</code>)</li>
+</ul>
+
+<p>YAML list of groups to be excluded from recording (only applicable when<br />
+scope=all):</p>
+
+<ul>
+  <li><code>tlog_exclude_groups_sssd</code> (default: <code>[]</code>)</li>
+</ul>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>This role has no dependencies currently.</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+<pre><code class="language-yaml">- name: Deploy session recording
+  hosts: all
+  roles:
+    - rhel-system-roles.tlog
+  vars:
+    tlog_scope_sssd: some
+    tlog_users_sssd:
+      - recordeduser
+</code></pre>
+<p>Testing<br />
+——-<br />
+Testing is done with the <code>tests/tests*.yml</code> playbooks.</p>
+
+<h2 id="license">License</h2>
+
+<p>GPL v3.0</p>
+
+<h2 id="author-information">Author Information</h2>
+
+<ul>
+  <li>
+    <p>Nathan Kinder @nkinder</p>
+  </li>
+  <li>
+    <p>Kirill Glebov @sabbaka</p>
+  </li>
+</ul>

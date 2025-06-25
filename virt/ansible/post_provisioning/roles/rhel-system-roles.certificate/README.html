@@ -1,0 +1,627 @@
+<h1 id="certificate-system-role">Certificate System Role</h1>
+<p><img src="https://github.com/linux-system-roles/certificate/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>Role for managing TLS/SSL certificate issuance and renewal</p>
+
+<p>Linux system role to issue and renew SSL certificates.</p>
+
+<p>Basic usage:</p>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        ca: self-sign
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<p>On a RPM-based system this will place the certificate in <code>/etc/pki/tls/certs/mycert.crt</code><br />
+and the key in <code>/etc/pki/tls/private/mycert.key</code>.</p>
+
+<h2 id="variables">Variables</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Required</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>certificate_wait</td>
+      <td>If the task should wait for the certificate to be issued.</td>
+      <td style="text-align: center">bool</td>
+      <td style="text-align: center">no</td>
+      <td>yes</td>
+    </tr>
+    <tr>
+      <td>certificate_requests</td>
+      <td>A list of dicts representing each certificate to be issued. See <a href="#certificate_requests">certificate_requests</a>.</td>
+      <td style="text-align: center">list</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="certificate_requests">certificate_requests</h3>
+
+<p><strong>Note:</strong> Fields such as <code>common_name</code>, <code>country</code>, <code>state</code>, <code>locality</code>,<br />
+<code>organization</code>, <code>organizational_unit</code>, <code>email</code>, <code>key_usage</code>, and<br />
+<code>extended_key_usage</code> that can be included in the certificate request<br />
+are defined by the RFC 5280.</p>
+
+<p><strong>Note:</strong> Be aware that the CA might not honor all the requested fields.<br />
+For example, even if a request include <code>country: US</code>, the CA might issue<br />
+the certificate without <code>country</code> in it’s subject.</p>
+
+<p><strong>Note:</strong> The fields <code>dns</code>, <code>email</code> and <code>ip</code> are used to define the Subject<br />
+Alternative Names (SAN).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Required</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>name</td>
+      <td>Name of the certificate. A full path can be used to choose the directory where files will be stored.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">yes</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>ca</td>
+      <td>CA that will issue the certificate. See <a href="#cas-and-providers">CAs and Providers</a>.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">yes</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>dns</td>
+      <td>Domain (or list of domains) to be included in the certificate. Also can provide the default value for <a href="#common_name">common_name</a>.</td>
+      <td style="text-align: center">str or list</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>email</td>
+      <td>Email (or list of emails) to be included in the certificate.</td>
+      <td style="text-align: center">str or list</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>ip</td>
+      <td>IP, or list of IPs, to be included in the certificate. IPs can be IPv4, IPv6 or both. Also can provide the default value for <a href="#common_name">common_name</a>.</td>
+      <td style="text-align: center">str or list</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>auto_renew</td>
+      <td>Indicates if the certificate should be renewed automatically before it expires.</td>
+      <td style="text-align: center">bool</td>
+      <td style="text-align: center">no</td>
+      <td>yes</td>
+    </tr>
+    <tr>
+      <td>owner</td>
+      <td>User name (or user id) for the certificate and key files.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td><em>User running Ansible</em></td>
+    </tr>
+    <tr>
+      <td>group</td>
+      <td>Group name (or group id) for the certificate and key files.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td><em>Group running Ansible</em></td>
+    </tr>
+    <tr>
+      <td>key_size</td>
+      <td>Generate keys with a specific keysize in bits.</td>
+      <td style="text-align: center">int</td>
+      <td style="text-align: center">no</td>
+      <td>2048 - See <a href="#key_size">key_size</a></td>
+    </tr>
+    <tr>
+      <td>common_name</td>
+      <td>Common Name requested for the certificate subject.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>See <a href="#common_name">common_name</a></td>
+    </tr>
+    <tr>
+      <td>country</td>
+      <td>Country code requested for the certificate subject.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>state</td>
+      <td>State requested for the certificate subject.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>locality</td>
+      <td>Locality requested for the certificate subject (usually city).</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>organization</td>
+      <td>Organization requested for the certificate subject.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>organizational_unit</td>
+      <td>Organizational unit requested for the certificate subject.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>contact_email</td>
+      <td>Contact email requested for the certificate subject.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>key_usage</td>
+      <td>Allowed Key Usage for the certificate. For valid values see: <a href="#key_usage">key_usage</a>.</td>
+      <td style="text-align: center">list</td>
+      <td style="text-align: center">no</td>
+      <td>See <a href="#key_usage">key_usage</a></td>
+    </tr>
+    <tr>
+      <td>extended_key_usage</td>
+      <td>Extended Key Usage attributes to be present in the certificate request.</td>
+      <td style="text-align: center">list</td>
+      <td style="text-align: center">no</td>
+      <td>See <a href="#extended_key_usage">extended_key_usage</a></td>
+    </tr>
+    <tr>
+      <td>run_before</td>
+      <td>Command that should run before saving the certificate. See <a href="#run-hooks">run hooks</a>.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>run_after</td>
+      <td>Command that should run after saving the certificate. See <a href="#run-hooks">run hooks</a>.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>principal</td>
+      <td>Kerberos principal.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>provider</td>
+      <td>The underlying method used to request and manage the certificate.</td>
+      <td style="text-align: center">str</td>
+      <td style="text-align: center">no</td>
+      <td><em>Varies by CA</em></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="common_name">common_name</h3>
+
+<p>If <code>common_name</code> is not set the role will attempt to use the first<br />
+value of <code>dns</code> or <code>ip</code>, respectively, as the default. If <code>dns</code> and<br />
+<code>ip</code> are also not set, <code>common_name</code> will not be included in the certificate.</p>
+
+<h3 id="key_size">key_size</h3>
+
+<p>Recommended minimal-values for a certificate key size, from different<br />
+organizations, vary across time. In the attempt to provide safe settings,<br />
+the default minimal-value for <code>key_size</code> will be increased over time.</p>
+
+<p>If you want your certificates to always keep the same <code>key_size</code> when<br />
+renewed, set this variable to the desired value.</p>
+
+<h3 id="key_usage">key_usage</h3>
+
+<p>Valid values for <code>key_usage</code> are:</p>
+
+<ul>
+  <li>digitalSignature</li>
+  <li>nonRepudiation</li>
+  <li>keyEncipherment</li>
+  <li>dataEncipherment</li>
+  <li>keyAgreement</li>
+  <li>keyCertSign</li>
+  <li>cRLSign</li>
+  <li>encipherOnly</li>
+  <li>decipherOnly</li>
+</ul>
+
+<p>The defaults for <code>key_usage</code> are:</p>
+
+<ul>
+  <li>digitalSignature</li>
+  <li>keyEncipherment</li>
+</ul>
+
+<h3 id="extended_key_usage">extended_key_usage</h3>
+
+<p>Any valid oid can be used to set one or more <code>extended_key_usage</code>.<br />
+In addition to that there is also a list of known aliases that<br />
+will be recognized by the role:</p>
+
+<ul>
+  <li>id-kp-serverAuth</li>
+  <li>id-kp-clientAuth</li>
+  <li>id-kp-codeSigning</li>
+  <li>id-kp-emailProtection</li>
+  <li>id-kp-timeStamping</li>
+  <li>id-kp-OCSPSigning</li>
+  <li>id-kp-ipsecEndSystem</li>
+  <li>id-kp-ipsecTunnel</li>
+  <li>id-kp-ipsecUser</li>
+</ul>
+
+<p>If <code>extended_key_usage</code> is not set the role will default to:</p>
+
+<ul>
+  <li>id-kp-serverAuth</li>
+  <li>id-kp-clientAuth</li>
+</ul>
+
+<h3 id="run-hooks">run hooks</h3>
+
+<p>Sometimes you need to execute a command just before a certificate is<br />
+renewed and another command just after. In order to do that use<br />
+<code>run_before</code> and <code>run_after</code>.</p>
+
+<p>The value provided to <code>run_before</code> and <code>run_after</code> will be wrapped and<br />
+stored in shell script files that later will be executed by the provider.</p>
+
+<h2 id="cas-and-providers">CAs and Providers</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>CA</th>
+      <th>Providers</th>
+      <th>CA description</th>
+      <th>Requirements</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>self-sign</td>
+      <td>certmonger*</td>
+      <td>Issue self-signed certificates from a local CA.</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>ipa</td>
+      <td>certmonger*</td>
+      <td>Issue certificates using the FreeIPA CA.</td>
+      <td>Host needs to be enrolled in a FreeIPA server.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>* Default provider.</em></p>
+
+<p>CA represents the CA certificates that will be used to issue and sign the<br />
+requested certificate. Provider represents the method used to send the certificate<br />
+request to the CA and then retrieve the signed certificate.</p>
+
+<p>If a user chooses <code>self-sign</code> CA, with <code>certmonger</code> as provider and, later on<br />
+decide to change the provider to <code>openssl</code>, the CA certificates used in both<br />
+cases needs to be the same. <em>Please note that <code>openssl</code> is <strong>not yet a supported</strong><br />
+provider and it’s only mentioned here as an example.</em></p>
+
+<h3 id="certmonger-and-selinux">Certmonger and SELinux</h3>
+
+<p>If SELinux is enforced, the <code>certmonger</code> service is only able to write or edit<br />
+files in directories where the <code>cert_t</code> context is present.</p>
+
+<p>Additionally to that, if the scripts executed by <code>run_before</code> and <code>run_after</code><br />
+parameters need to write or edit files, those scripts also require the <code>cert_t</code><br />
+context to be present prior to the role execution.</p>
+
+<p>You can use <a href="https://github.com/linux-system-roles/selinux">linux-system-roles/selinux</a><br />
+to manage SELinux contexts.</p>
+
+<p>For more information about <code>certmonger</code> and SELinux requirements, see<br />
+<a href="https://linux.die.net/man/8/certmonger_selinux">certmonger_selinux(8) man pages</a>.</p>
+
+<h2 id="examples">Examples:</h2>
+
+<h3 id="issuing-a-self-signed-certificate">Issuing a self-signed certificate:</h3>
+
+<p>Issue a certificate for <code>*.example.com</code> and place it in the standard<br />
+directory for the distribution.</p>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: *.example.com
+        ca: self-sign
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<p>You can find the directories for each distribution in the following locations:</p>
+
+<ul>
+  <li>Debian/Ubuntu:
+    <ul>
+      <li>Certificates: <code>/etc/ssl/localcerts/certs/</code></li>
+      <li>Keys: <code>/etc/ssl/localcerts/private/</code></li>
+    </ul>
+  </li>
+  <li>RHEL/CentOS/Fedora:
+    <ul>
+      <li>Certificates: <code>/etc/pki/tls/certs/</code></li>
+      <li>Keys: <code>/etc/pki/tls/private/</code></li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="choosing-where-to-place-the-certificates">Choosing where to place the certificates</h3>
+
+<p>Issue a certificate and key and place them in the specified location.<br />
+The example below creates a certificate file in<br />
+<code>/another/path/mycert.crt</code> and a key file in <code>/another/path/mycert.key</code>.</p>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: /another/path/mycert
+        dns: *.example.com
+        ca: self-sign
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="issuing-certificates-with-multiple-dns-ip-and-email">Issuing certificates with multiple DNS, IP and Email</h3>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns:
+          - www.example.com
+          - sub1.example.com
+          - sub2.example.com
+          - sub3.example.com
+        ip:
+          - 192.0.2.12
+          - 198.51.100.65
+          - 2001:db8::2:1
+        email:
+          - sysadmin@example.com
+          - support@example.com
+        ca: self-sign
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="setting-common-subject-options">Setting common subject options</h3>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        common_name: www.example.com
+        ca: self-sign
+        country: US
+        state: NY
+        locality: New York
+        organization: Red Hat
+        organizational_unit: platform
+        email: admin@example.com
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="setting-the-certificate-key-size">Setting the certificate key size</h3>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        ca: self-sign
+        key_size: 4096
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="setting-the-key-usage-and-extended-key-usage-eku">Setting the “Key Usage” and “Extended Key Usage” (EKU)</h3>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        ca: self-sign
+        key_usage:
+          - digitalSignature
+          - nonRepudiation
+          - keyEncipherment
+        extended_key_usage:
+          - id-kp-clientAuth
+          - id-kp-serverAuth
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="dont-wait-for-the-certificate-to-be-issued">Don’t wait for the certificate to be issued</h3>
+
+<p>The certificate issuance can take several minutes depending on the CA.<br />
+Because of that it’s also possible to request the certificate but not<br />
+actually wait for it.</p>
+
+<p>This configuration affects all certificates: if <code>certificate_wait</code> is<br />
+set to <code>no</code> the role does not wait for any certificate to be issued.</p>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_wait: false
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        ca: self-sign
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="setting-a-principal">Setting a principal</h3>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        ca: self-sign
+        principal: HTTP/www.example.com@EXAMPLE.COM
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="choosing-to-not-auto-renew-a-certificate">Choosing to not auto-renew a certificate</h3>
+
+<p>By default certificates generated by the role are set for<br />
+auto-renewal. To disable that behavior set <code>auto_renew: no</code>.</p>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        ca: self-sign
+        auto_renew: no
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="using-freeipa-to-issue-a-certificate">Using FreeIPA to issue a certificate</h3>
+
+<p>If your host is enrolled in a FreeIPA server, you also have the option<br />
+to use it’s CA to issue your certificate. To do that, set <code>ca: ipa</code>.</p>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        principal: HTTP/www.example.com@EXAMPLE.COM
+        ca: ipa
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="running-a-command-before-or-after-a-certificate-is-issued">Running a command before or after a certificate is issued</h3>
+
+<p>Sometimes you need to execute a command just before a certificate is<br />
+renewed and another command just after. To do so, use <code>run_before</code><br />
+and <code>run_after</code>.</p>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        ca: self-sign
+        run_before: systemctl stop webserver.service
+        run_after: systemctl start webserver.service
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<h3 id="setting-the-certificate-owner-and-group">Setting the certificate owner and group</h3>
+
+<p>If you are using a certificate for a service, for example httpd,<br />
+you need to set the certificate owner and group that will own the<br />
+certificate. In the following example the owner and group are both<br />
+set to httpd.</p>
+
+<pre><code class="language-yaml">---
+- hosts: webserver
+  vars:
+    certificate_requests:
+      - name: mycert
+        dns: www.example.com
+        ca: self-sign
+        owner: httpd
+        group: httpd
+
+  roles:
+    - rhel-system-roles.certificate
+</code></pre>
+
+<p>Note that you can also use UID and GID instead of user and group names.</p>
+
+<h2 id="compatibility">Compatibility</h2>
+
+<p>Currently supports CentOS 7+, RHEL 7+, Fedora. It has been tested with Debian 10.</p>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>None.</p>
+
+<h2 id="license">License</h2>
+
+<p>MIT</p>
+
+<h2 id="author-information">Author Information</h2>
+
+<p>Sergio Oliveira Campos (@seocam)</p>
+

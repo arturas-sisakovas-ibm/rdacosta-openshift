@@ -1,0 +1,17 @@
+[rhel:children]
+rhel9
+
+[webservers]
+servera
+serverc 
+
+[dbservers]
+serverb
+serverd
+
+[rhel9]
+server[a:d]
+
+[prod]
+servera
+serverb

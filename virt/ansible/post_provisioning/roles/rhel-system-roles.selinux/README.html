@@ -1,0 +1,197 @@
+<h1 id="selinux">SELinux</h1>
+<p><img src="https://github.com/linux-system-roles/selinux/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<h2 id="expected-functionality">Expected functionality</h2>
+
+<p>Essentially provide mechanisms to manage local customizations:</p>
+
+<ul>
+  <li>Set enforcing/permissive</li>
+  <li>restorecon portions of filesystem tree</li>
+  <li>Set/Get Booleans</li>
+  <li>Set/Get file contexts</li>
+  <li>Manage logins</li>
+  <li>Manage ports</li>
+</ul>
+
+<h2 id="available-modules-in-ansible">Available modules in Ansible</h2>
+
+<p><a href="https://docs.ansible.com/ansible/latest/collections/ansible/posix/selinux_module.html#ansible-collections-ansible-posix-selinux-module">selinux</a>: Configures the<br />
+SELinux mode and policy.</p>
+
+<p><a href="https://docs.ansible.com/ansible/latest/collections/ansible/posix/seboolean_module.html#ansible-collections-ansible-posix-seboolean-module">seboolean</a>: Toggles SELinux booleans.</p>
+
+<p><a href="https://docs.ansible.com/ansible/latest/collections/community/general/sefcontext_module.html#ansible-collections-community-general-sefcontext-module">sefcontext</a>: Manages<br />
+SELinux file context mapping definitions similar to the <code>semanage fcontext</code><br />
+command.</p>
+
+<p><a href="https://docs.ansible.com/ansible/latest/collections/community/general/seport_module.html#ansible-collections-community-general-seport-module">seport</a>: Manages SELinux<br />
+network port type definitions.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The role requires some SELinux modules.  If you are using <code>ansible-core</code>, you must<br />
+get these from the <code>ansible.posix</code> and <code>community.general</code> collections.  Use the<br />
+file <code>meta/collection-requirements.yml</code> to install these:</p>
+<pre><code>ansible-galaxy collection install -vv -r meta/collection-requirements.yml
+</code></pre>
+<p>If you are using Ansible Engine 2.9, or are using an Ansible bundle which<br />
+includes these collections/modules, you should have to do nothing.</p>
+
+<h3 id="modules-provided-by-this-repository">Modules provided by this repository</h3>
+
+<ul>
+  <li><code>selinux_modules_facts</code>: Gather state of SELinux modules</li>
+</ul>
+
+<h2 id="usage">Usage</h2>
+
+<p>The general usage is demonstrated in <a href="examples/selinux-playbook.yml">selinux-playbook.yml</a> playbook.</p>
+
+<h3 id="selinux-role">selinux role</h3>
+
+<p>This role can be configured using variables as it is described below.</p>
+
+<pre><code class="language-yaml">vars:
+  [ see below ]
+roles:
+  - role: rhel-system-roles.selinux
+</code></pre>
+
+<h4 id="purge-local-modifications">purge local modifications</h4>
+
+<p>By default, the modifications specified in <code>selinux_booleans</code>, <code>selinux_fcontexts</code>,<br />
+<code>selinux_ports</code> and <code>selinux_logins</code> are applied on top of pre-existing modifications.<br />
+To purge local modifications prior to setting new ones, set following variables to true:</p>
+
+<ul>
+  <li>SELinux booleans: <code>selinux_booleans_purge</code></li>
+  <li>SELinux file contexts: <code>selinux_fcontexts_purge</code></li>
+  <li>SELinux ports: <code>selinux_ports_purge</code></li>
+  <li>SELinux user mapping: <code>selinux_logins_purge</code></li>
+</ul>
+
+<p>You can purge all modifications by using shorthand:</p>
+
+<pre><code class="language-yaml">selinux_all_purge: true
+</code></pre>
+
+<h4 id="set-selinux-policy-type-and-mode">set SELinux policy type and mode</h4>
+
+<pre><code class="language-yaml">selinux_policy: targeted
+selinux_state: enforcing
+</code></pre>
+<p>Allowed values for <code>selinux_state</code> are <code>disabled</code>, <code>enforcing</code> and <code>permissive</code>.</p>
+
+<p>If <code>selinux_state</code> is not set, the SELinux state is not changed.<br />
+If <code>selinux_policy</code> is not set and SELinux is to be enabled, it defaults to <code>targeted</code>. <br />
+If SELinux is already enabled, the policy is not changed.</p>
+
+<h4 id="set-selinux-booleans">set SELinux booleans</h4>
+
+<pre><code class="language-yaml">selinux_booleans:
+  - { name: 'samba_enable_home_dirs', state: 'on' }
+  - { name: 'ssh_sysadm_login', state: 'on', persistent: 'yes' }
+</code></pre>
+
+<h4 id="set-selinux-file-contexts">Set SELinux file contexts</h4>
+
+<pre><code class="language-yaml">selinux_fcontexts:
+  - { target: '/tmp/test_dir(/.*)?', setype: 'user_home_dir_t', ftype: 'd', state: 'present' }
+</code></pre>
+<p>Users may also pass the following optional parameters:</p>
+<ul>
+  <li><code>seuser</code>: to set the SELinux user</li>
+  <li><code>selevel</code>: to set the MLS/MCS Security Range (MLS/MCS Systems only) SELinux Range for SELinux login mapping defaults to the SELinux user record range.</li>
+</ul>
+
+<p>Individual modifications can be dropped by setting <code>state</code> to <code>absent</code>.</p>
+
+<h4 id="set-selinux-ports">Set SELinux ports</h4>
+
+<pre><code class="language-yaml">selinux_ports:
+  - { ports: '22100', proto: 'tcp', setype: 'ssh_port_t', state: 'present', local: true }
+</code></pre>
+
+<h4 id="run-restorecon-on-filesystem-trees">run restorecon on filesystem trees</h4>
+
+<pre><code class="language-yaml">selinux_restore_dirs:
+  - /tmp/test_dir
+</code></pre>
+
+<h4 id="set-linux-user-to-selinux-user-mapping">Set linux user to SELinux user mapping</h4>
+
+<pre><code class="language-yaml">    selinux_logins:
+      - { login: 'plautrba', seuser: 'staff_u', state: 'absent' }
+      - { login: '__default__', seuser: 'staff_u', serange: 's0-s0:c0.c1023', state: 'present' }
+</code></pre>
+
+<h4 id="manage-selinux-modules">Manage SELinux modules</h4>
+
+<p>It is possible to maintain SELinux modules using <code>selinux_modules</code> variable which would contain a list of dictionaries, e.g.:</p>
+
+<pre><code class="language-yaml">    selinux_modules:
+      - { path: 'localmodule.pp', state: 'enabled' }
+      - { path: 'localmodule.cil', priority: '350', state: 'enabled' }
+      - { name: 'unconfineduser', state: 'disabled' }
+      - { name: 'localmodule', priority: '350', state: 'absent' }
+</code></pre>
+
+<ul>
+  <li><code>path</code>: a local module file (either .cil or .pp) to be installed on a node, used for installing new modules</li>
+  <li><code>name</code>: module name, used for enabling disabled modules, disabling enabled modules, removing modules</li>
+  <li><code>priority</code>: SELinux module priority, default is <em>“400”</em>. <em>“100”</em> is used for modules installed from <em>selinux-policy</em> packages, <em>“200”</em> for other modules installed from 3rd party rpms, <em>“300”</em> is used by SETroubleshoot</li>
+  <li><code>state</code>:</li>
+  <li><code>enabled</code>: install or enable module</li>
+  <li><code>disabled</code>: disable module</li>
+  <li><code>absent</code>: remove module</li>
+</ul>
+
+<p><strong>Note:</strong> Building modules from source on nodes is not supported.<br />
+However, in many cases a binary <em>pp</em> or <em>cil</em> module could be used on different systems if all systems support<br />
+types, classes and permissions used in the module.<br />
+In case of <em>pp</em> module it also needs to be built with the lowest supported policydb module version on target systems,<br />
+i.e. on the oldest system.</p>
+
+<p><strong>Note:</strong> Module priorities are ignored in Red Hat Enterprise Linux 6</p>
+
+<p><strong>Note:</strong> Managing modules is idempotent only on Fedora, and EL 8.6 and later. You can manage modules on older releases, but it will not be idempotent.</p>
+
+<h2 id="ansible-facts">Ansible Facts</h2>
+
+<h3 id="selinux_reboot_required">selinux_reboot_required</h3>
+
+<p>This custom fact is set to <code>true</code> if system reboot is necessary when SELinux is set from <code>disabled</code> to <code>enabled</code> or vice versa.  Otherwise the fact is set to <code>false</code>.  In the case that system reboot is needed, it will be indicated by returning failure from the role which needs to be handled using a <code>block:</code>…<code>rescue:</code> construct. The reboot needs to be performed in the playbook, the role itself never reboots the managed host. After the reboot the role needs to be reapplied to finish the changes.</p>
+
+<h3 id="selinux_installed_modules">selinux_installed_modules</h3>
+
+<p>This custom fact represents SELinux module store structure</p>
+
+<pre><code class="language-json">selinux_installed_modules = {
+  &lt;module name&gt;: {
+    &lt;module priority&gt;: ("enabled"|"disabled"),
+    ...
+  },
+  ...
+}
+</code></pre>
+
+<p>e.g.</p>
+
+<pre><code class="language-json">"ansible_facts": {
+  "selinux_installed_modules": {
+    "abrt": {
+      "100": "enabled",
+      "400": "disabled"
+    },
+    "accountsd": {
+      "100": "enabled"
+    },
+    "acct": {
+      "100": "enabled"
+    }
+  }
+}
+</code></pre>
+
+<p><strong>NOTE:</strong> Module priority is set to “0” when priorities are not supported, e.g. on Red Hat Enterprise Linux 6</p>

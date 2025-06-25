@@ -1,0 +1,1591 @@
+<h1 id="ha_cluster">ha_cluster</h1>
+<p><img src="https://github.com/linux-system-roles/ha_cluster/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>An Ansible role for managing High Availability Clustering.</p>
+
+<h2 id="limitations">Limitations</h2>
+
+<ul>
+  <li>Supported OS: RHEL 8.3+, Fedora 31+</li>
+  <li>Systems running RHEL are expected to be registered and have High-Availability<br />
+repositories accessible.</li>
+  <li>The role replaces the configuration of HA Cluster on specified nodes. Any<br />
+settings not specified in the role variables will be lost.</li>
+  <li>The role is capable of configuring:
+    <ul>
+      <li>single-link or multi-link cluster</li>
+      <li>Corosync transport options including compression and encryption</li>
+      <li>Corosync totem options</li>
+      <li>Corosync quorum options</li>
+      <li>Corosync quorum device (both qnetd and qdevice)</li>
+      <li>SBD</li>
+      <li>Pacemaker cluster properties</li>
+      <li>stonith and resources</li>
+      <li>resource constraints</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The role requires the <code>firewall</code> role and the <code>selinux</code> role from the<br />
+<code>fedora.linux_system_roles</code> collection, if <code>ha_cluster_manage_firewall</code><br />
+and <code>ha_cluster_manage_selinux</code> is set to true, respectively.<br />
+Please see also <a href="#ha_cluster_manage_firewall"><code>ha_cluster_manage_firewall</code></a><br />
+ and <a href="#ha_cluster_manage_selinux"><code>ha_cluster_manage_selinux</code></a>.</p>
+
+<p>If the <code>ha_cluster</code> is a role from the <code>fedora.linux_system_roles</code><br />
+collection or from the Fedora RPM package, the requirement is already<br />
+satisfied.</p>
+
+<p>Otherwise, please run the following command line to install the collection.</p>
+<pre><code>ansible-galaxy collection install -r meta/collection-requirements.yml
+</code></pre>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<h3 id="defined-in-defaultsmainyml">Defined in <code>defaults/main.yml</code></h3>
+
+<h4 id="ha_cluster_enable_repos"><code>ha_cluster_enable_repos</code></h4>
+
+<p>boolean, default: <code>true</code></p>
+
+<p>RHEL and CentOS only, enable repositories containing needed packages</p>
+
+<h4 id="ha_cluster_manage_firewall"><code>ha_cluster_manage_firewall</code></h4>
+
+<p>boolean, default: false</p>
+
+<p>Manage the <code>firewall high-availability service</code> as well as the <code>fence-virt port</code>.<br />
+When <code>ha_cluster_manage_firewall</code> is <code>true</code>, the <code>firewall high-availability
+service</code> and <code>fence-virt port</code> are enabled.<br />
+When <code>ha_cluster_manage_firewall</code> is <code>false</code>, the <code>ha_cluster role</code> does not<br />
+manage the firewall.</p>
+
+<p>NOTE: <code>ha_cluster_manage_firewall</code> is limited to <em>adding</em> ports.<br />
+It cannot be used for <em>removing</em> ports.<br />
+If you want to remove ports, you will need to use the firewall system<br />
+role directly.</p>
+
+<p>NOTE: The version of the <code>ha_cluster</code> role is 1.7.5 or older,<br />
+the firewall was configured by default if the firewalld was available<br />
+when the <code>ha_cluster</code> role was executed. In the newer version,<br />
+it does not happen unless <code>ha_cluster_manage_firewall</code> is set to <code>true</code>.</p>
+
+<h4 id="ha_cluster_manage_selinux"><code>ha_cluster_manage_selinux</code></h4>
+
+<p>boolean, default: false</p>
+
+<p>Manage the ports belonging to the <code>firewall high-availability service</code> using<br />
+the selinux role.<br />
+When <code>ha_cluster_manage_selinux</code> is <code>true</code>, the ports belonging to the<br />
+<code>firewall high-availability service</code> are associated with the selinux port type<br />
+<code>cluster_port_t</code>.<br />
+When <code>ha_cluster_manage_selinux</code> is <code>false</code>, the <code>ha_cluster role</code> does not<br />
+manage the selinux.</p>
+
+<p>NOTE: The firewall configuration is prerequisite for managing selinux. If the<br />
+firewall is not installed, managing selinux policy is skipped.</p>
+
+<p>NOTE: <code>ha_cluster_manage_selinux</code> is limited to <em>adding</em> policy.<br />
+It cannot be used for <em>removing</em> policy.<br />
+If you want to remove policy, you will need to use the selinux system<br />
+role directly.</p>
+
+<h4 id="ha_cluster_cluster_present"><code>ha_cluster_cluster_present</code></h4>
+
+<p>boolean, default: <code>true</code></p>
+
+<p>If set to <code>true</code>, HA cluster will be configured on the hosts according to other<br />
+variables. If set to <code>false</code>, all HA Cluster configuration will be purged from<br />
+target hosts.</p>
+
+<h4 id="ha_cluster_start_on_boot"><code>ha_cluster_start_on_boot</code></h4>
+
+<p>boolean, default: <code>true</code></p>
+
+<p>If set to <code>true</code>, cluster services will be configured to start on boot. If set<br />
+to <code>false</code>, cluster services will be configured not to start on boot.</p>
+
+<h4 id="ha_cluster_fence_agent_packages"><code>ha_cluster_fence_agent_packages</code></h4>
+
+<p>list of fence agent packages to install, default: fence-agents-all, fence-virt</p>
+
+<h4 id="ha_cluster_extra_packages"><code>ha_cluster_extra_packages</code></h4>
+
+<p>list of additional packages to be installed, default: no packages</p>
+
+<p>This variable can be used to install additional packages not installed<br />
+automatically by the role, for example custom resource agents.</p>
+
+<p>It is possible to specify fence agents here as well. However,<br />
+<code>ha_cluster_fence_agent_packages</code> is preferred for that, so that its default<br />
+value is overridden.</p>
+
+<h4 id="ha_cluster_hacluster_password"><code>ha_cluster_hacluster_password</code></h4>
+
+<p>string, no default - must be specified</p>
+
+<p>Password of the <code>hacluster</code> user. This user has full access to a cluster. It is<br />
+recommended to vault encrypt the value, see<br />
+https://docs.ansible.com/ansible/latest/user_guide/vault.html for details.</p>
+
+<h4 id="ha_cluster_corosync_key_src"><code>ha_cluster_corosync_key_src</code></h4>
+
+<p>path to Corosync authkey file, default: <code>null</code></p>
+
+<p>Authentication and encryption key for Corosync communication. It is highly<br />
+recommended to have a unique value for each cluster. The key should be 256<br />
+bytes of random data.</p>
+
+<p>If value is provided, it is recommended to vault encrypt it. See<br />
+https://docs.ansible.com/ansible/latest/user_guide/vault.html for details.</p>
+
+<p>If no key is specified, a key already present on the nodes will be used. If<br />
+nodes don’t have the same key, a key from one node will be distributed to other<br />
+nodes so that all nodes have the same key. If no node has a key, a new key will<br />
+be generated and distributed to the nodes.</p>
+
+<p>If this variable is set, <code>ha_cluster_regenerate_keys</code> is ignored for this key.</p>
+
+<h4 id="ha_cluster_pacemaker_key_src"><code>ha_cluster_pacemaker_key_src</code></h4>
+
+<p>path to Pacemaker authkey file, default: <code>null</code></p>
+
+<p>Authentication and encryption key for Pacemaker communication. It is highly<br />
+recommended to have a unique value for each cluster. The key should be 256<br />
+bytes of random data.</p>
+
+<p>If value is provided, it is recommended to vault encrypt it. See<br />
+https://docs.ansible.com/ansible/latest/user_guide/vault.html for details.</p>
+
+<p>If no key is specified, a key already present on the nodes will be used. If<br />
+nodes don’t have the same key, a key from one node will be distributed to other<br />
+nodes so that all nodes have the same key. If no node has a key, a new key will<br />
+be generated and distributed to the nodes.</p>
+
+<p>If this variable is set, <code>ha_cluster_regenerate_keys</code> is ignored for this key.</p>
+
+<h4 id="ha_cluster_fence_virt_key_src"><code>ha_cluster_fence_virt_key_src</code></h4>
+
+<p>path to fence-virt or fence-xvm pre-shared key file, default: <code>null</code></p>
+
+<p>Authentication key for fence-virt or fence-xvm fence agent.</p>
+
+<p>If value is provided, it is recommended to vault encrypt it. See<br />
+https://docs.ansible.com/ansible/latest/user_guide/vault.html for details.</p>
+
+<p>If no key is specified, a key already present on the nodes will be used. If<br />
+nodes don’t have the same key, a key from one node will be distributed to other<br />
+nodes so that all nodes have the same key. If no node has a key, a new key will<br />
+be generated and distributed to the nodes.</p>
+
+<p>If this variable is set, <code>ha_cluster_regenerate_keys</code> is ignored for this key.</p>
+
+<p>If you let the role to generate new key, you are supposed to copy the key to<br />
+your nodes’ hypervisor to ensure that fencing works.</p>
+
+<h4 id="ha_cluster_pcsd_public_key_src-ha_cluster_pcsd_private_key_src"><code>ha_cluster_pcsd_public_key_src</code>, <code>ha_cluster_pcsd_private_key_src</code></h4>
+
+<p>path to pcsd TLS certificate and key, default: <code>null</code></p>
+
+<p>TLS certificate and private key for pcsd. If this is not specified, a<br />
+certificate - key pair already present on the nodes will be used. If<br />
+certificate - key pair is not present, a random new one will be generated.</p>
+
+<p>If private key value is provided, it is recommended to vault encrypt it. See<br />
+https://docs.ansible.com/ansible/latest/user_guide/vault.html for details.</p>
+
+<p>If these variables are set, <code>ha_cluster_regenerate_keys</code> is ignored for this<br />
+certificate - key pair.</p>
+
+<h4 id="ha_cluster_pcsd_certificates"><code>ha_cluster_pcsd_certificates</code></h4>
+
+<p>If there is no pcsd private key and certificate, there are two ways to create them.</p>
+
+<p>One way is by setting <code>ha_cluster_pcsd_certificates</code> variable.<br />
+Another way is by setting none of<br />
+<a href="#ha_cluster_pcsd_public_key_src-ha_cluster_pcsd_private_key_src"><code>ha_cluster_pcsd_public_key_src</code> and <code>ha_cluster_pcsd_private_key_src</code></a> and <code>ha_cluster_pcsd_certificates</code>.</p>
+
+<p>If <code>ha_cluster_pcsd_certificates</code> is provided, the <code>certificate</code> role is internally<br />
+used and it creates the private key and certificate for pcsd as defined.<br />
+If none of the variables are provided, the <code>ha_cluster</code> role will create pcsd<br />
+certificates via pcsd itself.</p>
+
+<p>The value of <code>ha_cluster_pcsd_certificates</code> is set to the variable <code>certificate_requests</code><br />
+in the <code>certificate</code> role.<br />
+For more information, see the <code>certificate_requests</code> section in the <code>certificate</code><br />
+role documentation.</p>
+
+<p>The default value is <code>[]</code>.</p>
+
+<p>NOTE: The <code>certificate</code> role, unless using IPA and joining the systems to an IPA domain,<br />
+creates self-signed certificates, so you will need to explicitly configure trust,<br />
+which is not currently supported by the system roles.</p>
+
+<p>NOTE: When you set <code>ha_cluster_pcsd_certificates</code>, you must not set<br />
+<code>ha_cluster_pcsd_public_key_src</code> and <code>ha_cluster_pcsd_private_key_src</code> variables.</p>
+
+<p>NOTE: When you set <code>ha_cluster_pcsd_certificates</code>, <code>ha_cluster_regenerate_keys</code> is<br />
+ignored for this certificate - key pair.</p>
+
+<h4 id="ha_cluster_regenerate_keys"><code>ha_cluster_regenerate_keys</code></h4>
+
+<p>boolean, default: <code>false</code></p>
+
+<p>If this is set to <code>true</code>, pre-shared keys and TLS certificates will be<br />
+regenerated.<br />
+See also:<br />
+<a href="#ha_cluster_corosync_key_src"><code>ha_cluster_corosync_key_src</code></a>,<br />
+<a href="#ha_cluster_pacemaker_key_src"><code>ha_cluster_pacemaker_key_src</code></a>,<br />
+<a href="#ha_cluster_fence_virt_key_src"><code>ha_cluster_fence_virt_key_src</code></a>,<br />
+<a href="#ha_cluster_pcsd_public_key_src-ha_cluster_pcsd_private_key_src"><code>ha_cluster_pcsd_public_key_src</code></a>,<br />
+<a href="#ha_cluster_pcsd_public_key_src-ha_cluster_pcsd_private_key_src"><code>ha_cluster_pcsd_private_key_src</code></a><br />
+<a href="#ha_cluster_pcsd_certificates"><code>ha_cluster_pcsd_certificates</code></a></p>
+
+<h4 id="ha_cluster_pcs_permission_list"><code>ha_cluster_pcs_permission_list</code></h4>
+
+<p>structure and default value:</p>
+<pre><code class="language-yaml">ha_cluster_pcs_permission_list:
+  - type: group
+    name: haclient
+    allow_list:
+      - grant
+      - read
+      - write
+</code></pre>
+
+<p>This configures permissions to manage a cluster using pcsd. The items are as<br />
+follows:</p>
+
+<ul>
+  <li><code>type</code> - <code>user</code> or <code>group</code></li>
+  <li><code>name</code> - user or group name</li>
+  <li><code>allow_list</code> - Allowed actions for the specified user or group:
+    <ul>
+      <li><code>read</code> - allows to view cluster status and settings</li>
+      <li><code>write</code> - allows to modify cluster settings except permissions and ACLs</li>
+      <li><code>grant</code> - allows to modify cluster permissions and ACLs</li>
+      <li><code>full</code> - allows unrestricted access to a cluster including adding and<br />
+removing nodes and access to keys and certificates</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="ha_cluster_cluster_name"><code>ha_cluster_cluster_name</code></h4>
+
+<p>string, default: <code>my-cluster</code></p>
+
+<p>Name of the cluster.</p>
+
+<h4 id="ha_cluster_transport"><code>ha_cluster_transport</code></h4>
+
+<p>structure, default: no settings</p>
+
+<pre><code class="language-yaml">ha_cluster_transport:
+  type: knet
+  options:
+    - name: option1_name
+      value: option1_value
+    - name: option2_name
+      value: option2_value
+  links:
+    -
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+    -
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+  compression:
+    - name: option1_name
+      value: option1_value
+    - name: option2_name
+      value: option2_value
+  crypto:
+    - name: option1_name
+      value: option1_value
+    - name: option2_name
+      value: option2_value
+</code></pre>
+
+<ul>
+  <li><code>type</code> (optional) - Transport type: <code>knet</code>, <code>udp</code> or <code>udpu</code>. Defaults to<br />
+<code>knet</code> if not specified.</li>
+  <li><code>options</code> (optional) - List of name-value dictionaries with transport options.</li>
+  <li><code>links</code> (optional) - List of lists of name-value dictionaries. Each list of<br />
+name-value dictionaries holds options for one Corosync link. It is<br />
+recommended to set <code>linknumber</code> value for each link. Otherwise, the first<br />
+list of dictionaries is assigned to the first link, the second one to the<br />
+second link and so on. Only one link is supported with <code>udp</code> and <code>udpu</code><br />
+transports.</li>
+  <li><code>compression</code> (optional) - List of name-value dictionaries configuring<br />
+transport compression. Only available for <code>knet</code> transport.</li>
+  <li><code>crypto</code> (optional) - List of name-value dictionaries configuring transport<br />
+encryption. Only available for <code>knet</code> transport, where encryption is enabled<br />
+by default. Encryption is always disabled with <code>udp</code> and <code>udpu</code> transports.</li>
+</ul>
+
+<p>For a list of allowed options, see <code>pcs -h cluster setup</code> or <code>pcs(8)</code> man page,<br />
+section ‘cluster’, command ‘setup’. For a detailed description, see<br />
+<code>corosync.conf(5)</code> man page.</p>
+
+<p>You may take a look at <a href="#advanced-corosync-configuration">an example</a>.</p>
+
+<h4 id="ha_cluster_totem"><code>ha_cluster_totem</code></h4>
+
+<p>structure, default: no totem settings</p>
+
+<pre><code class="language-yaml">ha_cluster_totem:
+  options:
+    - name: option1_name
+      value: option1_value
+    - name: option2_name
+      value: option2_value
+</code></pre>
+
+<p>Corosync totem configuration. For a list of allowed options, see <code>pcs -h
+cluster setup</code> or <code>pcs(8)</code> man page, section ‘cluster’, command ‘setup’. For a<br />
+detailed description, see <code>corosync.conf(5)</code> man page.</p>
+
+<p>You may take a look at <a href="#advanced-corosync-configuration">an example</a>.</p>
+
+<h4 id="ha_cluster_quorum"><code>ha_cluster_quorum</code></h4>
+
+<p>structure, default: no quorum settings</p>
+
+<pre><code class="language-yaml">ha_cluster_quorum:
+  options:
+    - name: option1_name
+      value: option1_value
+    - name: option2_name
+      value: option2_value
+  device:
+    model: string
+    model_options:
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+    generic_options:
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+    heuristics_options:
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+</code></pre>
+
+<p>Cluster quorum configuration. The items are as follows:</p>
+
+<ul>
+  <li><code>options</code> (optional) - List of name-value dictionaries configuring quorum.<br />
+Allowed options are: <code>auto_tie_breaker</code>, <code>last_man_standing</code>,<br />
+<code>last_man_standing_window</code>, <code>wait_for_all</code>. They are documented in<br />
+<code>votequorum(5)</code> man page.</li>
+  <li><code>device</code> (optional) - Configures the cluster to use a quorum device. By<br />
+default, no quorum device is used.
+    <ul>
+      <li><code>model</code> (mandatory) - Specifies a type of the quorum device. Currently, only<br />
+<code>net</code> is supported.</li>
+      <li><code>model_options</code> (optional) - List of name-value dictionaries configuring<br />
+the specified quorum device model. For model <code>net</code>, options <code>host</code> and<br />
+<code>algorithm</code> must be specified.
+        <ul>
+          <li>You may use the <code>pcs-address</code> option to set a custom pcsd address and<br />
+port to connect to the qnetd host. Otherwise, the role connects to<br />
+default pcsd port on the value of <code>host</code>.</li>
+        </ul>
+      </li>
+      <li><code>generic_options</code> (optional) - List of name-value dictionaries setting<br />
+quorum device options which are not model specific.</li>
+      <li><code>heuristics_options</code> (optional) - List of name-value dictionaries<br />
+configuring quorum device heuristics.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>Quorum device options are documented in <code>corosync-qdevice(8)</code> man page; generic<br />
+options are <code>sync_timeout</code> and <code>timeout</code>, for model net options check the<br />
+<code>quorum.device.net</code> section, for heuristics options see the<br />
+<code>quorum.device.heuristics</code> section.</p>
+
+<p>To regenerate quorum device TLS certificate, set the<br />
+<a href="#ha_cluster_regenerate_keys"><code>ha_cluster_regenerate_keys</code></a> variable to <code>true</code>.</p>
+
+<p>You may take a look at <a href="#advanced-corosync-configuration">a quorum example</a> and<br />
+<a href="#configuring-a-cluster-using-a-quorum-device">a quorum device example</a>.</p>
+
+<h4 id="ha_cluster_sbd_enabled"><code>ha_cluster_sbd_enabled</code></h4>
+
+<p>boolean, default: <code>false</code></p>
+
+<p>Defines whether to use SBD.</p>
+
+<p>You may take a look at <a href="#configuring-cluster-to-use-sbd">an example</a>.</p>
+
+<h4 id="ha_cluster_sbd_options"><code>ha_cluster_sbd_options</code></h4>
+
+<p>list, default: <code>[]</code></p>
+
+<p>List of name-value dictionaries specifying SBD options. Supported options are:<br />
+<code>delay-start</code> (defaults to <code>false</code>), <code>startmode</code> (defaults to <code>always</code>),<br />
+<code>timeout-action</code> (defaults to <code>flush,reboot</code>) and <code>watchdog-timeout</code> (defaults<br />
+to <code>5</code>). See <code>sbd(8)</code> man page, section ‘Configuration via environment’ for<br />
+their description.</p>
+
+<p>You may take a look at <a href="#configuring-cluster-to-use-sbd">an example</a>.</p>
+
+<p>Watchdog and SBD devices are configured on a node to node basis in<br />
+<a href="#sbd-watchdog-and-devices">inventory</a>.</p>
+
+<h4 id="ha_cluster_cluster_properties"><code>ha_cluster_cluster_properties</code></h4>
+
+<p>structure, default: no properties</p>
+
+<pre><code class="language-yaml">ha_cluster_cluster_properties:
+  - attrs:
+      - name: property1_name
+        value: property1_value
+      - name: property2_name
+        value: property2_value
+</code></pre>
+
+<p>List of sets of cluster properties - Pacemaker cluster-wide configuration.<br />
+Currently, only one set is supported.</p>
+
+<p>You may take a look at <a href="#configuring-cluster-properties">an example</a>.</p>
+
+<h4 id="ha_cluster_resource_primitives"><code>ha_cluster_resource_primitives</code></h4>
+
+<p>structure, default: no resources</p>
+
+<pre><code class="language-yaml">ha_cluster_resource_primitives:
+  - id: resource-id
+    agent: resource-agent
+    instance_attrs:
+      - attrs:
+          - name: attribute1_name
+            value: attribute1_value
+          - name: attribute2_name
+            value: attribute2_value
+    meta_attrs:
+      - attrs:
+          - name: meta_attribute1_name
+            value: meta_attribute1_value
+          - name: meta_attribute2_name
+            value: meta_attribute2_value
+    operations:
+      - action: operation1-action
+        attrs:
+          - name: operation1_attribute1_name
+            value: operation1_attribute1_value
+          - name: operation1_attribute2_name
+            value: operation1_attribute2_value
+      - action: operation2-action
+        attrs:
+          - name: operation2_attribute1_name
+            value: operation2_attribute1_value
+          - name: operation2_attribute2_name
+            value: operation2_attribute2_value
+</code></pre>
+
+<p>This variable defines Pacemaker resources (including stonith) configured by the<br />
+role. The items are as follows:</p>
+
+<ul>
+  <li><code>id</code> (mandatory) - ID of a resource.</li>
+  <li><code>agent</code> (mandatory) - Name of a resource or stonith agent, for example<br />
+<!--- wokeignore:rule=dummy --><br />
+<code>ocf:pacemaker:Dummy</code> or <code>stonith:fence_xvm</code>. It is mandatory to use<br />
+<code>stonith:</code> for stonith agents. For resource agents, it is possible to use a<br />
+<!--- wokeignore:rule=dummy --><br />
+short name, such as <code>Dummy</code> instead of <code>ocf:pacemaker:Dummy</code>. However, if<br />
+several agents with the same short name are installed, the role will fail as<br />
+it will be unable to decide which agent should be used. Therefore, it is<br />
+recommended to use full names.</li>
+  <li><code>instance_attrs</code> (optional) - List of sets of the resource’s instance<br />
+attributes. Currently, only one set is supported. The exact names and values<br />
+of attributes, as well as whether they are mandatory or not, depends on the<br />
+resource or stonith agent.</li>
+  <li><code>meta_attrs</code> (optional) - List of sets of the resource’s meta attributes.<br />
+Currently, only one set is supported.</li>
+  <li><code>operations</code> (optional) - List of the resource’s operations.
+    <ul>
+      <li><code>action</code> (mandatory) - Operation action as defined by Pacemaker and the<br />
+resource or stonith agent.</li>
+      <li><code>attrs</code> (mandatory) - Operation options, at least one option must be<br />
+specified.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-fencing-and-several-resources">an example</a>.</p>
+
+<h4 id="ha_cluster_resource_groups"><code>ha_cluster_resource_groups</code></h4>
+
+<p>structure, default: no resource groups</p>
+
+<pre><code class="language-yaml">ha_cluster_resource_groups:
+  - id: group-id
+    resource_ids:
+      - resource1-id
+      - resource2-id
+    meta_attrs:
+      - attrs:
+          - name: group_meta_attribute1_name
+            value: group_meta_attribute1_value
+          - name: group_meta_attribute2_name
+            value: group_meta_attribute2_value
+</code></pre>
+
+<p>This variable defines resource groups. The items are as follows:</p>
+
+<ul>
+  <li><code>id</code> (mandatory) - ID of a group.</li>
+  <li><code>resources</code> (mandatory) - List of the group’s resources. Each resource is<br />
+referenced by its ID and the resources must be defined in<br />
+<a href="#ha_cluster_resource_primitives"><code>ha_cluster_resource_primitives</code></a>. At least<br />
+one resource must be listed.</li>
+  <li><code>meta_attrs</code> (optional) - List of sets of the group’s meta attributes.<br />
+Currently, only one set is supported.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-fencing-and-several-resources">an example</a>.</p>
+
+<h4 id="ha_cluster_resource_clones"><code>ha_cluster_resource_clones</code></h4>
+
+<p>structure, default: no resource clones</p>
+
+<pre><code class="language-yaml">ha_cluster_resource_clones:
+  - resource_id: resource-to-be-cloned
+    promotable: true
+    id: custom-clone-id
+    meta_attrs:
+      - attrs:
+          - name: clone_meta_attribute1_name
+            value: clone_meta_attribute1_value
+          - name: clone_meta_attribute2_name
+            value: clone_meta_attribute2_value
+</code></pre>
+
+<p>This variable defines resource clones. The items are as follows:</p>
+
+<ul>
+  <li><code>resource_id</code> (mandatory) - Resource to be cloned. The resource must be<br />
+defined in<br />
+<a href="#ha_cluster_resource_primitives"><code>ha_cluster_resource_primitives</code></a> or<br />
+<a href="#ha_cluster_resource_groups"><code>ha_cluster_resource_groups</code></a>.</li>
+  <li><code>promotable</code> (optional) - Create a promotable clone, <code>true</code> or <code>false</code>.</li>
+  <li><code>id</code> (optional) - Custom ID of the clone. If no ID is specified, it will be<br />
+generated. Warning will be emitted if this option is not supported by the<br />
+cluster.</li>
+  <li><code>meta_attrs</code> (optional) - List of sets of the clone’s meta attributes.<br />
+Currently, only one set is supported.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-fencing-and-several-resources">an example</a>.</p>
+
+<h4 id="ha_cluster_resource_bundles"><code>ha_cluster_resource_bundles</code></h4>
+
+<p>structure, default: no bundle resources</p>
+
+<pre><code class="language-yaml">- id: bundle-id
+  resource_id: resource-id
+  container:
+    type: container-type
+    options:
+      - name: container_option1_name
+        value: container_option1_value
+      - name: container_option2_name
+        value: container_option2_value
+  network_options:
+      - name: network_option1_name
+        value: network_option1_value
+      - name: network_option2_name
+        value: network_option2_value
+  port_map:
+    -
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+    -
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+  storage_map:
+    -
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+    -
+      - name: option1_name
+        value: option1_value
+      - name: option2_name
+        value: option2_value
+    meta_attrs:
+      - attrs:
+          - name: bundle_meta_attribute1_name
+            value: bundle_meta_attribute1_value
+          - name: bundle_meta_attribute2_name
+            value: bundle_meta_attribute2_value
+</code></pre>
+
+<p>This variable defines resource bundles. The items are as follows:</p>
+
+<ul>
+  <li><code>id</code> (mandatory) - ID of a bundle.</li>
+  <li><code>resource_id</code> (optional) - Resource to be placed into the bundle. The<br />
+resource must be defined in<br />
+<a href="#ha_cluster_resource_primitives"><code>ha_cluster_resource_primitives</code></a>.</li>
+  <li><code>container.type</code> (mandatory) - Container technology, such as <code>docker</code>,<br />
+<code>podman</code> or <code>rkt</code>.</li>
+  <li><code>container.options</code> (optional) - List of name-value dictionaries. Depending<br />
+on the selected <code>container.type</code>, certain options may be required to be<br />
+specified, such as <code>image</code>.</li>
+  <li><code>network_options</code> (optional) - List of name-value dictionaries. When a<br />
+resource is placed into a bundle, some <code>network_options</code> may be required to<br />
+be specified, such as <code>control-port</code> or <code>ip-range-start</code>.</li>
+  <li><code>port_map</code> (optional) - List of lists of name-value dictionaries defining<br />
+port forwarding from the host network to the container network. Each list of<br />
+name-value dictionaries holds options for one port forwarding.</li>
+  <li><code>storage_map</code> (optional) - List of lists of name-value dictionaries mapping<br />
+directories on the host’s filesystem into the container. Each list of<br />
+name-value dictionaries holds options for one directory mapping.</li>
+  <li><code>meta_attrs</code> (optional) - List of sets of the bundle’s meta attributes.<br />
+Currently, only one set is supported.</li>
+</ul>
+
+<p>Note, that the role does not install container launch technology automatically.<br />
+However, you can install it by listing appropriate packages in<br />
+<a href="#ha_cluster_extra_packages"><code>ha_cluster_extra_packages</code></a> variable.</p>
+
+<p>Note, that the role does not build and distribute container images. Please, use<br />
+other means to supply a fully configured container image to every node allowed<br />
+to run a bundle depending on it.</p>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-fencing-and-several-resources">an example</a>.</p>
+
+<h4 id="ha_cluster_constraints_location"><code>ha_cluster_constraints_location</code></h4>
+
+<p>structure, default: no constraints</p>
+
+<p>This variable defines resource location constraints. They tell the cluster<br />
+which nodes a resource can run on. Resources can be specified by their ID or a<br />
+pattern matching more resources. Nodes can be specified by their name or a<br />
+rule.</p>
+
+<p>Structure for constraints with resource ID and node name:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_location:
+  - resource:
+      id: resource-id
+    node: node-name
+    id: constraint-id
+    options:
+      - name: score
+        value: score-value
+      - name: option-name
+        value: option-value
+</code></pre>
+<ul>
+  <li><code>resource</code> (mandatory) - Specification of a resource the constraint applies<br />
+to.</li>
+  <li><code>node</code> (mandatory) - Name of a node the resource should prefer or avoid.</li>
+  <li><code>id</code> (optional) - ID of the constraint. If not specified, it will be<br />
+autogenerated.</li>
+  <li><code>options</code> (optional) - List of name-value dictionaries.
+    <ul>
+      <li><code>score</code> - Score sets weight of the constraint.
+        <ul>
+          <li>Positive value means the resource prefers running on the node.</li>
+          <li>Negative value means the resource should avoid running on the node.</li>
+          <li><code>-INFINITY</code> means the resource must avoid running on the node.</li>
+          <li>If not specified, <code>score</code> defaults to <code>INFINITY</code>.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<p>Structure for constraints with resource pattern and node name:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_location:
+  - resource:
+      pattern: resource-pattern
+    node: node-name
+    id: constraint-id
+    options:
+      - name: score
+        value: score-value
+      - name: resource-discovery
+        value: resource-discovery-value
+</code></pre>
+<ul>
+  <li>This is the same as the previous type, except the resource specification.</li>
+  <li><code>pattern</code> (mandatory) - POSIX extended regular expression resource IDs are<br />
+matched against.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<p>Structure for constraints with resource ID and a rule:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_location:
+  - resource:
+      id: resource-id
+      role: resource-role
+    rule: rule-string
+    id: constraint-id
+    options:
+      - name: score
+        value: score-value
+      - name: resource-discovery
+        value: resource-discovery-value
+</code></pre>
+<ul>
+  <li><code>resource</code> (mandatory) - Specification of a resource the constraint applies<br />
+to.
+    <ul>
+      <li><code>id</code> (mandatory) - Resource ID.</li>
+      <li><code>role</code> (optional) - You may limit the constraint to the specified resource<br />
+role: <code>Started</code>, <code>Unpromoted</code>, <code>Promoted</code>.</li>
+    </ul>
+  </li>
+  <li><code>rule</code> (mandatory) - Constraint rule written using pcs syntax. See <code>pcs(8)</code><br />
+man page, section <code>constraint location</code> for details.</li>
+  <li>Other items have the same meaning as above.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<p>Structure for constraints with resource pattern and a rule:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_location:
+  - resource:
+      pattern: resource-pattern
+      role: resource-role
+    rule: rule-string
+    id: constraint-id
+    options:
+      - name: score
+        value: score-value
+      - name: resource-discovery
+        value: resource-discovery-value
+</code></pre>
+<ul>
+  <li>This is the same as the previous type, except the resource specification.</li>
+  <li><code>pattern</code> (mandatory) - POSIX extended regular expression resource IDs are<br />
+matched against.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<h4 id="ha_cluster_constraints_colocation"><code>ha_cluster_constraints_colocation</code></h4>
+
+<p>structure, default: no constraints</p>
+
+<p>This variable defines resource colocation constraints. They tell the cluster<br />
+that the location of one resource depends on the location of another one. There<br />
+are two types of colocation constraints: a simple one for two resources, and a<br />
+set constraint for multiple resources.</p>
+
+<p>Structure for simple constraints:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_colocation:
+  - resource_follower:
+      id: resource-id1
+      role: resource-role1
+    resource_leader:
+      id: resource-id2
+      role: resource-role2
+    id: constraint-id
+    options:
+      - name: score
+        value: score-value
+      - name: option-name
+        value: option-value
+</code></pre>
+<ul>
+  <li><code>resource_follower</code> (mandatory) - A resource that should be located relative<br />
+to <code>resource_leader</code>.
+    <ul>
+      <li><code>id</code> (mandatory) - Resource ID.</li>
+      <li><code>role</code> (optional) - You may limit the constraint to the specified resource<br />
+role: <code>Started</code>, <code>Unpromoted</code>, <code>Promoted</code>.</li>
+    </ul>
+  </li>
+  <li><code>resource_leader</code> (mandatory) - The cluster will decide where to put this<br />
+resource first and then decide where to put <code>resource_follower</code>.
+    <ul>
+      <li><code>id</code> (mandatory) - Resource ID.</li>
+      <li><code>role</code> (optional) - You may limit the constraint to the specified resource<br />
+role: <code>Started</code>, <code>Unpromoted</code>, <code>Promoted</code>.</li>
+    </ul>
+  </li>
+  <li><code>id</code> (optional) - ID of the constraint. If not specified, it will be<br />
+autogenerated.</li>
+  <li><code>options</code> (optional) - List of name-value dictionaries.
+    <ul>
+      <li><code>score</code> (optional) - Score sets weight of the constraint.
+        <ul>
+          <li>Positive values indicate the resources should run on the same node.</li>
+          <li>Negative values indicate the resources should run on different nodes.</li>
+          <li>Values of <code>+INFINITY</code> and <code>-INFINITY</code> change “should” to “must”.</li>
+          <li>If not specified, <code>score</code> defaults to <code>INFINITY</code>.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<p>Structure for set constraints:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_colocation:
+  - resource_sets:
+      - resource_ids:
+          - resource-id1
+          - resource-id2
+        options:
+          - name: option-name
+            value: option-value
+    id: constraint-id
+    options:
+      - name: score
+        value: score-value
+      - name: option-name
+        value: option-value
+</code></pre>
+<ul>
+  <li><code>resource_sets</code> (mandatory) - List of resource sets.
+    <ul>
+      <li><code>resource_ids</code> (mandatory) - List of resources in a set.</li>
+      <li><code>options</code> (optional) - List of name-value dictionaries fine-tuning how<br />
+resources in the sets are treated by the constraint.</li>
+    </ul>
+  </li>
+  <li><code>id</code> (optional) - Same as above.</li>
+  <li><code>options</code> (optional) - Same as above.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<h4 id="ha_cluster_constraints_order"><code>ha_cluster_constraints_order</code></h4>
+
+<p>structure, default: no constraints</p>
+
+<p>This variable defines resource order constraints. They tell the cluster the<br />
+order in which certain resource actions should occur. There are two types of<br />
+order constraints: a simple one for two resources, and a set constraint for<br />
+multiple resources.</p>
+
+<p>Structure for simple constraints:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_order:
+  - resource_first:
+      id: resource-id1
+      action: resource-action1
+    resource_then:
+      id: resource-id2
+      action: resource-action2
+    id: constraint-id
+    options:
+      - name: score
+        value: score-value
+      - name: option-name
+        value: option-value
+</code></pre>
+<ul>
+  <li><code>resource_first</code> (mandatory) - Resource that the <code>resource_then</code> depends on.
+    <ul>
+      <li><code>id</code> (mandatory) - Resource ID.</li>
+      <li><code>action</code> (optional) - The action that the resource must complete before  an<br />
+action can be initiated for the <code>resource_then</code>. Allowed values: <code>start</code>,<br />
+<code>stop</code>, <code>promote</code>, <code>demote</code>.</li>
+    </ul>
+  </li>
+  <li><code>resource_then</code> (mandatory) - The dependent resource.
+    <ul>
+      <li><code>id</code> (mandatory) - Resource ID.</li>
+      <li><code>action</code> (optional) - The action that the resource can execute only after<br />
+the action on the <code>resource_first</code> has completed. Allowed values: <code>start</code>,<br />
+<code>stop</code>, <code>promote</code>, <code>demote</code>.</li>
+    </ul>
+  </li>
+  <li><code>id</code> (optional) - ID of the constraint. If not specified, it will be<br />
+autogenerated.</li>
+  <li><code>options</code> (optional) - List of name-value dictionaries.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<p>Structure for set constraints:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_order:
+  - resource_sets:
+      - resource_ids:
+          - resource-id1
+          - resource-id2
+        options:
+          - name: option-name
+            value: option-value
+    id: constraint-id
+    options:
+      - name: score
+        value: score-value
+      - name: option-name
+        value: option-value
+</code></pre>
+<ul>
+  <li><code>resource_sets</code> (mandatory) - List of resource sets.
+    <ul>
+      <li><code>resource_ids</code> (mandatory) - List of resources in a set.</li>
+      <li><code>options</code> (optional) - List of name-value dictionaries fine-tuning how<br />
+resources in the sets are treated by the constraint.</li>
+    </ul>
+  </li>
+  <li><code>id</code> (optional) - Same as above.</li>
+  <li><code>options</code> (optional) - Same as above.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<h4 id="ha_cluster_constraints_ticket"><code>ha_cluster_constraints_ticket</code></h4>
+
+<p>structure, default: no constraints</p>
+
+<p>This variable defines resource ticket constraints. They let you specify the<br />
+resources depending on a certain ticket. There are two types of ticket<br />
+constraints: a simple one for two resources, and a set constraint for multiple<br />
+resources.</p>
+
+<p>Structure for simple constraints:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_ticket:
+  - resource:
+      id: resource-id
+      role: resource-role
+    ticket: ticket-name
+    id: constraint-id
+    options:
+      - name: loss-policy
+        value: loss-policy-value
+      - name: option-name
+        value: option-value
+</code></pre>
+<ul>
+  <li><code>resource</code> (mandatory) - Specification of a resource the constraint applies<br />
+to.
+    <ul>
+      <li><code>id</code> (mandatory) - Resource ID.</li>
+      <li><code>role</code> (optional) - You may limit the constraint to the specified resource<br />
+role: <code>Started</code>, <code>Unpromoted</code>, <code>Promoted</code>.</li>
+    </ul>
+  </li>
+  <li><code>ticket</code> (mandatory) - Name of a ticket the resource depends on.</li>
+  <li><code>id</code> (optional) - ID of the constraint. If not specified, it will be<br />
+autogenerated.</li>
+  <li><code>options</code> (optional) - List of name-value dictionaries.
+    <ul>
+      <li><code>loss-policy</code> (optional) - Action that should happen to the resource if the<br />
+ticket is revoked.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<p>Structure for set constraints:</p>
+<pre><code class="language-yaml">ha_cluster_constraints_ticket:
+  - resource_sets:
+      - resource_ids:
+          - resource-id1
+          - resource-id2
+        options:
+          - name: option-name
+            value: option-value
+    ticket: ticket-name
+    id: constraint-id
+    options:
+      - name: option-name
+        value: option-value
+</code></pre>
+<ul>
+  <li><code>resource_sets</code> (mandatory) - List of resource sets.
+    <ul>
+      <li><code>resource_ids</code> (mandatory) - List of resources in a set.</li>
+      <li><code>options</code> (optional) - List of name-value dictionaries fine-tuning how<br />
+resources in the sets are treated by the constraint.</li>
+    </ul>
+  </li>
+  <li><code>ticket</code> (mandatory) - Same as above.</li>
+  <li><code>id</code> (optional) - Same as above.</li>
+  <li><code>options</code> (optional) - Same as above.</li>
+</ul>
+
+<p>You may take a look at<br />
+<a href="#creating-a-cluster-with-resource-constraints">an example</a>.</p>
+
+<h4 id="ha_cluster_qnetd"><code>ha_cluster_qnetd</code></h4>
+
+<p>structure and default value:</p>
+<pre><code class="language-yaml">ha_cluster_qnetd:
+  present: boolean
+  start_on_boot: boolean
+  regenerate_keys: boolean
+</code></pre>
+
+<p>This configures a qnetd host which can then serve as an external quorum device<br />
+for clusters. The items are as follows:</p>
+
+<ul>
+  <li><code>present</code> (optional) - If <code>true</code>, configure a qnetd instance on the host. If<br />
+<code>false</code>, remove qnetd configuration from the host. Defaults to <code>false</code>. If<br />
+you set this to <code>true</code>, you must set<br />
+<a href="#ha_cluster_cluster_present"><code>ha_cluster_cluster_present</code></a> to <code>false</code>.</li>
+  <li><code>start_on_boot</code> (optional) - Configures whether the qnetd should start<br />
+automatically on boot. Defaults to <code>true</code>.</li>
+  <li><code>regenerate_keys</code> (optional) - Set this variable to <code>true</code> to regenerate<br />
+qnetd TLS certificate. If you regenerate the certificate, you will need to<br />
+re-run the role for each cluster to connect it to the qnetd again or run pcs<br />
+manually to do that.</li>
+</ul>
+
+<p>Note that you cannot run qnetd on a cluster node as fencing would disrupt qnetd<br />
+operation.</p>
+
+<p>You may take a look at <a href="#configuring-a-cluster-using-a-quorum-device">an<br />
+example</a>.</p>
+
+<h3 id="inventory">Inventory</h3>
+
+<h4 id="nodes-names-and-addresses">Nodes’ names and addresses</h4>
+<p>Nodes’ names and addresses can be configured in inventory. This is optional. If<br />
+no names or addresses are configured, play’s targets will be used.</p>
+
+<p>Example inventory with targets <code>node1</code> and <code>node2</code>:</p>
+<pre><code class="language-yaml">all:
+  hosts:
+    node1:
+      ha_cluster:
+        node_name: node-A
+        pcs_address: node1-address
+        corosync_addresses:
+          - 192.168.1.11
+          - 192.168.2.11
+    node2:
+      ha_cluster:
+        node_name: node-B
+        pcs_address: node2-address:2224
+        corosync_addresses:
+          - 192.168.1.12
+          - 192.168.2.12
+</code></pre>
+
+<ul>
+  <li><code>node_name</code> - the name of a node in a cluster</li>
+  <li><code>pcs_address</code> - an address used by pcs to communicate with the node, it can<br />
+be a name, FQDN or an IP address and it can contain port</li>
+  <li><code>corosync_addresses</code> - list of addresses used by Corosync, all nodes must<br />
+have the same number of addresses and the order of the addresses matters</li>
+</ul>
+
+<h4 id="sbd-watchdog-and-devices">SBD watchdog and devices</h4>
+<p>When using SBD, you may optionally configure watchdog and SBD devices for each<br />
+node in inventory. Even though all SBD devices must be shared to and accessible<br />
+from all nodes, each node may use different names for the devices. Watchdog may<br />
+be different for each node as well. See also <a href="#ha_cluster_sbd_enabled">SBD<br />
+variables</a>.</p>
+
+<p>Example inventory with targets <code>node1</code> and <code>node2</code>:</p>
+<pre><code class="language-yaml">all:
+  hosts:
+    node1:
+      ha_cluster:
+        sbd_watchdog: /dev/watchdog2
+        sbd_devices:
+          - /dev/vdx
+          - /dev/vdy
+    node2:
+      ha_cluster:
+        sbd_watchdog: /dev/watchdog1
+        sbd_devices:
+          - /dev/vdw
+          - /dev/vdz
+</code></pre>
+
+<ul>
+  <li><code>sbd_watchdog</code> (optional) - Watchdog device to be used by SBD. Defaults to<br />
+<code>/dev/watchdog</code> if not set.</li>
+  <li><code>sbd_devices</code> (optional) - Devices to use for exchanging SBD messages and for<br />
+monitoring. Defaults to empty list if not set.</li>
+</ul>
+
+<h2 id="example-playbooks">Example Playbooks</h2>
+
+<p>Following examples show what the structure of the role variables looks like.<br />
+They are not guides or best practices for configuring a cluster.</p>
+
+<h3 id="configuring-firewall-and-selinux-using-each-role">Configuring firewall and selinux using each role</h3>
+
+<p>To run <code>ha_cluster</code> properly, the <code>ha_cluster</code> ports need to be configured<br />
+for <code>firewalld</code> and the <code>SELinux</code> policy as shown in this example. Although<br />
+they are omitted in each example playbook, we highly recommend to set them<br />
+to <code>true</code> in your playbooks using the <code>ha_cluster</code> role.</p>
+
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_manage_firewall: true
+    ha_cluster_manage_selinux: true
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="creating-pcsd-tls-cert-and-key-files-using-the-certificate-role">Creating pcsd TLS cert and key files using the <code>certificate</code> role</h3>
+
+<p>This example creates self-signed pcsd certificate and private key files<br />
+in /var/lib/pcsd with the file name FILENAME.crt and FILENAME.key, respectively.</p>
+
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_pcsd_certificates:
+      - name: FILENAME
+        common_name: "{{ ansible_hostname }}"
+        ca: self-sign
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="creating-a-cluster-running-no-resources">Creating a cluster running no resources</h3>
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="advanced-corosync-configuration">Advanced Corosync configuration</h3>
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    ha_cluster_transport:
+      type: knet
+      options:
+        - name: ip_version
+          value: ipv4-6
+        - name: link_mode
+          value: active
+      links:
+        -
+          - name: linknumber
+            value: 1
+          - name: link_priority
+            value: 5
+        -
+          - name: linknumber
+            value: 0
+          - name: link_priority
+            value: 10
+      compression:
+        - name: level
+          value: 5
+        - name: model
+          value: zlib
+      crypto:
+        - name: cipher
+          value: none
+        - name: hash
+          value: none
+    ha_cluster_totem:
+      options:
+        - name: block_unlisted_ips
+          value: 'yes'
+        - name: send_join
+          value: 0
+    ha_cluster_quorum:
+      options:
+        - name: auto_tie_breaker
+          value: 1
+        - name: wait_for_all
+          value: 1
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="configuring-cluster-to-use-sbd">Configuring cluster to use SBD</h3>
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    ha_cluster_sbd_enabled: true
+    ha_cluster_sbd_options:
+      - name: delay-start
+        value: 'no'
+      - name: startmode
+        value: always
+      - name: timeout-action
+        value: 'flush,reboot'
+      - name: watchdog-timeout
+        value: 5
+    #  if you need to set stonith-watchdog-timeout property as well:
+    ha_cluster_cluster_properties:
+      - attrs:
+          - name: stonith-watchdog-timeout
+            value: 10
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="configuring-cluster-properties">Configuring cluster properties</h3>
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    ha_cluster_cluster_properties:
+      - attrs:
+          - name: stonith-enabled
+            value: 'true'
+          - name: no-quorum-policy
+            value: stop
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="creating-a-cluster-with-fencing-and-several-resources">Creating a cluster with fencing and several resources</h3>
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    ha_cluster_resource_primitives:
+      - id: xvm-fencing
+        agent: 'stonith:fence_xvm'
+        instance_attrs:
+          - attrs:
+              - name: pcmk_host_list
+                value: node1 node2
+      - id: simple-resource
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: resource-with-options
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+        instance_attrs:
+          - attrs:
+              - name: fake
+                value: fake-value
+              - name: passwd
+                value: passwd-value
+        meta_attrs:
+          - attrs:
+              - name: target-role
+                value: Started
+              - name: is-managed
+                value: 'true'
+        operations:
+          - action: start
+            attrs:
+              - name: timeout
+                value: '30s'
+          - action: monitor
+            attrs:
+              - name: timeout
+                value: '5'
+              - name: interval
+                value: '1min'
+      - id: example-1
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: example-2
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: example-3
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: simple-clone
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: clone-with-options
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: bundled-resource
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+    ha_cluster_resource_groups:
+      - id: simple-group
+        resource_ids:
+          - example-1
+          - example-2
+        meta_attrs:
+          - attrs:
+              - name: target-role
+                value: Started
+              - name: is-managed
+                value: 'true'
+      - id: cloned-group
+        resource_ids:
+          - example-3
+    ha_cluster_resource_clones:
+      - resource_id: simple-clone
+      - resource_id: clone-with-options
+        promotable: true
+        id: custom-clone-id
+        meta_attrs:
+          - attrs:
+              - name: clone-max
+                value: '2'
+              - name: clone-node-max
+                value: '1'
+      - resource_id: cloned-group
+        promotable: true
+    ha_cluster_resource_bundles:
+      - id: bundle-with-resource
+        resource-id: bundled-resource
+        container:
+          type: podman
+          options:
+            - name: image
+              value: my:image
+        network_options:
+          - name: control-port
+            value: 3121
+        port_map:
+          -
+            - name: port
+              value: 10001
+          -
+            - name: port
+              value: 10002
+            - name: internal-port
+              value: 10003
+        storage_map:
+          -
+            - name: source-dir
+              value: /srv/daemon-data
+            - name: target-dir
+              value: /var/daemon/data
+          -
+            - name: source-dir-root
+              value: /var/log/pacemaker/bundles
+            - name: target-dir
+              value: /var/log/daemon
+        meta_attrs:
+          - attrs:
+              - name: target-role
+                value: Started
+              - name: is-managed
+                value: 'true'
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="creating-a-cluster-with-resource-constraints">Creating a cluster with resource constraints</h3>
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    # In order to use constraints, we need resources the constraints will apply
+    # to.
+    ha_cluster_resource_primitives:
+      - id: xvm-fencing
+        agent: 'stonith:fence_xvm'
+        instance_attrs:
+          - attrs:
+              - name: pcmk_host_list
+                value: node1 node2
+      - id: example-1
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: example-2
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: example-3
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: example-4
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: example-5
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+      - id: example-6
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+    # location constraints
+    ha_cluster_constraints_location:
+      # resource ID and node name
+      - resource:
+          id: example-1
+        node: node1
+        options:
+          - name: score
+            value: 20
+      # resource pattern and node name
+      - resource:
+          pattern: example-\d+
+        node: node1
+        options:
+          - name: score
+            value: 10
+      # resource ID and rule
+      - resource:
+          id: example-2
+        rule: '#uname eq node2 and date in_range 2022-01-01 to 2022-02-28'
+      # resource pattern and rule
+      - resource:
+          pattern: example-\d+
+        rule: node-type eq weekend and date-spec weekdays=6-7
+    # colocation constraints
+    ha_cluster_constraints_colocation:
+      # simple constraint
+      - resource_leader:
+          id: example-3
+        resource_follower:
+          id: example-4
+        options:
+          - name: score
+            value: -5
+      # set constraint
+      - resource_sets:
+          - resource_ids:
+              - example-1
+              - example-2
+          - resource_ids:
+              - example-5
+              - example-6
+            options:
+              - name: sequential
+                value: "false"
+        options:
+          - name: score
+            value: 20
+    # order constraints
+    ha_cluster_constraints_order:
+      # simple constraint
+      - resource_first:
+          id: example-1
+        resource_then:
+          id: example-6
+        options:
+          - name: symmetrical
+            value: "false"
+      # set constraint
+      - resource_sets:
+          - resource_ids:
+              - example-1
+              - example-2
+            options:
+              - name: require-all
+                value: "false"
+              - name: sequential
+                value: "false"
+          - resource_ids:
+              - example-3
+          - resource_ids:
+              - example-4
+              - example-5
+            options:
+              - name: sequential
+                value: "false"
+    # ticket constraints
+    ha_cluster_constraints_ticket:
+      # simple constraint
+      - resource:
+          id: example-1
+        ticket: ticket1
+        options:
+          - name: loss-policy
+            value: stop
+      # set constraint
+      - resource_sets:
+          - resource_ids:
+              - example-3
+              - example-4
+              - example-5
+        ticket: ticket2
+        options:
+          - name: loss-policy
+            value: fence
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="configuring-a-cluster-using-a-quorum-device">Configuring a cluster using a quorum device</h3>
+
+<h4 id="configuring-a-quorum-device">Configuring a quorum device</h4>
+<p>Before you can add a quorum device to a cluster, you need to set the device up.<br />
+This is only needed to be done once for each quorum device. Once it has been<br />
+set up, you can use a quorom device in any number of clusters.</p>
+
+<p>Note that you cannot run a quorum device on a cluster node.</p>
+
+<pre><code class="language-yaml">- hosts: nodeQ
+  vars:
+    ha_cluster_cluster_present: false
+    ha_cluster_hacluster_password: password
+    ha_cluster_qnetd:
+      present: true
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h4 id="configuring-a-cluster-to-use-a-quorum-device">Configuring a cluster to use a quorum device</h4>
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    ha_cluster_quorum:
+      device:
+        model: net
+        model_options:
+          - name: host
+            value: nodeQ
+          - name: algorithm
+            value: lms
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h3 id="purging-all-cluster-configuration">Purging all cluster configuration</h3>
+<pre><code class="language-yaml">- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_present: false
+
+  roles:
+    - rhel-system-roles.ha_cluster
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>MIT</p>
+
+<h2 id="author-information">Author Information</h2>
+
+<p>Tomas Jelinek</p>

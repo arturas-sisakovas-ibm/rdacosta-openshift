@@ -1,0 +1,188 @@
+<h1 id="postfix">postfix</h1>
+<p><img src="https://github.com/linux-system-roles/posffix/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>This role can install, configure and start Postfix MTA.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The role requires the <code>firewall</code> role and the <code>selinux</code> role from the<br />
+<code>fedora.linux_system_roles</code> collection, if <code>postfix_manage_firewall</code><br />
+and <code>postfix_manage_selinux</code> is set to true, respectively.<br />
+(Please see also <a href="#postfix_manage_firewall"><code>postfix_manage_firewall</code></a><br />
+ and <a href="#postfix_manage_selinux"><code>postfix_manage_selinux</code></a>)</p>
+
+<p>If the <code>postfix</code> is a role from the <code>fedora.linux_system_roles</code><br />
+collection or from the Fedora RPM package, the requirement is already<br />
+satisfied.</p>
+
+<p>Otherwise, please run the following command line to install the collection.</p>
+<pre><code>ansible-galaxy collection install -r meta/collection-requirements.yml
+</code></pre>
+
+<h1 id="role-variables">Role Variables</h1>
+
+<h3 id="postfix_conf">postfix_conf</h3>
+
+<pre><code>postfix_conf:
+  relayhost: example.com
+</code></pre>
+
+<p>This is a dictionary which can hold key/value pairs of all supported Postfix<br />
+configuration parameters. Keys not supported by the installed Postfix are<br />
+ignored.  The default is empty <code>{}</code>.</p>
+
+<p>You can specify <code>previous: replaced</code> within the <code>postfix_conf</code> dictionary to<br />
+remove any existing configuration and apply the desired configuration on top of<br />
+clean postfix installation.</p>
+
+<p><strong>WARNING</strong>: If you specify <code>previous: replaced</code>, the role reinstalls the postfix<br />
+package and replaces the existing <code>/etc/postfix/main.cf</code> and<br />
+<code>/etc/postfix/master.cf</code> files. <!--- wokeignore:rule=master --><br />
+Ensure to back up those files to preserve your settings.</p>
+
+<p>If you specify only <code>previous: replaced</code> under the <code>postfix_conf</code> dictionary,<br />
+the role re-installs the <code>postfix</code> package and enables the <code>postfix</code> service<br />
+without applying any configuration.</p>
+
+<p>Example of settings <code>previous: replaced</code>:</p>
+
+<pre><code>postfix_conf:
+  previous: replaced
+  relayhost: example.com
+</code></pre>
+
+<h3 id="postfix_check">postfix_check</h3>
+
+<pre><code>postfix_check: false
+</code></pre>
+
+<p>This is a boolean which determines if <code>postfix check</code> is run before starting<br />
+Postfix if the configuration has changed.  The default is <code>true</code>.</p>
+
+<h3 id="postfix_backup">postfix_backup</h3>
+
+<pre><code>postfix_backup: true
+</code></pre>
+
+<p>This is a boolean which determines if the role will make a single backup copy of<br />
+the configuration - for example,<br />
+<code>cp /etc/postfix/main.cf /etc/postfix/main.cf.backup</code>,<br />
+thus overwriting the previous backup, if any.  The default is <code>false</code>.  NOTE: If<br />
+you want to set this to <code>true</code>, you must also set <code>postfix_backup_multiple:
+false</code> - see below.</p>
+
+<h3 id="postfix_backup_multiple">postfix_backup_multiple</h3>
+
+<pre><code>postfix_backup_multiple: false
+</code></pre>
+
+<p>This is a boolean which determines if the role will make a timestamped backup copy of<br />
+the configuration - for example,<br />
+<code>cp /etc/postfix/main.cf /etc/postfix/main.cf.$(date -Isec)</code>,<br />
+thus keeping multiple backup copies.  The default is <code>true</code>.  NOTE: This setting<br />
+overrides <code>postfix_backup</code>, so you must set this to <code>false</code> if you want to use<br />
+<code>postfix_backup</code>.</p>
+
+<h3 id="postfix_manage_firewall">postfix_manage_firewall</h3>
+
+<p>Boolean flag allowing to configure firewall using the firewall role.<br />
+Manage the smtp related ports, 25/tcp, 465/tcp, and 587/tcp.<br />
+If the variable is set to <code>false</code>, the <code>postfix role</code> does not manage the<br />
+firewall.<br />
+Default to <code>false</code>.</p>
+
+<p>NOTE: <code>postfix_manage_firewall</code> is limited to <em>adding</em> ports.<br />
+It cannot be used for <em>removing</em> ports.<br />
+If you want to remove ports, you will need to use the firewall system<br />
+role directly.</p>
+
+<p>NOTE: the firewall management is not supported on RHEL 6.</p>
+
+<h3 id="postfix_manage_selinux">postfix_manage_selinux</h3>
+
+<p>Boolean flag allowing to configure selinux using the selinux role.<br />
+Assign <code>smtp_port_t</code> to the smtp related ports.<br />
+If the variable is set to false, the <code>postfix role</code> does not manage the<br />
+selinux</p>
+
+<p>NOTE: <code>postfix_manage_selinux</code> is limited to <em>adding</em> policy.<br />
+It cannot be used for <em>removing</em> policy.<br />
+If you want to remove policy, you will need to use the selinux system<br />
+role directly.</p>
+
+<h2 id="limitations">Limitations</h2>
+
+<p>There is no way to remove configuration parameters.  If you know all of the<br />
+configuration parameters that you want to set, you can use the <code>file</code> module to<br />
+remove <code>/etc/postfix/main.cf</code> before running this role, with <code>postfix_conf</code> set<br />
+to all of the configuration parameters you want to apply.</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+
+<p>Install and enable postfix. Configure <code>relay_domains=$mydestination</code> and<br />
+<code>relayhost=example.com</code>.</p>
+
+<pre><code class="language-yaml">---
+- hosts: all
+  vars:
+    postfix_conf:
+      relay_domains: $mydestination
+      relayhost: example.com
+  roles:
+    - rhel-system-roles.postfix
+</code></pre>
+
+<p>Install and enable postfix. Do not run ‘postfix check’ before restarting<br />
+postfix:</p>
+
+<pre><code class="language-yaml">---
+- hosts: all
+  vars:
+    postfix_check: false
+  roles:
+    - rhel-system-roles.postfix
+</code></pre>
+
+<p>Install and enable postfix. Do single backup of main.cf (older backup will be<br />
+rewritten) and configure <code>relayhost=example.com</code>:</p>
+
+<pre><code class="language-yaml">---
+- hosts: all
+  vars:
+    postfix_conf:
+      relayhost: example.com
+    postfix_backup: true
+  roles:
+    - rhel-system-roles.postfix
+</code></pre>
+
+<p>Install and enable postfix. Do timestamped backup of main.cf and<br />
+configure <code>relayhost=example.com</code> (if <code>postfix_backup_multiple</code> is<br />
+set to true <code>postfix_backup</code> is ignored):</p>
+
+<pre><code class="language-yaml">---
+- hosts: all
+  vars:
+    postfix_conf:
+      relayhost: example.com
+    postfix_backup_multiple: true
+  roles:
+    - rhel-system-roles.postfix
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>Copyright (C) 2017 Jaroslav Škarvada <a href="mailto:jskarvad@redhat.com">jskarvad@redhat.com</a></p>
+
+<p>This program is free software: you can redistribute it and/or modify<br />
+it under the terms of the GNU General Public License as published by<br />
+the Free Software Foundation, either version 3 of the License, or<br />
+(at your option) any later version.</p>
+
+<p>This program is distributed in the hope that it will be useful,<br />
+but WITHOUT ANY WARRANTY; without even the implied warranty of<br />
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the<br />
+GNU General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU General Public License<br />
+along with this program. If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>

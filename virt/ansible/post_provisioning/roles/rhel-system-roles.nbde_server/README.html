@@ -1,0 +1,176 @@
+<h1 id="nbde_server"><code>nbde_server</code></h1>
+<p><img src="https://github.com/linux-system-roles/nbde_server/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>Ansible role for configuring Network-Bound Disk Encryption servers (e.g. tang).</p>
+
+<p>This role currently supports <code>tang</code> as a provider and it can set up tang servers.</p>
+
+<h2 id="supported-distributions">Supported Distributions</h2>
+<ul>
+  <li>RHEL-7+, CentOS-7+</li>
+  <li>Fedora</li>
+</ul>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The role requires additional collections which are specified in <code>meta/collection-requirements.yml</code>.  These are not automatically installed.  You must install them like this:</p>
+
+<p><code>ansible-galaxy install -vv -r meta/collection-requirements.yml</code></p>
+
+<h2 id="limitations">Limitations</h2>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<p>These are the variables that can be passed to the role:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th><strong>Variable</strong></th>
+      <th><strong>Default</strong></th>
+      <th><strong>Description</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>nbde_server_provider</code></td>
+      <td><code>tang</code></td>
+      <td>identifies the provider for <code>nbde_server</code> role. We currently support <code>tang</code> as an <code>nbde_server</code> provider, meaning that the <code>nbde_server</code> role is currently able to provision/deploy tang servers.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_service_state</code></td>
+      <td><code>started</code></td>
+      <td>indicates the state the nbde_server should be. It can be either <code>started</code> (default) or <code>stopped</code>. <code>started</code> means the server is accepting connections, whereas <code>stopped</code> means it is not accepting connections.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_rotate_keys</code></td>
+      <td><code>false</code></td>
+      <td>indicates whether we should rotate existing keys – if any – , then create new keys. Default behavior (<code>false</code>) is to create new keys, if there are none, and don’t touch the keys, if they exist. If set to <code>true</code>, existing keys will be rotated and new keys will be created.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_fetch_keys</code></td>
+      <td><code>false</code></td>
+      <td>indicates whether we should fetch keys to the control node, in which case they will be placed in <code>nbde_server_keys_dir</code>. You <strong>must</strong> set <code>nbde_server_keys_dir</code> to use <code>nbde_server_fetch_keys</code>.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_deploy_keys</code></td>
+      <td><code>false</code></td>
+      <td>indicates whether we should deploy the keys located in <code>nbde_server_keys_dir</code> directory to the remote hosts. You <strong>must</strong> set <code>nbde_server_keys_dir</code> to use <code>nbde_server_deploy_keys</code>.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_keys_dir</code></td>
+      <td> </td>
+      <td>specifies a directory in the control node that contains keys to be deployed to the remote hosts. Keys located in the top level directory will be deployed to every remote host, while keys located within subdirectories named after the remote hosts  – as per the inventory – will be deployed only to these specific hosts. <code>nbde_server_keys_dir</code> <strong>must</strong> be an absolute path. You need to set this to use either <code>nbde_server_fetch_keys</code> and/or <code>nbde_server_deploy_keys</code>.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_manage_firewall</code></td>
+      <td><code>false</code></td>
+      <td>manage the nbde server port and zone using the <code>firewall</code> role if set to <code>true</code>.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_manage_selinux</code></td>
+      <td><code>false</code></td>
+      <td>manage the nbde server port using the <code>selinux</code> role if set to <code>true</code>.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_port</code></td>
+      <td><code>80</code></td>
+      <td>port number that tangd will listen on.  You <strong>must</strong> set <code>nbde_server_manage_selinux: true</code> if you want the role to manage SELinux labeling for the port.  You <strong>must</strong> set <code>nbde_server_manage_firewall: true</code> if you want the role to manage firewall for the port.</td>
+    </tr>
+    <tr>
+      <td><code>nbde_server_firewall_zone</code></td>
+      <td><code>public</code></td>
+      <td>change the default zone where the port should be opened. You <strong>must</strong> set <code>nbde_server_manage_firewall: true</code> to change the default zone.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="nbde_server_fetch_keys-and-nbde_server_deploy_keys">nbde_server_fetch_keys and nbde_server_deploy_keys</h4>
+<p>To use either of these options, you need to specify <code>nbde_server_keys_dir</code>, a directory, with an absolute path.</p>
+
+<p>The behavior of using these variables is described next:</p>
+
+<h5 id="when-nbde_server_fetch_keys-is-set-to-true-the-role-will-fetch-keys-from-the-hosts-in-the-following-manner">When <code>nbde_server_fetch_keys</code> is set to <code>true</code>, the role will fetch keys from the hosts in the following manner:</h5>
+<ul>
+  <li>if <code>nbde_server_deploy_keys</code> is not set, the keys from every host will be fetched and placed in directories named after the host,<br />
+inside <code>nbde_server_keys_dir</code></li>
+  <li>if <code>nbde_server_deploy_keys</code> is set, only the keys from the first host in the inventory will be fetched, and it will be placed in<br />
+the top level directory of <code>nbde_server_keys_dir</code></li>
+</ul>
+
+<h5 id="nbde_server_deploy_keys-is-simple-if-it-is-set-to-true-it-will-deploy-the-keys-available-in-nbde_server_keys_dir-in-the-following-manner"><code>nbde_server_deploy_keys</code> is simple: if it is set to true, it will deploy the keys available in <code>nbde_server_keys_dir</code>, in the following manner:</h5>
+<ul>
+  <li>the keys located in the top level directory of <code>nbde_server_keys_dir</code> will be deployed to every host</li>
+  <li>the keys located within subdirectories named after hosts in the inventory, inside <code>nbde_server_keys_dir</code>, will be deployed to that<br />
+specific host</li>
+</ul>
+
+<h2 id="example-playbooks">Example Playbooks</h2>
+
+<h4 id="example-1-deploy-nbde-server-to-every-host-in-the-inventory">Example 1: deploy NBDE server to every host in the inventory</h4>
+<pre><code class="language-yaml">---
+- hosts: all
+
+  roles:
+    - rhel-system-roles.nbde_server
+</code></pre>
+
+<h4 id="example-2-lift-the-keys-from-every-nbde-server-install-in-rootnbde_serverkeys">Example 2: lift the keys from every NBDE server install in <code>/root/nbde_server/keys</code></h4>
+<pre><code class="language-yaml">---
+- hosts: all
+
+  vars:
+    nbde_server_fetch_keys: true
+    nbde_server_keys_dir: /root/nbde_server/keys
+
+  roles:
+    - rhel-system-roles.nbde_server
+</code></pre>
+
+<p>After this, you can backup your keys, which will be placed in <code>/root/nbde_server/keys</code>, within subdirectories named after the host they belong to.</p>
+
+<h4 id="example-3-redeploy-keys-from-a-backup-taken-with-example-2">Example 3: redeploy keys from a backup taken with Example 2:</h4>
+
+<p>To redeploy keys, they must be placed into subdirectories named after the host they are to be deployed to. With <code>/root/nbde_server/keys</code> after Example 2, use the following playbook to redeploy the same keys to the same hosts:</p>
+
+<pre><code class="language-yaml">---
+- hosts: all
+
+  vars:
+    nbde_server_deploy_keys: true
+    nbde_server_keys_dir: /root/nbde_server/keys
+
+  roles:
+    - rhel-system-roles.nbde_server
+</code></pre>
+
+<h4 id="example-4-deploy-an-nbde-server-and-use-the-same-keys-in-every-host">Example 4: deploy an NBDE server and use the same keys in every host</h4>
+<p><strong>NOTE</strong> This is not recommended, but it is supported</p>
+<pre><code class="language-yaml">---
+- hosts: all
+
+  vars:
+    nbde_server_fetch_keys: true
+    nbde_server_deploy_keys: true
+    nbde_server_keys_dir: /root/nbde_server/keys
+
+  roles:
+    - rhel-system-roles.nbde_server
+</code></pre>
+
+<h4 id="example-5-deploy-nbde-server-with-custom-port-and-zone">Example 5: deploy NBDE server with custom port and zone</h4>
+<pre><code class="language-yaml">---
+- hosts: all
+
+  vars:
+    nbde_server_manage_firewall: true
+    nbde_server_manage_selinux: true
+    nbde_server_port: 7500
+    nbde_server_firewall_zone: dmz
+  roles:
+    - rhel-system-roles.nbde_server
+</code></pre>
+
+<h2 id="license">License</h2>
+
+<p>MIT</p>

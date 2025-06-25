@@ -1,0 +1,467 @@
+<h1 id="openssh-server">OpenSSH Server</h1>
+
+<p><a href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-lint.yml"><img src="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-lint.yml/badge.svg" alt="Ansible Lint" /></a><br />
+<a href="https://galaxy.ansible.com/willshersystems/sshd/"><img src="http://img.shields.io/badge/galaxy-willshersystems.sshd-660198.svg?style=flat" alt="Ansible Galaxy" /></a></p>
+
+<p>This role configures the OpenSSH daemon. It:</p>
+
+<ul>
+  <li>By default configures the SSH daemon with the normal OS defaults.</li>
+  <li>Works across a variety of <code>UN*X</code> distributions</li>
+  <li>Can be configured by dict or simple variables</li>
+  <li>Supports Match sets</li>
+  <li>Supports all <code>sshd_config</code> options. Templates are programmatically generated.<br />
+(see <a href="meta/make_option_lists"><code>meta/make_option_lists</code></a>)</li>
+  <li>Tests the <code>sshd_config</code> before reloading sshd.</li>
+</ul>
+
+<p><strong>WARNING</strong> Misconfiguration of this role can lock you out of your server!<br />
+Please test your configuration and its interaction with your users configuration<br />
+before using in production!</p>
+
+<p><strong>WARNING</strong> Digital Ocean allows root with passwords via SSH on Debian and<br />
+Ubuntu. This is not the default assigned by this module - it will set<br />
+<code>PermitRootLogin without-password</code> which will allow access via SSH key but not<br />
+via simple password. If you need this functionality, be sure to set<br />
+<code>sshd_PermitRootLogin yes</code> for those hosts.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>Tested on:</p>
+
+<ul>
+  <li>Ubuntu precise, trusty, xenial, bionic, focal, jammy
+    <ul>
+      <li><a href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-ubuntu.yml"><img src="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-ubuntu.yml/badge.svg" alt="Run tests on Ubuntu latest" /></a></li>
+    </ul>
+  </li>
+  <li>Debian wheezy, jessie, stretch, buster, bullseye
+    <ul>
+      <li><a href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-debian-check.yml"><img src="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-debian-check.yml/badge.svg" alt="Run tests on Debian" /></a></li>
+    </ul>
+  </li>
+  <li>EL 6, 7, 8, 9 derived distributions
+    <ul>
+      <li><a href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-centos-check.yml"><img src="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-centos-check.yml/badge.svg" alt="Run tests on CentOS" /></a></li>
+    </ul>
+  </li>
+  <li>All Fedora
+    <ul>
+      <li><a href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-fedora.yml"><img src="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-fedora.yml/badge.svg" alt="Run tests on Fedora latest" /></a></li>
+    </ul>
+  </li>
+  <li>Latest Alpine
+    <ul>
+      <li><a href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-alpine.yml"><img src="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-alpine.yml/badge.svg" alt="Run tests on Alpine" /></a></li>
+    </ul>
+  </li>
+  <li>FreeBSD 10.1</li>
+  <li>OpenBSD 6.0</li>
+  <li>AIX 7.1, 7.2</li>
+  <li>OpenWrt 21.03</li>
+</ul>
+
+<p>It will likely work on other flavours and more direct support via suitable<br />
+<a href="vars/">vars/</a> files is welcome.</p>
+
+<h3 id="optional-requirements">Optional requirements</h3>
+
+<p>If you want to use advanced functionality of this role that can configure<br />
+firewall and selinux for you, which is mostly useful when custom port is used,<br />
+the role requires additional collections which are specified in<br />
+<code>meta/collection-requirements.yml</code>. These are not automatically installed.<br />
+You must install them like this:</p>
+<pre><code>ansible-galaxy install -vv -r meta/collection-requirements.yml
+</code></pre>
+
+<p>For more information, see <code>sshd_manage_firewall</code> and <code>sshd_manage_selinux</code><br />
+options below. These roles are supported only on Red Hat based Linux.</p>
+
+<h2 id="role-variables">Role variables</h2>
+
+<p>Unconfigured, this role will provide a <code>sshd_config</code> that matches the OS default,<br />
+minus the comments and in a different order.</p>
+
+<ul>
+  <li><code>sshd_enable</code></li>
+</ul>
+
+<p>If set to <em>false</em>, the role will be completely disabled. Defaults to <em>true</em>.</p>
+
+<ul>
+  <li><code>sshd_skip_defaults</code></li>
+</ul>
+
+<p>If set to <em>true</em>, don’t apply default values. This means that you must have a<br />
+complete set of configuration defaults via either the <code>sshd</code> dict, or<br />
+<code>sshd_Key</code> variables. Defaults to <em>false</em> unless <code>sshd_config_namespace</code> is<br />
+set or <code>sshd_config_file</code> points to a drop-in directory to avoid recursive include.</p>
+
+<ul>
+  <li><code>sshd_manage_service</code></li>
+</ul>
+
+<p>If set to <em>false</em>, the service/daemon won’t be <strong>managed</strong> at all, i.e. will not<br />
+try to enable on boot or start or reload the service.  Defaults to <em>true</em><br />
+unless: Running inside a docker container (it is assumed ansible is used during<br />
+build phase) or AIX (Ansible <code>service</code> module does not currently support <code>enabled</code><br />
+for AIX)</p>
+
+<ul>
+  <li><code>sshd_allow_reload</code></li>
+</ul>
+
+<p>If set to <em>false</em>, a reload of sshd wont happen on change. This can help with<br />
+troubleshooting. You’ll need to manually reload sshd if you want to apply the<br />
+changed configuration. Defaults to the same value as <code>sshd_manage_service</code>.<br />
+(Except on AIX, where <code>sshd_manage_service</code> is default <em>false</em>, but<br />
+<code>sshd_allow_reload</code> is default <em>true</em>)</p>
+
+<ul>
+  <li><code>sshd_install_service</code></li>
+</ul>
+
+<p>If set to <em>true</em>, the role will install service files for the ssh service.<br />
+Defaults to <em>false</em>.</p>
+
+<p>The templates for the service files to be used are pointed to by the variables</p>
+
+<ul>
+  <li><code>sshd_service_template_service</code> (<strong>default</strong>: <code>templates/sshd.service.j2</code>)</li>
+  <li><code>sshd_service_template_at_service</code> (<strong>default</strong>: <code>templates/sshd@.service.j2</code>)</li>
+  <li><code>sshd_service_template_socket</code> (<strong>default</strong>: <code>templates/sshd.socket.j2</code>)</li>
+</ul>
+
+<p>Using these variables, you can use your own custom templates. With the above<br />
+default templates, the name of the installed ssh service will be provided by<br />
+the <code>sshd_service</code> variable.</p>
+
+<ul>
+  <li><code>sshd_manage_firewall</code></li>
+</ul>
+
+<p>If set to <em>true</em>, the the SSH port(s) will be opened in firewall. Note, this<br />
+works only on Red Hat based OS. The default is <em>false</em>.</p>
+
+<p>NOTE: <code>sshd_manage_firewall</code> is limited to <em>adding</em> ports. It cannot be used<br />
+for <em>removing</em> ports. If you want to remove ports, you will need to use the<br />
+firewall system role directly.</p>
+
+<ul>
+  <li><code>sshd_manage_selinux</code></li>
+</ul>
+
+<p>If set to <em>true</em>, the the selinux will be configured to allow sshd listening<br />
+on the given SSH port(s). Note, this works only on Red Hat based OS.<br />
+The default is <em>false</em>.</p>
+
+<p>NOTE: <code>sshd_manage_selinux</code> is limited to <em>adding</em> policy. It cannot be used<br />
+for <em>removing</em> policy. If you want to remove ports, you will need to use the<br />
+selinux system role directly.</p>
+
+<ul>
+  <li><code>sshd</code></li>
+</ul>
+
+<p>A dict containing configuration.  e.g.</p>
+
+<pre><code class="language-yaml">sshd:
+  Compression: delayed
+  ListenAddress:
+    - 0.0.0.0
+</code></pre>
+
+<ul>
+  <li><code>sshd_...</code></li>
+</ul>
+
+<p>Simple variables can be used rather than a dict. Simple values override dict<br />
+values. e.g.:</p>
+
+<pre><code class="language-yaml">sshd_Compression: off
+</code></pre>
+
+<p>In all cases, booleans are correctly rendered as yes and no in sshd<br />
+configuration. Lists can be used for multiline configuration items. e.g.</p>
+
+<pre><code class="language-yaml">sshd_ListenAddress:
+  - 0.0.0.0
+  - '::'
+</code></pre>
+
+<p>Renders as:</p>
+
+<pre><code>ListenAddress 0.0.0.0
+ListenAddress ::
+</code></pre>
+
+<ul>
+  <li><code>sshd_match</code>, <code>sshd_match_1</code> through <code>sshd_match_9</code></li>
+</ul>
+
+<p>A list of dicts or just a dict for a Match section. Note, that these variables<br />
+do not override match blocks as defined in the <code>sshd</code> dict. All of the sources<br />
+will be reflected in the resulting configuration file. The use of<br />
+<code>sshd_match_*</code> variant is deprecated and no longer recommended.</p>
+
+<ul>
+  <li><code>sshd_backup</code></li>
+</ul>
+
+<p>When set to <em>false</em>, the original <code>sshd_config</code> file is not backed up. Default<br />
+is <em>true</em>.</p>
+
+<ul>
+  <li><code>sshd_sysconfig</code></li>
+</ul>
+
+<p>On RHEL-based systems, sysconfig is used for configuring more details of sshd<br />
+service. If set to <em>true</em>, this role will manage also the <code>/etc/sysconfig/sshd</code><br />
+configuration file based on the following configurations. Default is <em>false</em>.</p>
+
+<ul>
+  <li><code>sshd_sysconfig_override_crypto_policy</code></li>
+</ul>
+
+<p>In RHEL8-based systems, this can be used to override system-wide crypto policy<br />
+by setting to <em>true</em>. Without this option, changes to ciphers, MACs, public<br />
+key algorithms will have no effect on the resulting service in RHEL8. Defaults<br />
+to <em>false</em>.</p>
+
+<ul>
+  <li><code>sshd_sysconfig_use_strong_rng</code></li>
+</ul>
+
+<p>In RHEL-based systems (before RHEL9), this can be used to force sshd to reseed<br />
+openssl random number generator with the given amount of bytes as an argument.<br />
+The default is <em>0</em>, which disables this functionality. It is not recommended to<br />
+turn this on if the system does not have hardware random number generator.</p>
+
+<ul>
+  <li><code>sshd_config_file</code></li>
+</ul>
+
+<p>The path where the openssh configuration produced by this role should be saved.<br />
+This is useful mostly when generating configuration snippets to Include from<br />
+drop-in directory (default in Fedora and RHEL9).</p>
+
+<p>When this path points to a drop-in directory (like<br />
+<code>/etc/ssh/sshd_confg.d/00-custom.conf</code>), the main configuration file (defined<br />
+with the variable <code>sshd_main_config_file</code>) is checked to contain a proper<br />
+<code>Include</code> directive.</p>
+
+<ul>
+  <li><code>sshd_config_namespace</code></li>
+</ul>
+
+<p>By default (<em>null</em>), the role defines whole content of the configuration file<br />
+including system defaults. You can use this variable to invoke this role from<br />
+other roles or from multiple places in a single playbook as an alternative to<br />
+using a drop-in directory. The <code>sshd_skip_defaults</code> is ignored and no system<br />
+defaults are used in this case.</p>
+
+<p>When this variable is set, the role places the configuration that you specify<br />
+to configuration snippets in a existing configuration file under the given<br />
+namespace. You need to select different namespaces when invoking the role<br />
+several times.</p>
+
+<p>Note that limitations of the openssh configuration file still apply. For<br />
+example, only the first option specified in a configuration file is effective<br />
+for most of the variables.</p>
+
+<p>Technically, the role places snippets in <code>Match all</code> blocks, unless they contain<br />
+other match blocks, to ensure they are applied regardless of the previous match<br />
+blocks in the existing configuration file. This allows configuring any<br />
+non-conflicting options from different roles invocations.</p>
+
+<ul>
+  <li><code>sshd_config_owner</code>, <code>sshd_config_group</code>, <code>sshd_config_mode</code></li>
+</ul>
+
+<p>Use these variables to set the ownership and permissions for the openssh config<br />
+file that this role produces.</p>
+
+<ul>
+  <li><code>sshd_verify_hostkeys</code></li>
+</ul>
+
+<p>By default (<em>auto</em>), this list contains all the host keys that are present in<br />
+the produced configuration file. If there are none, the OpenSSH default list<br />
+will be used after excluding non-FIPS approved keys in FIPS mode. The paths<br />
+are checked for presence and new keys are generated if they are missing.<br />
+Additionally, permissions and file owners are set to sane defaults. This is<br />
+useful if the role is used in deployment stage to make sure the service is<br />
+able to start on the first attempt.</p>
+
+<p>To disable this check, set this to empty list.</p>
+
+<ul>
+  <li><code>sshd_hostkey_owner</code>, <code>sshd_hostkey_group</code>, <code>sshd_hostkey_mode</code></li>
+</ul>
+
+<p>Use these variables to set the ownership and permissions for the host keys from<br />
+the above list.</p>
+
+<h3 id="secondary-role-variables">Secondary role variables</h3>
+
+<p>These variables are used by the role internals and can be used to override the<br />
+defaults that correspond to each supported platform. They are not tested and<br />
+generally are not needed as the role will determine them from the OS type.</p>
+
+<ul>
+  <li><code>sshd_packages</code></li>
+</ul>
+
+<p>Use this variable to override the default list of packages to install.</p>
+
+<ul>
+  <li><code>sshd_binary</code></li>
+</ul>
+
+<p>The path to the openssh executable</p>
+
+<ul>
+  <li><code>sshd_service</code></li>
+</ul>
+
+<p>The name of the openssh service. By default, this variable contains the name of<br />
+the ssh service that the target platform uses. But it can also be used to set<br />
+the name of the custom ssh service when the <code>sshd_install_service</code> variable is<br />
+used.</p>
+
+<ul>
+  <li><code>sshd_sftp_server</code></li>
+</ul>
+
+<p>Default path to the sftp server binary.</p>
+
+<h3 id="variables-exported-by-the-role">Variables Exported by the Role</h3>
+
+<ul>
+  <li><code>sshd_has_run</code></li>
+</ul>
+
+<p>This variable is set to <em>true</em> after the role was successfully executed.</p>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>None</p>
+
+<p>For tests the <code>ansible.posix</code> collection is required for the <code>mount</code> role to<br />
+emulate FIPS mode.</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+
+<p><strong>DANGER!</strong> This example is to show the range of configuration this role<br />
+provides. Running it will likely break your SSH access to the server!</p>
+
+<pre><code class="language-yaml">---
+- hosts: all
+  vars:
+    sshd_skip_defaults: true
+    sshd:
+      Compression: true
+      ListenAddress:
+        - "0.0.0.0"
+        - "::"
+      GSSAPIAuthentication: no
+      Match:
+        - Condition: "Group user"
+          GSSAPIAuthentication: yes
+    sshd_UsePrivilegeSeparation: no
+    sshd_match:
+        - Condition: "Group xusers"
+          X11Forwarding: yes
+  roles:
+    - role: rhel-system-roles.sshd
+</code></pre>
+
+<p>Results in:</p>
+
+<pre><code># Ansible managed: ...
+Compression yes
+GSSAPIAuthentication no
+UsePrivilegeSeparation no
+Match Group user
+  GSSAPIAuthentication yes
+Match Group xusers
+  X11Forwarding yes
+</code></pre>
+
+<p>Since Ansible 2.4, the role can be invoked using <code>include_role</code> keyword,<br />
+for example:</p>
+
+<pre><code class="language-yaml">---
+- hosts: all
+  become: true
+  tasks:
+  - name: "Configure sshd"
+    include_role:
+      name: rhel-system-roles.sshd
+    vars:
+      sshd_skip_defaults: true
+      sshd:
+        Compression: true
+        ListenAddress:
+          - "0.0.0.0"
+          - "::"
+        GSSAPIAuthentication: no
+        Match:
+          - Condition: "Group user"
+            GSSAPIAuthentication: yes
+      sshd_UsePrivilegeSeparation: no
+      sshd_match:
+          - Condition: "Group xusers"
+            X11Forwarding: yes
+</code></pre>
+
+<p>You can just add a configuration snippet with the <code>sshd_config_namespace</code><br />
+option:</p>
+<pre><code>---
+- hosts: all
+  tasks:
+  - name: Configure sshd to accept some useful environment variables
+    include_role:
+      name: ansible-sshd
+    vars:
+      sshd_config_namespace: accept-env
+      sshd:
+        # there are some handy environment variables to accept
+        AcceptEnv:
+          LANG
+          LS_COLORS
+          EDITOR
+</code></pre>
+<p>The following snippet will be added to the default configuration file<br />
+(if not yet present):</p>
+<pre><code># BEGIN sshd system role managed block: namespace accept-env
+Match all
+  AcceptEnv LANG LS_COLORS EDITOR
+# END sshd system role managed block: namespace accept-env
+</code></pre>
+
+<p>More example playbooks can be found in <a href="examples/"><code>examples/</code></a> directory.</p>
+
+<h2 id="template-generation">Template Generation</h2>
+
+<p>The <a href="templates/sshd_config.j2"><code>sshd_config.j2</code></a> and<br />
+<a href="templates/sshd_config_snippet.j2"><code>sshd_config_snippet.j2</code></a> templates are<br />
+programatically generated by the scripts in meta. New options should be added<br />
+to the <code>options_body</code> and/or <code>options_match</code>.</p>
+
+<p>To regenerate the templates, from within the <code>meta/</code> directory run:<br />
+<code>./make_option_lists</code></p>
+
+<h2 id="license">License</h2>
+
+<p>LGPLv3</p>
+
+<h2 id="authors">Authors</h2>
+
+<p>Matt Willsher <a href="mailto:matt@willsher.systems">matt@willsher.systems</a></p>
+
+<p>© 2014,2015 Willsher Systems Ltd.</p>
+
+<p>Jakub Jelen <a href="mailto:jjelen@redhat.com">jjelen@redhat.com</a></p>
+
+<p>© 2020 - 2022 Red Hat, Inc.</p>

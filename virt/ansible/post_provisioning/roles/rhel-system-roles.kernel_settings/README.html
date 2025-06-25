@@ -1,0 +1,253 @@
+<h1 id="kernel-settings-role">Kernel Settings Role</h1>
+<p><img src="https://github.com/linux-system-roles/kernel_settings/workflows/tox/badge.svg" alt="CI Testing" /></p>
+
+<p>This role is used to modify kernel settings.  For example, on Linux, settings<br />
+in <code>/proc/sys</code> (using <code>sysctl</code>), <code>/sys/fs</code>, and some other settings.  It uses<br />
+<code>tuned</code> for its default provider on Enterprise Linux and derivatives (RHEL and<br />
+CentOS) and Fedora.</p>
+
+<ul>
+  <li><code>tuned</code> homepage - https://github.com/redhat-performance/tuned</li>
+</ul>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>This role requires an operating system which has the <code>tuned</code> package and<br />
+service (for the default <code>tuned</code> provider).</p>
+
+<h2 id="role-variables">Role Variables</h2>
+
+<p>The values for some of the various <code>kernel_settings_GROUP</code> parameters are a<br />
+<code>list</code> of <code>dict</code> objects.  Each <code>dict</code> has the following keys:</p>
+<ul>
+  <li><code>name</code> - Usually Required - The name the setting, or the name of a file<br />
+under <code>/sys</code> for the <code>sysfs</code> group.  <code>name</code> is omitted when using<br />
+<code>replaced</code>.</li>
+  <li><code>value</code> - Usually Required - The value for the setting.  <code>value</code> is omitted<br />
+when using <code>state</code> or <code>previous</code>.  Values must not be <a href="https://yaml.org/type/bool.html">YAML bool<br />
+type</a>. One situation where this might be a<br />
+problem is using <code>value: on</code> or other YAML <code>bool</code> typed value.  You must<br />
+quote these values, or otherwise pass them as a value of <code>str</code> type e.g.<br />
+<code>value: "on"</code>.</li>
+  <li><code>state</code> - Optional - the value <code>absent</code> means to remove a setting with name<br />
+<code>name</code> from a group - <code>name</code> must be provided</li>
+  <li><code>previous</code> - Optional - the only value is <code>replaced</code> - this is used to<br />
+specify that the previous values in a group should be replaced with the<br />
+given values.</li>
+</ul>
+
+<p><code>kernel_settings_sysctl</code> - A <code>list</code> of settings to be applied using <code>sysctl</code>.<br />
+The settings are given in the format described above.  Note that the settings<br />
+are <em>additive</em> - by default, each setting is added to the existing settings, or<br />
+replaces the setting of the same name if it already exists. If you want to<br />
+remove a specific setting, use <code>state: absent</code> instead of giving a <code>value</code>. If<br />
+you want to remove all of the existing <code>sysctl</code> settings and replace them with<br />
+the given settings, specify <code>previous: replaced</code> as one of the values in the<br />
+list.  If you want to remove all of the <code>sysctl</code> settings, use the <code>dict</code> value<br />
+<code>{"state": "empty"}</code>, instead of a <code>list</code>, as the only value for the parameter.<br />
+See below for examples.</p>
+
+<p><code>kernel_settings_sysfs</code> - A <code>list</code> of settings to be applied to <code>/sys</code>. The<br />
+settings are given in the format described above.  Note that the settings are<br />
+<em>additive</em> - by default, each setting is added to the existing settings, or<br />
+replaces the setting of the same name if it already exists. If you want to<br />
+remove a specific setting, use <code>state: absent</code> instead of giving a <code>value</code>. If<br />
+you want to remove all of the existing <code>sysfs</code> settings and replace them with<br />
+the given settings, specify <code>previous: replaced</code> as one of the values in the<br />
+list.  If you want to remove all of the <code>sysfs</code> settings, use the <code>dict</code> value<br />
+<code>{"state": "empty"}</code>, instead of a <code>list</code>, as the only value for the parameter.<br />
+See below for examples.</p>
+
+<p><code>kernel_settings_systemd_cpu_affinity</code> - To set the value, specify a <code>string</code> in<br />
+the format specified by<br />
+https://www.freedesktop.org/software/systemd/man/systemd-system.conf.html#CPUAffinity=<br />
+If you want to remove the setting, use the <code>dict</code> value <code>{"state": "absent"}</code>,<br />
+instead of a <code>string</code>, as the value for the parameter.</p>
+
+<p><code>kernel_settings_transparent_hugepages</code> - To set the value, specify one of the<br />
+following <code>string</code> values: <code>always</code> <code>madvise</code> <code>never</code>. This is the memory<br />
+subsystem transparent hugepages value.  If you want to remove the setting, use<br />
+the <code>dict</code> value <code>{"state": "absent"}</code>, instead of a <code>string</code>, as the value for<br />
+the parameter.</p>
+
+<p><code>kernel_settings_transparent_hugepages_defrag</code> - To set the value, specify one<br />
+of the following <code>string</code> values: <code>always</code> <code>defer</code> <code>defer+madvise</code> <code>madvise</code><br />
+<code>never</code>. This is the memory subsystem transparent hugepages fragmentation<br />
+handling value.  The actual supported values may be different depending on your<br />
+OS.  If you want to remove the setting, use the <code>dict</code> value<br />
+<code>{"state": "absent"}</code>, instead of a <code>string</code>, as the value for the parameter.</p>
+
+<p><code>kernel_settings_purge</code> - default <code>false</code> - If <code>true</code>, then the existing<br />
+configuration will be completely wiped out and replaced with your given<br />
+<code>kernel_settings_GROUP</code> settings.</p>
+
+<p><code>kernel_settings_reboot_ok</code> - default <code>false</code> - If <code>true</code>, then if the role<br />
+detects that something was changed that requires a reboot to take effect, the<br />
+role will reboot the managed host.  If <code>false</code>, it is up to you to determine<br />
+when to reboot the managed host.  The role will return the variable<br />
+<code>kernel_settings_reboot_required</code> (see below) with a value of <code>true</code> to indicate<br />
+that some change has occurred which needs a reboot to take effect.</p>
+
+<h3 id="variables-exported-by-the-role">Variables Exported by the Role</h3>
+
+<p>The role will export the following variables:</p>
+
+<p><code>kernel_settings_reboot_required</code> - default <code>false</code> - if <code>true</code>, this means a<br />
+change has occurred which will require rebooting the managed host in order to<br />
+take effect.  If you want the role to<br />
+reboot the managed host, set <code>kernel_settings_reboot_ok: true</code>, otherwise, you<br />
+will need to handle rebooting the machine.</p>
+
+<h3 id="examples-of-settings-usage">Examples of Settings Usage</h3>
+
+<pre><code class="language-yaml">kernel_settings_sysctl:
+  - name: fs.epoll.max_user_watches
+    value: 785592
+  - name: fs.file-max
+    value: 379724
+kernel_settings_sysfs:
+  - name: /sys/kernel/debug/x86/pti_enabled
+    value: 0
+  - name: /sys/kernel/debug/x86/retp_enabled
+    value: 0
+  - name: /sys/kernel/debug/x86/ibrs_enabled
+    value: 0
+kernel_settings_systemd_cpu_affinity: "1,3,5,7"
+kernel_settings_transparent_hugepages: madvise
+kernel_settings_transparent_hugepages_defrag: defer
+</code></pre>
+<p><em>NOTE</em> that the <code>list</code> valued settings are <strong>additive</strong>.  That is, they are<br />
+applied <strong>in addition to</strong> any current settings.  For example, if you already<br />
+had</p>
+<pre><code class="language-yaml">kernel_settings_sysctl:
+  - name: kernel.threads-max
+    value: 29968
+  - name: vm.max_map_count
+    value: 65530
+</code></pre>
+<p>then after applying the above, you would have</p>
+<pre><code class="language-yaml">kernel_settings_sysctl:
+  - name: kernel.threads-max
+    value: 29968
+  - name: vm.max_map_count
+    value: 65530
+  - name: fs.epoll.max_user_watches
+    value: 785592
+  - name: fs.file-max
+    value: 379724
+</code></pre>
+<p>This allows multiple higher level roles or playbooks to use this role to<br />
+provide the kernel settings specific to that component.  For example, if you<br />
+are installing a web server and a database server on the same machine, and<br />
+they both require setting kernel parameters, the <code>kernel_settings</code> role allows<br />
+you to set them both.</p>
+
+<p>If you specify multiple settings with the same name in a section, the last<br />
+one will be used.</p>
+
+<p>If you want to replace <em>all</em> of the settings in a section with your supplied<br />
+values, use <code>previous: replaced</code> as a single, preferably first element in the<br />
+list of settings.  This indicates that the <code>previous</code> settings in the system<br />
+should be <code>replaced</code> with the given settings.  For example:</p>
+<pre><code class="language-yaml">kernel_settings_sysctl:
+  - previous: replaced
+  - name: kernel.threads-max
+    value: 30000
+  - name: vm.max_map_count
+    value: 50000
+</code></pre>
+<p>This will have the effect of removing all of the existing settings for<br />
+<code>kernel_settings_sysctl</code>, and adding the specified settings.<br />
+If you want to remove a single setting, specify <code>state: absent</code> in the<br />
+individual setting, instead of a <code>value</code>:</p>
+<pre><code class="language-yaml">kernel_settings_sysctl:
+  - name: kernel.threads-max
+    value: 30000
+  - name: vm.max_map_count
+    state: absent
+</code></pre>
+<p>This will remove the <code>vm.max_map_count</code> setting from the<br />
+<code>kernel_settings_sysctl</code> settings. If you want to remove all of the settings<br />
+from a group, specify <code>state: empty</code> as a <code>dict</code> instead of a <code>list</code>:</p>
+<pre><code class="language-yaml">kernel_settings_sysctl:
+  state: empty
+</code></pre>
+<p>This will have the effect of removing all of the <code>kernel_settings_sysctl</code><br />
+settings.</p>
+
+<p>Use <code>{"state":"absent"}</code> to remove a scalar valued parameter.  For example, to<br />
+remove all of <code>kernel_settings_systemd_cpu_affinity</code>,<br />
+<code>kernel_settings_transparent_hugepages</code>, and<br />
+<code>kernel_settings_transparent_hugepages_defrag</code> settings, use this:</p>
+<pre><code class="language-yaml">kernel_settings_systemd_cpu_affinity:
+  state: absent
+kernel_settings_transparent_hugepages:
+  state: absent
+kernel_settings_transparent_hugepages_defrag:
+  state: absent
+</code></pre>
+
+<h2 id="dependencies">Dependencies</h2>
+
+<p>The <code>tuned</code> package is required for the default provider.</p>
+
+<h2 id="example-playbook">Example Playbook</h2>
+
+<pre><code class="language-yaml">- hosts: all
+  vars:
+    kernel_settings_sysctl:
+      - name: fs.epoll.max_user_watches
+        value: 785592
+      - name: fs.file-max
+        value: 379724
+      - name: kernel.threads-max
+        state: absent
+    kernel_settings_sysfs:
+      - name: /sys/kernel/debug/x86/pti_enabled
+        value: 0
+      - name: /sys/kernel/debug/x86/retp_enabled
+        value: 0
+      - name: /sys/kernel/debug/x86/ibrs_enabled
+        value: 0
+    kernel_settings_systemd_cpu_affinity: "1,3,5,7"
+    kernel_settings_transparent_hugepages: madvise
+    kernel_settings_transparent_hugepages_defrag: defer
+  roles:
+    - rhel-system-roles.kernel_settings
+</code></pre>
+
+<h2 id="warnings">Warnings</h2>
+
+<p>The <code>kernel_settings</code> role will cause other <code>sysctl</code> settings to be applied when<br />
+using the <code>tuned</code> implementation, which is the default. This can happen when you<br />
+manually edit <code>/etc/sysctl.d/</code> files, or if the <code>sysctl.d</code> files are installed<br />
+by some system package.  For example, on Fedora, installing the <code>libreswan</code><br />
+package provides <code>/etc/sysctl.d/50-libreswan.conf</code>.  Using the <code>kernel_settings</code><br />
+role will cause this file to be reloaded and reapplied.  If this behavior is not<br />
+desired, you will need to edit the <code>tuned</code> configuration on the managed hosts in<br />
+<code>/etc/tuned/tuned-main.conf</code> and set <code>reapply_sysctl=0</code>.</p>
+
+<p>The settings you apply with the <code>kernel_settings</code> role may conflict with other<br />
+settings.  For example, if you manually run the <code>sysctl</code> command, or manually<br />
+edit <code>/etc/sysctl.d/</code> files, or if the <code>sysctl.d</code> files are installed by some<br />
+system package, they may set the same values you are setting with the<br />
+<code>kernel_settings</code> role.  For <code>sysctl</code> settings, the precedence goes like this:</p>
+<ul>
+  <li><code>sysctl</code> files have highest precedence - <code>/etc/sysctl.conf</code> and<br />
+<code>/etc/sysctl.d/*</code> will override everything</li>
+  <li><code>kernel_settings</code> role settings have the next highest precedence</li>
+  <li>settings set manually using the <code>sysctl</code> command have the lowest precedence</li>
+</ul>
+
+<p>For all other settings such as <code>sysfs</code>, the settings from <code>kernel_settings</code> role<br />
+have the highest precedence.</p>
+
+<h2 id="license">License</h2>
+
+<p>Some parts related to <code>tuned</code> are <code>GPLv2+</code>.  These are noted in the headers<br />
+of the files.  Everything else is <code>MIT</code>, except where noted.  See the file<br />
+<code>LICENSE</code> for more information.</p>
+
+<h2 id="author-information">Author Information</h2>
+
+<p>Rich Megginson (richm on github, rmeggins at my company)</p>
