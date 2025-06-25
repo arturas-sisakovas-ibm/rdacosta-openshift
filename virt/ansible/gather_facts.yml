@@ -1,0 +1,3 @@
+- name: Gather facts for caching in Automation Controller
+  hosts: all
+  gather_facts: true
