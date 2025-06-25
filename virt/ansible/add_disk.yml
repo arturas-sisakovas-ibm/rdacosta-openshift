@@ -25,7 +25,7 @@
                   accessModes: ["ReadWriteMany"]
                   resources:
                     requests:
-                      storage: "{{ my_size }}"
+                      storage: "{{ my_size }}Gi"
           - op: add
             path: /spec/template/spec/domain/devices/disks/-
             value:
