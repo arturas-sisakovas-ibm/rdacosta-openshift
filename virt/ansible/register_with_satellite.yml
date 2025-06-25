@@ -1,0 +1,17 @@
+- name: Ensure systems are registered with satellite
+  hosts: "{{ my_host | default('foo.example.com') }}"
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Ensure katello-ca-consumer-latest rpm is installed
+      ansible.builtin.dnf:
+        name: https://{{ my_satellite_server | mandatory('You need to specify the FQDN of your Satellite') }}/pub/katello-ca-consumer-latest.noarch.rpm
+        state: present
+        validate_certs: false
+        disable_gpg_check: true
+
+    - name: Ensure system is registered with Satellite
+      redhat.rhel_system_roles.redhat_subscription:
+        activationkey: "{{ my_key }}"
+        org_id: "{{ my_org }}"
