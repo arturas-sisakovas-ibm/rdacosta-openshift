@@ -7,17 +7,16 @@
 
   tasks:
 
-    - name: Add extra disk (SCSI) 
-      redhat.openshift.k8s:
-        state: present
-        kind: VirtualMachine
+    - name: Append disk to VM via JSON Patch
+      kubernetes.core.k8s_json_patch:
+        state:       patched
         api_version: kubevirt.io/v1
-        name: "{{ my_vm }}"
-        namespace: "{{ my_namespace }}"
-        apply: true
-        force: true
-        template: templates/add_disk.j2
-        wait: true
+        kind:        VirtualMachine
+        name:        "{{ my_vm }}"
+        namespace:   "{{ my_namespace }}"
+        patch_type:  json
+        patch:       "{{ lookup('template', 'templates/add_disk_patch.j2') | from_json }}"
+        wait:        true
         wait_condition:
-          type: Ready
+          type:   Ready
           status: "True"

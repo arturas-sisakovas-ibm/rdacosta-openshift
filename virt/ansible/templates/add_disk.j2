@@ -1,27 +1,34 @@
----
-spec:
-  dataVolumeTemplates:
-    - metadata:
-        name: {{ my_disk | default('extra_disk') }}
-      spec:
-        source:
-          blank: {}
-        storage:
-          storageClassName: "{{ my_storageclass | default('ocs-external-storagecluster-ceph-rbd-virtualization') }}"
-          accessModes:
-            - ReadWriteMany
-          resources:
-            requests:
-              storage: "{{ my_size | default('10Gi') }}"
-  template:
-    spec:
-      domain:
-        devices:
-          disks:
-            - name: {{ my_disk | default('extra_disk') }}
-              disk:
-                bus: scsi
-      volumes:
-        - name: {{ my_disk | default('extra_disk') }}
-          dataVolume:
-            name: {{ my_disk | default('extra_disk') }}
+[
+  {
+    "op": "add",
+    "path": "/spec/dataVolumeTemplates/-",
+    "value": {
+      "metadata": { "name": "{{ my_disk }}" },
+      "spec": {
+        "source": { "blank": {} },
+        "storage": {
+          "storageClassName": "{{ my_storageclass }}",
+          "accessModes": ["ReadWriteOnce"],
+          "resources": { "requests": { "storage": "{{ my_size }}" } }
+        }
+      }
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/domain/devices/disks/-",
+    "value": {
+      "name": "{{ my_disk }}",
+      "disk": { "bus": "scsi" }
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/volumes/-",
+    "value": {
+      "name": "{{ my_disk }}",
+      "dataVolume": { "name": "{{ my_disk }}" }
+    }
+  }
+]
+
