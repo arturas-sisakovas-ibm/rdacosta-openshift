@@ -1,0 +1,16 @@
+---
+- name: Create VM
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Deploy VM from template
+      redhat.openshift.openshift_process:
+        namespace: "{{ my_template_namespace | default('openshift') }}"
+        name: "{{ my_vm_template | default('rhel9-server-small') }}"
+        namespace_target: "{{ my_namespace | default('vms') }}"
+        parameters:
+          NAME: "{{ my_vm }}"
