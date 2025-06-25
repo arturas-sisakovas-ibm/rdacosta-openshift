@@ -14,7 +14,7 @@
         kind: VirtualMachine
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
-        patch: "{{ my_patch }}"
+        patch: {{ my_patch }}
         wait: true
         wait_condition:
           type: Ready
