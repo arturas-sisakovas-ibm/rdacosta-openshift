@@ -22,15 +22,15 @@
         name: "{{ my_vm | default('rhel9-server-small') }}"
         namespace: "{{ _namespace | default('vms') }}"
         running: true
-      spec:
-        accessCredentials:
-        - sshPublicKey:
-            propagationMethod:
-              qemuGuestAgent:
-                users:
-                - cloud-user
-            source:
-              secret:
-                secretName: "{{ my_ssh_secret | default('ssh-pub-key') }}"
+        spec:
+          accessCredentials:
+          - sshPublicKey:
+              propagationMethod:
+                qemuGuestAgent:
+                  users:
+                  - cloud-user
+              source:
+                secret:
+                  secretName: "{{ my_ssh_secret | default('ssh-pub-key') }}"
 
         
