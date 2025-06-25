@@ -8,8 +8,17 @@
   tasks:
 
     - name: Ensure app route exists
-      redhat.openshift.k8s:
-        template: templates/create_route.j2
+      redhat.openshift.openshift_route:
+        name: "{{ my_route | mandatory('You must specify a route name') }}"
+        namespace: "{{ my_namespace | mandatory('You must specify a namespace') }}"
+        state: "{{ my_state | default('present') }}"
+        service: "{{ my_svc | mandatory('You must specify a service name') }}"
+        hostname: "{{ my_hostname }}"
+        annotations:
+          haproxy.router.openshift.io/balance: roundrobin
+        termination: "{{ my_termination | default('edge') }}"
+        tls:
+          insecure_policy: "{{ my_insecure_policy | default('redirect') }}"
 
     - name: Ensure route name is displayed
       ansible.builtin.debug:

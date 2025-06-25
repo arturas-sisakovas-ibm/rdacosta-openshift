@@ -1,0 +1,19 @@
+---
+- name: Create route 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure app route exists
+      redhat.openshift.k8s:
+        template: templates/create_route.j2
+
+    - name: Ensure route name is displayed
+      ansible.builtin.debug:
+        msg: |
+
+            🚀 🚀 🚀 Your application is available at http://{{ my_hostname }} and/or https://{{ my_hostname }}
+
