@@ -9,9 +9,9 @@
 
     - name: Deploy VM from template
       redhat.openshift.openshift_process:
-        namespace: "{{ my_template_namespace | default('openshift') }}"
         name: "{{ my_template | default('rhel9-server-small') }}"
         namespace_target: "{{ my_namespace | default('vms') }}"
+        namespace: "{{ my_template_namespace | default('openshift') }}"
         state: "{{ my_state | default('present') }}"
         parameters:
           NAME: "{{ my_vm }}"
@@ -19,8 +19,8 @@
   
     - name: Ensure VM is configured
       redhat.openshift_virtualization.kubevirt_vm:
-        namespace: "{{ my_template_namespace | default('openshift') }}"
-        name: "{{ my_template | default('rhel9-server-small') }}"
+        name: "{{ my_vm | default('rhel9-server-small') }}"
+        namespace: "{{ _namespace | default('vms') }}"
         running: true
         spec:
           accessCredentials:
