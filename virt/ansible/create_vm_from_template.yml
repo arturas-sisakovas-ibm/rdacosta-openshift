@@ -16,3 +16,21 @@
         parameters:
           NAME: "{{ my_vm }}"
           CLOUD_USER_PASSWORD: "{{ my_password }}"
+  
+    - name: Ensure VM is configured
+      redhat.openshift_virtualization.kubevirt_vm:
+        namespace: "{{ my_template_namespace | default('openshift') }}"
+        name: "{{ my_template | default('rhel9-server-small') }}"
+        running: true
+        spec:
+          accessCredentials:
+          - sshPublicKey:
+              propagationMethod:
+                qemuGuestAgent:
+                  users:
+                  - cloud-user
+              source:
+                secret:
+                  secretName: "{{ my_ssh_secret | default('ssh-pub-key') }}"
+
+        
