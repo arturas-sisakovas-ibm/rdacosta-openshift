@@ -4,19 +4,42 @@
   gather_facts: false
 
   tasks:
-    - name: Ensure patch is rendered into a list 
-      set_fact:
-        my_patch: "{{ lookup('template','templates/add_disk.j2') | from_json }}"
 
-    - name: Ensure patch is applied 
+    - name: Ensure disk is added
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
-        patch: {{ my_patch }}
+        patch:
+          - op: add
+            path: /spec/dataVolumeTemplates/-
+            value:
+              metadata:
+                name: "{{ my_disk }}"
+              spec:
+                source:
+                  blank: {}
+                storage:
+                  storageClassName: "{{ my_storageclass }}"
+                  accessModes: ["ReadWriteMany"]
+                  resources:
+                    requests:
+                      storage: "{{ my_size }}"
+          - op: add
+            path: /spec/template/spec/domain/devices/disks/-
+            value:
+              name: "{{ my_disk }}"
+              disk:
+                bus: scsi
+          - op: add
+            path: /spec/template/spec/volumes/-
+            value:
+              name: "{{ my_disk }}"
+              dataVolume:
+                name: "{{ my_disk }}"
         wait: true
         wait_condition:
-          type: Ready
+          type:   Ready
           status: "True"
 
