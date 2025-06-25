@@ -12,5 +12,7 @@
         namespace: "{{ my_template_namespace | default('openshift') }}"
         name: "{{ my_template | default('rhel9-server-small') }}"
         namespace_target: "{{ my_namespace | default('vms') }}"
+        state: "{{ my_state | default('present') }}"
         parameters:
           NAME: "{{ my_vm }}"
+          CLOUD_USER_PASSWORD: "{{ my_password }}"
