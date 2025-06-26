@@ -33,23 +33,12 @@
 
           ❌ OH NO! We need to set my_package to either httpd or nginx ❌
 
-
-    - name: Ping
-      tags:
-        - always
-      ping:
-      
-    - name: Debug wait for
-      tags:
-        - always
-      wait_for:
-        port: 22
-        timeout: 99999999999
-
     - name: Ensure that we can connect to server
+      delegate_to: localhost
       tags:
         - always
       ansible.builtin.wait_for:
+        host: "{{ my_host }}"
         port: 22
         delay: 10
         timeout: 600
