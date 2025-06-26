@@ -17,7 +17,7 @@
     - name: Set SSH public key fact
       when: ssh_secret_info.kubernetes_info is defined and ssh_secret_info.kubernetes_info | length > 0
       set_fact:
-        _ssh_public_key: "{{ ssh_secret_info.kubernetes_info[0].data['id_rsa.pub'] | b64decode }}"
+        my_ssh_public_key: "{{ ssh_secret_info.kubernetes_info[0].data['id_rsa.pub'] | b64decode }}"
 
     - name: Deploy VM from template
       redhat.openshift.openshift_process:
@@ -28,7 +28,7 @@
         parameters:
           NAME: "{{ my_vm }}"
           CLOUD_USER_PASSWORD: "{{ my_password }}"
-          SSH_PUBLIC_KEY: "{{ _ssh_public_key }}"
+          SSH_PUBLIC_KEY: "{{ my_ssh_public_key }}"
 
     - name: Ensure VM is configured
       redhat.openshift_virtualization.kubevirt_vm:
