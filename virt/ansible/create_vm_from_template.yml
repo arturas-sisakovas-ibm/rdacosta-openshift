@@ -6,22 +6,6 @@
   force_handlers: true
 
   tasks:
-    - name: Get SSH public key from secret
-      kubernetes.core.k8s_info:
-        api_version: v1
-        kind: Secret
-        name: "{{ my_ssh_secret | default('ssh-pub-key') }}"
-        namespace: "{{ my_namespace | default('vms') }}"
-      register: ssh_secret_info
-      
-    - debug:
-        var: ssh_secret_info['resources'][0]['data']['ssh-publickey']
-        # var: ssh_secret_info.resources[0].data.ssh-publickey
-
-    - name: Set SSH public key fact
-      set_fact:
-        my_ssh_public_key: "{{ ssh_secret_info['resources'][0]['data']['ssh-publickey'] | b64decode }}"
-
     - name: Deploy VM from template
       redhat.openshift.openshift_process:
         name: "{{ my_template | default('rhel9-server-small') }}"
@@ -31,9 +15,8 @@
         parameters:
           NAME: "{{ my_vm }}"
           CLOUD_USER_PASSWORD: "{{ my_password }}"
-          SSH_PUBLIC_KEY: "{{ my_ssh_public_key }}"
 
-    - name: Ensure VM is configured
+    - name: Ensure VM is configured with SSH key via Qemu Guest Agent
       redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ my_vm | default('rhel9-server-small') }}"
         namespace: "{{ my_namespace | default('vms') }}"
