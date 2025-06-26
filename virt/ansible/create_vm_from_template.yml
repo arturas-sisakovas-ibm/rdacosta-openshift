@@ -15,7 +15,7 @@
       register: ssh_secret_info
       
     - debug:
-        var: ssh_secret_info.resources[0].data
+        var: ssh_secret_info.resources[0].data.'ssh-publickey'
         # var: ssh_secret_info.resources[0].data.ssh-publickey
 
     - name: Set SSH public key fact
