@@ -33,6 +33,13 @@
 
           ❌ OH NO! We need to set my_package to either httpd or nginx ❌
 
+
+    - ping:
+      
+    - wait_for:
+        port: 22
+        timeout: 99999999999
+
     - name: Ensure that we can connect to server
       tags:
         - always
