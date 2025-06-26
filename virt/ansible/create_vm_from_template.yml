@@ -19,9 +19,8 @@
         # var: ssh_secret_info.resources[0].data.ssh-publickey
 
     - name: Set SSH public key fact
-      when: ssh_secret_info.kubernetes_info is defined and ssh_secret_info.kubernetes_info | length > 0
       set_fact:
-        my_ssh_public_key: "{{ ssh_secret_info.kubernetes_info[0].data['id_rsa.pub'] | b64decode }}"
+        my_ssh_public_key: "{{ ssh_secret_info['resources'][0]['data']['ssh-publickey'] | b64decode }}"
 
     - name: Deploy VM from template
       redhat.openshift.openshift_process:
