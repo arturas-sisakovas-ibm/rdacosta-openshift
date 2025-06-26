@@ -26,6 +26,13 @@
           app: "{{ my_vm }}"
           kubevirt.io/dynamic-credentials-support: "true"
         spec:
+          domain:
+            devices:
+              channels:
+                - name: qemu-guest-agent
+                  channel:
+                    targetName: org.qemu.guest_agent.0
+                    targetType: virtio-serial
           accessCredentials:
           - sshPublicKey:
               propagationMethod:
