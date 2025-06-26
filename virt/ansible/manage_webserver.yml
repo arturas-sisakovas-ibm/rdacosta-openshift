@@ -33,13 +33,13 @@
 
           ❌ OH NO! We need to set my_package to either httpd or nginx ❌
 
-      - name: Ensure that we can connect to server
-        tags:
-          - always
-        ansible.builtin.wait_for:
-          port: 22
-          delay: 10
-          timeout: 600
+    - name: Ensure that we can connect to server
+      tags:
+        - always
+      ansible.builtin.wait_for:
+        port: 22
+        delay: 10
+        timeout: 600
 
     - name: Ensure webserver is setup
       become: true
