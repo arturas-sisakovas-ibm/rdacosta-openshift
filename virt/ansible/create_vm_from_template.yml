@@ -6,6 +6,18 @@
   force_handlers: true
 
   tasks:
+    - name: Get SSH public key from secret
+      register: ssh_secret_info
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: "{{ my_ssh_secret | default('ssh-pub-key') }}"
+        namespace: "{{ my_namespace | default('vms') }}"
+
+    - name: Set SSH public key fact
+      when: ssh_secret_info['resources '] | length > 0
+      set_fact:
+        _ssh_public_key: "{{ ssh_secret_info['resources'][0]['data']['id_rsa.pub'] | b64decode }}"
 
     - name: Deploy VM from template
       redhat.openshift.openshift_process:
@@ -16,31 +28,13 @@
         parameters:
           NAME: "{{ my_vm }}"
           CLOUD_USER_PASSWORD: "{{ my_password }}"
-  
+          SSH_PUBLIC_KEY: "{{ _ssh_public_key }}"
+
     - name: Ensure VM is configured
       redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ my_vm | default('rhel9-server-small') }}"
-        namespace: "{{ _namespace | default('vms') }}"
+        namespace: "{{ my_namespace | default('vms') }}"
         running: true
         labels:
           app: "{{ my_vm }}"
           kubevirt.io/dynamic-credentials-support: "true"
-        spec:
-          domain:
-            devices:
-              channels:
-                - name: qemu-guest-agent
-                  channel:
-                    targetName: org.qemu.guest_agent.0
-                    targetType: virtio-serial
-          accessCredentials:
-          - sshPublicKey:
-              propagationMethod:
-                qemuGuestAgent:
-                  users:
-                  - cloud-user
-              source:
-                secret:
-                  secretName: "{{ my_ssh_secret | default('ssh-pub-key') }}"
-
-        
