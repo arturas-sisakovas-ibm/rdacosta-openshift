@@ -7,17 +7,17 @@
 
   tasks:
     - name: Get SSH public key from secret
-      register: ssh_secret_info
       kubernetes.core.k8s_info:
         api_version: v1
         kind: Secret
         name: "{{ my_ssh_secret | default('ssh-pub-key') }}"
         namespace: "{{ my_namespace | default('vms') }}"
+      register: ssh_secret_info
 
     - name: Set SSH public key fact
-      when: ssh_secret_info['resources '] | length > 0
+      when: ssh_secret_info.kubernetes_info is defined and ssh_secret_info.kubernetes_info | length > 0
       set_fact:
-        _ssh_public_key: "{{ ssh_secret_info['resources'][0]['data']['id_rsa.pub'] | b64decode }}"
+        _ssh_public_key: "{{ ssh_secret_info.kubernetes_info[0].data['id_rsa.pub'] | b64decode }}"
 
     - name: Deploy VM from template
       redhat.openshift.openshift_process:
@@ -38,3 +38,13 @@
         labels:
           app: "{{ my_vm }}"
           kubevirt.io/dynamic-credentials-support: "true"
+        spec:
+          accessCredentials:
+          - sshPublicKey:
+              propagationMethod:
+                qemuGuestAgent:
+                  users:
+                  - cloud-user
+              source:
+                secret:
+                  secretName: "{{ my_ssh_secret | default('ssh-pub-key') }}"
