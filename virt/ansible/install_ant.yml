@@ -9,4 +9,4 @@
     - name: Ensure {{ my_package }} is at state {{ my_state }}
       ansible.builtin.dnf:
         name: "{{ my_package | default('bash') }}"
-        state: "{{ [my_state | default('installed') }}"
+        state: "{{ my_state | default('installed') }}"
