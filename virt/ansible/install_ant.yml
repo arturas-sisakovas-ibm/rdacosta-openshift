@@ -1,12 +1,12 @@
-- name: Install ant
-  hosts: all
+- name: Manage Software
+  hosts: "{{ my_host }}"
   become: true
   gather_facts: false
   force_handlers: true
 
   tasks:
 
-    - name: Ensure ant is installed
+    - name: Ensure {{ my_package }} is at state {{ my_state }}
       ansible.builtin.dnf:
-        name: ant
-        state: installed
+        name: "{{ my_package | default('bash') }}"
+        state: "{{ [my_state | default('installed') }}"
