@@ -1,0 +1,12 @@
+- name: Install ant
+  hosts: all
+  become: true
+  gather_facts: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure ant is installed
+      ansible.builtin.dnf:
+        name: ant
+        state: installed
