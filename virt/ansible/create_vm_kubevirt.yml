@@ -12,16 +12,11 @@
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace | default('vms') }}"
         running: true
+        instancetype:
+          name: u1.small
+        preference:
+          name: rhel.9
         labels:
           app: "{{ my_vm }}"
           kubevirt.io/dynamic-credentials-support: "true"
-        spec:
-          accessCredentials:
-          - sshPublicKey:
-              propagationMethod:
-                qemuGuestAgent:
-                  users:
-                  - cloud-user
-              source:
-                secret:
-                  secretName: "{{ my_ssh_secret | default('ssh-pub-key') }}"
+
