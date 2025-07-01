@@ -10,7 +10,3 @@
     - name: Ensure VM exists
       redhat.openshift.k8s:
         template: templates/create_vm.j2
-
-    - name: Ensure fact controller learns
-      ansible.builtin.set_fact:
-        my_host: "{{ my_namespace }}-{{ my_vm }}"
