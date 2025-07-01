@@ -13,9 +13,9 @@
         namespace: "{{ my_namespace | default('vms') }}"
         running: true
         instancetype:
-          name: u1.small
+          name: "{{ my_instancetype | default('u1.small' }}"
         preference:
-          name: rhel.9
+          name: "{{ my_preference | default('rhel.9') }}"
         labels:
           app: "{{ my_vm }}"
           kubevirt.io/dynamic-credentials-support: "true"
