@@ -1,0 +1,27 @@
+---
+- name: Create VM
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure VM is created 
+      redhat.openshift_virtualization.kubevirt_vm:
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace | default('vms') }}"
+        running: true
+        labels:
+          app: "{{ my_vm }}"
+          kubevirt.io/dynamic-credentials-support: "true"
+        spec:
+          accessCredentials:
+          - sshPublicKey:
+              propagationMethod:
+                qemuGuestAgent:
+                  users:
+                  - cloud-user
+              source:
+                secret:
+                  secretName: "{{ my_ssh_secret | default('ssh-pub-key') }}"
