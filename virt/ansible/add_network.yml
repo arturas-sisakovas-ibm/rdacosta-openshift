@@ -6,43 +6,42 @@
   force_handlers: true
 
   tasks:
-
-    - name: Ensure VM is stopped
-      redhat.openshift_virtualization.kubevirt_vm:
+    - name: Get current VM YAML
+      kubernetes.core.k8s_info:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
-        running: false
-        wait: true
+      register: vm_info
 
-    - name: Ensure network is added 
+    - name: Extract interfaces and networks
+      set_fact:
+        vm_interfaces: "{{ (vm_info.resources[0].spec.template.spec.domain.devices.interfaces | default([])) | list }}"
+        vm_networks: "{{ (vm_info.resources[0].spec.template.spec.networks | default([])) | list }}"
+
+    - name: Append Multus interface if not present
+      set_fact:
+        vm_interfaces: "{{ vm_interfaces + [ {'name': 'nic1', 'bridge': {}, 'model': 'virtio', 'macAddress': '02:42:ac:11:00:02'} ] if not (vm_interfaces | selectattr('name','equalto','nic1') | list) else vm_interfaces }}"
+
+    - name: Append Multus network if not present
+      set_fact:
+        vm_networks: "{{ vm_networks + [ {'name': 'nic1', 'multus': {'networkName': 'default/' + my_nad }} ] if not (vm_networks | selectattr('name','equalto','nic1') | list) else vm_networks }}"
+
+    - name: Patch interfaces and networks 
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
         patch:
-          - op: add
-            path: /spec/template/spec/domain/devices/interfaces/-
-            value:
-              - name: nic1
-                bridge: {}
-                model: virtio
-                macAddress: 02:42:ac:11:00:02
-          - op: add
-            path: /spec/template/spec/networks/-
-            value:
-              - name: nic1
-                multus:
-                  networkName: default/{{ my_nad }}
+          - op: replace
+            path: /spec/template/spec/domain/devices/interfaces
+            value: "{{ vm_interfaces }}"
+          - op: replace
+            path: /spec/template/spec/networks
+            value: "{{ vm_networks }}"
         wait: true
         wait_condition:
           type: Ready
           status: "True"
-
-    - name: Ensure VM is started
-      redhat.openshift_virtualization.kubevirt_vm:
-        name: "{{ my_vm }}"
-        namespace: "{{ my_namespace }}"
-        running: true
-        wait: true
 
