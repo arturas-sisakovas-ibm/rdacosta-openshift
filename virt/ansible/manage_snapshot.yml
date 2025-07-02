@@ -2,7 +2,7 @@
 - name: Manage snapshot 
   hosts: localhost
   gather_facts: false
-  become: true
+  become: false
   force_handlers: true
 
   tasks:
