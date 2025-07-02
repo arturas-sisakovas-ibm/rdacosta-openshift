@@ -14,14 +14,14 @@
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
         patch:
-          - op: replace
+          - op: add
             path: /spec/template/spec/domain/devices/interfaces
             value:
               - name: nic1
                 bridge: {}
                 model: virtio
                 macAddress: 02:42:ac:11:00:02
-          - op: replace
+          - op: add
             path: /spec/template/spec/networks
             value:
               - name: nic1
