@@ -6,6 +6,14 @@
   force_handlers: true
 
   tasks:
+
+    - name: Ensure VM is stopped
+      redhat.openshift_virtualization.kubevirt_vm:
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        running: false
+        wait: true
+
     - name: Get current VM YAML
       kubernetes.core.k8s_info:
         api_version: kubevirt.io/v1
@@ -45,3 +53,9 @@
           type: Ready
           status: "True"
 
+    - name: Ensure VM is started
+      redhat.openshift_virtualization.kubevirt_vm:
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        running: true
+        wait: true
