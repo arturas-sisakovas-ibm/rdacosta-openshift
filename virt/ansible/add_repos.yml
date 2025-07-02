@@ -1,8 +1,8 @@
 ---
 - name: Add repos 
-  hosts: localhost
+  hosts: "{{ my_namespace }}-{{ my_vm }}"
   gather_facts: false
-  become: false
+  become: true
   force_handlers: true
 
   tasks:
