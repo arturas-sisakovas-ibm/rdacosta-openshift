@@ -19,4 +19,30 @@
         labels:
           app: "{{ my_vm }}"
           kubevirt.io/dynamic-credentials-support: "true"
-
+          network.kubevirt.io/headlessService: headless
+        spec:
+          dataVolumeTemplates:
+            - metadata:
+                name: "{{ my_vm }}-volume"
+              spec:
+                sourceRef:
+                  kind: DataSource
+                  name: "{{ rhel.9 | }"
+                  namespace: openshift-virtualization-os-images
+                storage:
+                  resources: {}
+          domain:
+            devices: {}
+          subdomain: headless
+                  volumes:
+                    - dataVolume:
+                        name: "{{ my_vm }}-volume"
+                      name: rootdisk
+            - cloudInitNoCloud:
+                userData: |
+                  #cloud-config
+                  chpasswd:
+                    expire: false
+                  password: "{{ my_password }}"
+                  user: cloud-user
+              name: cloudinitdisk
