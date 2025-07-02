@@ -17,12 +17,13 @@
           - op: add
             path: /spec/template/spec/domain/devices/interfaces/-
             value:
-              name: bridge-network
+              name: nic1
               bridge: {}
+              model: virtio
           - op: add
             path: /spec/template/spec/networks/-
             value:
-              name: bridge-network
+              name: nic1
               multus:
                 networkName: default/{{ my_nad }}
         wait: true
