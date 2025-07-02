@@ -27,7 +27,7 @@
               spec:
                 sourceRef:
                   kind: DataSource
-                  name: "{{ rhel.9 }}"
+                  name: "{{ my_preference }}"
                   namespace: openshift-virtualization-os-images
                 storage:
                   resources: {}
