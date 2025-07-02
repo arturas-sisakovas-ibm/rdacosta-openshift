@@ -17,11 +17,10 @@
           - op: add
             path: /spec/template/spec/domain/devices/interfaces/-
             value:
-              metadata:
-                name: bridge-network
-                bridge: {}
+              name: bridge-network
+              bridge: {}
           - op: add
-            path: /spec/template/spec/domain/networks/-
+            path: /spec/template/spec/networks/-
             value:
               name: bridge-network
               multus:
