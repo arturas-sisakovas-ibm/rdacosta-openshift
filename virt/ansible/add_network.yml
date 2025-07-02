@@ -1,5 +1,5 @@
 ---
-- name: Add Multus network to VM while preserving pod network
+- name: Add network interface 
   hosts: localhost
   gather_facts: false
   become: false
@@ -35,15 +35,15 @@
       set_fact:
         vm_networks: "{{ [ {'name': 'default', 'pod': {}} ] + vm_networks if (vm_networks | selectattr('name','equalto','default') | list | length) == 0 else vm_networks }}"
 
-    - name: Append Multus interface if not present
+    - name: Ensure multus interface is added 
       set_fact:
         vm_interfaces: "{{ vm_interfaces + [ {'name': 'nic1', 'bridge': {}, 'model': 'virtio', 'macAddress': '02:42:ac:11:00:02'} ] if not (vm_interfaces | selectattr('name','equalto','nic1') | list) else vm_interfaces }}"
 
-    - name: Append Multus network if not present
+    - name: Ensure multus network is added 
       set_fact:
         vm_networks: "{{ vm_networks + [ {'name': 'nic1', 'multus': {'networkName': 'default/' + my_nad }} ] if not (vm_networks | selectattr('name','equalto','nic1') | list) else vm_networks }}"
 
-    - name: Patch interfaces and networks (atomic update)
+    - name: Ensure VM is patched 
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
