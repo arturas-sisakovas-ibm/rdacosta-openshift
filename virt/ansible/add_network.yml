@@ -48,10 +48,7 @@
           - op: replace
             path: /spec/template/spec/networks
             value: "{{ vm_networks }}"
-        wait: true
-        wait_condition:
-          type: Ready
-          status: "True"
+        wait: false
 
     - name: Ensure VM is started
       redhat.openshift_virtualization.kubevirt_vm:
