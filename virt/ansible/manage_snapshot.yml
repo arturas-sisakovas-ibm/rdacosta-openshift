@@ -1,0 +1,38 @@
+---
+- name: Perform a snapshot for the running VM
+  hosts: all
+  vars: # You define values for these variables in the job template
+    vm_name:
+    ns:
+
+  tasks:
+
+    - name: Obtain the VirtualMachine details
+      redhat.openshift_virtualization.kubevirt_vm_info:
+        namespace: "{{ ns }}"
+        name: "{{ vm_name }}"
+      register: vm_details
+
+    - name: Create the Snapshot
+      redhat.openshift.k8s:
+        state: present
+        definition:
+          apiVersion: snapshot.kubevirt.io/v1alpha1
+          kind: VirtualMachineSnapshot
+          metadata:
+            name: "{{ vm_name }}-snapshot-aap"
+            namespace: "{{ ns }}"
+            ownerReferences:
+              - apiVersion: kubevirt.io/v1
+                blockOwnerDeletion: false
+                kind: VirtualMachine
+                name: "{{ vm_name }}"
+                uid: "{{ vm_details.resources[0].metadata.uid }}"
+          spec:
+            source:
+              apiGroup: kubevirt.io
+              kind: VirtualMachine
+              name: "{{ vm_name }}"
+        wait: true
+        wait_condition:
+          type: Ready
