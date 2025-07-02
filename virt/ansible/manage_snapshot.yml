@@ -1,38 +1,82 @@
 ---
-- name: Perform a snapshot for the running VM
-  hosts: all
-  vars: # You define values for these variables in the job template
-    vm_name:
-    ns:
+- name: Manage snapshot 
+  hosts: localhost
+  gather_facts: false
+  become: true
+  force_handlers: true
 
   tasks:
 
-    - name: Obtain the VirtualMachine details
-      redhat.openshift_virtualization.kubevirt_vm_info:
-        namespace: "{{ ns }}"
-        name: "{{ vm_name }}"
-      register: vm_details
-
-    - name: Create the Snapshot
+    - name: Ensure snapshot is created
+      tags:
+        - create
       redhat.openshift.k8s:
         state: present
         definition:
           apiVersion: snapshot.kubevirt.io/v1alpha1
           kind: VirtualMachineSnapshot
           metadata:
-            name: "{{ vm_name }}-snapshot-aap"
-            namespace: "{{ ns }}"
-            ownerReferences:
-              - apiVersion: kubevirt.io/v1
-                blockOwnerDeletion: false
-                kind: VirtualMachine
-                name: "{{ vm_name }}"
-                uid: "{{ vm_details.resources[0].metadata.uid }}"
+            name: "{{ my_vm }}-snapshot-aap"
+            namespace: "{{ my_namespace }}"
           spec:
             source:
               apiGroup: kubevirt.io
               kind: VirtualMachine
-              name: "{{ vm_name }}"
+              name: "{{ my_vm }}"
         wait: true
         wait_condition:
           type: Ready
+
+    - name: Ensure snapshot is restored
+      tags:
+        - restore
+      block:
+
+      - name: Ensure VM is stopped
+        redhat.openshift_virtualization.kubevirt_vm:
+          name: "{{ my_vm }}"
+          namespace: "{{ my_namespace }}"
+          running: false
+          wait: true
+
+
+      - name: Ensure snapshot is restored 
+        redhat.openshift.k8s:
+          state: present
+          definition:
+            apiVersion: snapshot.kubevirt.io/v1alpha1
+            kind: VirtualMachineRestore
+            metadata:
+              generateName: "{{ my_vm }}-restore-"
+              namespace: "{{ my_namespace }}"
+            spec:
+              target:
+                apiGroup: kubevirt.io
+                kind: VirtualMachine
+                name: "{{ vm_name }}"
+              virtualMachineSnapshotName: "{{ my_vm }}-snapshot-aap"
+          wait: true
+          wait_timeout: 600
+          wait_condition:
+            type: Ready
+
+      - name: Ensure old snapshot is removed
+        redhat.openshift.k8s:
+          state: absent
+          definition:
+            apiVersion: snapshot.kubevirt.io/v1alpha1
+            kind: VirtualMachineSnapshot
+            metadata:
+              name: "{{ my_vm }}-snapshot-aap"
+              namespace: "{{ my_namespace }}"
+            spec:
+              source:
+                apiGroup: kubevirt.io
+                kind: VirtualMachine
+                name: "{{ my_vm }}"
+          wait: true
+          wait_condition:
+            type: Ready
+
+
+
