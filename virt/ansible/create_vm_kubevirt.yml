@@ -27,7 +27,7 @@
               spec:
                 sourceRef:
                   kind: DataSource
-                  name: "{{ my_preference }}"
+                  name: "{{ my_preference | replace('.', '') }}"
                   namespace: openshift-virtualization-os-images
                 storage:
                   resources:
