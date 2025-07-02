@@ -18,6 +18,17 @@
             path: /spec/template/spec/domain/devices/interfaces
             value: []
 
+    - name: Ensure networks array exists
+      kubernetes.core.k8s_json_patch:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        patch:
+          - op: add
+            path: /spec/template/spec/networks
+            value: []
+
     - name: Ensure NetworkAttachmentDefinition is added
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
