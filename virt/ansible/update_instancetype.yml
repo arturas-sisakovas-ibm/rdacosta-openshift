@@ -1,0 +1,19 @@
+---
+- name: Update instancetype 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Change instancetype 
+        redhat.openshift_virtualization.kubevirt_vm:
+          state: present
+          name: "{{ my_vm }}"
+          namespace: "{{ my_namespace }}"
+          instancetype:
+            name: "{{ my_instancetype | default('u1.small') }}"
+            revisionName: null
+          preference:
+            revisionName: null
