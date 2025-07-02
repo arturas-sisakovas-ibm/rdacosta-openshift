@@ -2,6 +2,8 @@
 - name: Add disk to VM
   hosts: localhost
   gather_facts: false
+  become: false
+  force_handlers: true
 
   tasks:
 
