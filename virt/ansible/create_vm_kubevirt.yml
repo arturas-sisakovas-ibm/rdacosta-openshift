@@ -30,9 +30,18 @@
                   name: "{{ my_preference }}"
                   namespace: openshift-virtualization-os-images
                 storage:
-                  resources: {}
+                  resources:
+                    requests:
+                      storage: 30Gi
           domain:
-            devices: {}
+            devices:
+              disks:
+              - name: rootdisk
+                disk:
+                  bus: virtio
+              - name: cloudinitdisk
+                disk:
+                  bus: virtio
           subdomain: headless
           volumes:
             - dataVolume:
