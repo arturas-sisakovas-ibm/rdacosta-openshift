@@ -1,0 +1,27 @@
+---
+- name: Manage VM Power state
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure VM is started
+      tags:
+        - stop
+      redhat.openshift_virtualization.kubevirt_vm:
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        running: true
+        wait: true
+
+    - name: Ensure VM is stopped
+      tags:
+        - start
+      redhat.openshift_virtualization.kubevirt_vm:
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        running: false
+        wait: true
+
