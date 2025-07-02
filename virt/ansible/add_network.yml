@@ -1,5 +1,5 @@
 ---
-- name: Add Multus network to VM without removing pod network
+- name: Add Multus network to VM while preserving pod network
   hosts: localhost
   gather_facts: false
   become: false
@@ -26,6 +26,14 @@
       set_fact:
         vm_interfaces: "{{ (vm_info.resources[0].spec.template.spec.domain.devices.interfaces | default([])) | list }}"
         vm_networks: "{{ (vm_info.resources[0].spec.template.spec.networks | default([])) | list }}"
+
+    - name: Ensure pod interface is present
+      set_fact:
+        vm_interfaces: "{{ [ {'name': 'default', 'masquerade': {}} ] + vm_interfaces if (vm_interfaces | selectattr('name','equalto','default') | list | length) == 0 else vm_interfaces }}"
+
+    - name: Ensure pod network is present
+      set_fact:
+        vm_networks: "{{ [ {'name': 'default', 'pod': {}} ] + vm_networks if (vm_networks | selectattr('name','equalto','default') | list | length) == 0 else vm_networks }}"
 
     - name: Append Multus interface if not present
       set_fact:
