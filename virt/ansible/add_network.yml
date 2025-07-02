@@ -1,0 +1,42 @@
+---
+- name: Add network to VM 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure interace is added 
+      kubernetes.core.k8s_json_patch:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        patch:
+          - op: replace
+            path: /spec/template/spec/domain/devices/interfaces
+            value:
+              - name: nic1
+                bridge: {}
+                model: virtio
+                macAddress: 02:42:ac:11:00:02
+
+    - name: Ensure network is added 
+      kubernetes.core.k8s_json_patch:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        patch:
+          - op: replace
+            path: /spec/template/spec/networks
+            value:
+              - name: nic1
+                multus:
+                  networkName: default/{{ my_nad }}
+        wait: true
+        wait_condition:
+          type: Ready
+          status: "True"
+
