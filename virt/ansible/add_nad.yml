@@ -8,6 +8,7 @@
   tasks:
 
     - name: Ensure interfaces array exists
+      ignore_errors: true
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
@@ -19,6 +20,7 @@
             value: []
 
     - name: Ensure networks array exists
+      ignore_errors: true
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
