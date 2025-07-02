@@ -53,7 +53,7 @@
               target:
                 apiGroup: kubevirt.io
                 kind: VirtualMachine
-                name: "{{ vm_name }}"
+                name: "{{ my_vm }}"
               virtualMachineSnapshotName: "{{ my_vm }}-snapshot-aap"
           wait: true
           wait_timeout: 600
