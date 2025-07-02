@@ -9,7 +9,7 @@
 
     - name: Ensure VM is started
       tags:
-        - stop
+        - start
       redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
@@ -18,7 +18,7 @@
 
     - name: Ensure VM is stopped
       tags:
-        - start
+        - stop
       redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
