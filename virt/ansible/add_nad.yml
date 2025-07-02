@@ -29,7 +29,11 @@
             path: /spec/template/spec/networks
             value: []
 
-    - name: Ensure NetworkAttachmentDefinition is added
+    - name: Wait for arrays to exist (workaround for possible API race)
+      ansible.builtin.pause:
+        seconds: 3
+
+    - name: Ensure multus interface is added
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
@@ -43,6 +47,14 @@
               bridge: {}
               model: virtio
               macAddress: 02:42:ac:11:00:02
+
+    - name: Ensure multus network is added
+      kubernetes.core.k8s_json_patch:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        patch:
           - op: add
             path: /spec/template/spec/networks/-
             value:
