@@ -1,5 +1,5 @@
 ---
-- name: Add network to VM 
+- name: Add Multus network to VM without removing pod network
   hosts: localhost
   gather_facts: false
   become: false
@@ -35,7 +35,7 @@
       set_fact:
         vm_networks: "{{ vm_networks + [ {'name': 'nic1', 'multus': {'networkName': 'default/' + my_nad }} ] if not (vm_networks | selectattr('name','equalto','nic1') | list) else vm_networks }}"
 
-    - name: Patch interfaces and networks 
+    - name: Patch interfaces and networks (atomic update)
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
@@ -56,3 +56,4 @@
         namespace: "{{ my_namespace }}"
         running: true
         wait: true
+
