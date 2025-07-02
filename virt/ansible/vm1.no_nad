@@ -2,21 +2,21 @@ apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
   annotations:
-    kubemacpool.io/transaction-timestamp: "2025-07-02T13:47:41.437492006Z"
+    kubemacpool.io/transaction-timestamp: "2025-07-02T13:58:50.642685372Z"
     kubevirt.io/latest-observed-api-version: v1
     kubevirt.io/storage-observed-api-version: v1
     restore.kubevirt.io/lastRestoreUID: vm1-restore-f82xx-d931a0c7-54ac-493e-b443-f10f22d7ee58
   creationTimestamp: "2025-07-02T09:51:49Z"
   finalizers:
   - kubevirt.io/virtualMachineControllerFinalize
-  generation: 13
+  generation: 14
   labels:
     app: vm1
     kubevirt.io/dynamic-credentials-support: "true"
     network.kubevirt.io/headlessService: headless
   name: vm1
   namespace: vms
-  resourceVersion: "10087707"
+  resourceVersion: "10100650"
   uid: 03edff2a-87be-403d-b461-ea42cc0acdc8
 spec:
   dataVolumeTemplates:
@@ -59,18 +59,9 @@ spec:
           - disk:
               bus: virtio
             name: cloudinitdisk
-          interfaces:
-          - bridge: {}
-            macAddress: 02:d0:a8:00:00:06
-            model: virtio
-            name: nic1
         machine:
           type: pc-q35-rhel9.4.0
         resources: {}
-      networks:
-      - multus:
-          networkName: default/vm-private-net
-        name: nic1
       subdomain: headless
       volumes:
       - dataVolume:
