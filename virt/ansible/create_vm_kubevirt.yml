@@ -43,6 +43,6 @@
                   #cloud-config
                   chpasswd:
                     expire: false
-                  password: "{{ my_password }}"
+                  password: "{{ my_password | default('redhatocp') }}"
                   user: cloud-user
               name: cloudinitdisk
