@@ -7,30 +7,6 @@
 
   tasks:
 
-    - name: Ensure interfaces array exists
-      ignore_errors: true
-      kubernetes.core.k8s_json_patch:
-        api_version: kubevirt.io/v1
-        kind: VirtualMachine
-        name: "{{ my_vm }}"
-        namespace: "{{ my_namespace }}"
-        patch:
-          - op: add
-            path: /spec/template/spec/domain/devices/interfaces
-            value: []
-
-    - name: Ensure networks array exists
-      ignore_errors: true
-      kubernetes.core.k8s_json_patch:
-        api_version: kubevirt.io/v1
-        kind: VirtualMachine
-        name: "{{ my_vm }}"
-        namespace: "{{ my_namespace }}"
-        patch:
-          - op: add
-            path: /spec/template/spec/networks
-            value: []
-
     - name: Ensure NetworkAttachmentDefinition is added
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
@@ -44,6 +20,7 @@
               name: nic1
               bridge: {}
               model: virtio
+              macAddress: 02:42:ac:11:00:02
           - op: add
             path: /spec/template/spec/networks/-
             value:
