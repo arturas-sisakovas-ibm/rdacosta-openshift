@@ -1,0 +1,33 @@
+---
+- name: Add NetworkAttachmentDefinition to VM
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure NetworkAttachmentDefinition is added
+      kubernetes.core.k8s_json_patch:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        name: "{{ my_vm }}"
+        namespace: "{{ my_namespace }}"
+        patch:
+          - op: add
+            path: /spec/template/spec/domain/devices/interfaces/-
+            value:
+              metadata:
+                name: bridge-network
+                bridge: {}
+          - op: add
+            path: /spec/template/spec/domain/networks/-
+            value:
+              name: bridge-network
+              multus:
+                networkName: default/{{ my_nad }}
+        wait: true
+        wait_condition:
+          type:   Ready
+          status: "True"
+
