@@ -39,7 +39,6 @@
           running: false
           wait: true
 
-
       - name: Ensure snapshot is restored 
         redhat.openshift.k8s:
           state: present
