@@ -34,10 +34,10 @@
           domain:
             devices: {}
           subdomain: headless
-                  volumes:
-                    - dataVolume:
-                        name: "{{ my_vm }}-volume"
-                      name: rootdisk
+          volumes:
+            - dataVolume:
+                name: "{{ my_vm }}-volume"
+              name: rootdisk
             - cloudInitNoCloud:
                 userData: |
                   #cloud-config
