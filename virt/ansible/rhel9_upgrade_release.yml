@@ -1,4 +1,5 @@
-- name: Upgrade minor release for RHEL 9
+---
+- name: Update minor release for RHEL 9
   hosts: "{{ my_host | mandatory('You must use the variable my_host to define the target for automation')  }}"
   gather_facts: true
   become: true

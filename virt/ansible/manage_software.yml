@@ -1,6 +1,8 @@
+---
 - name: Manage Software
   hosts: "{{ my_host | default('all') }}"
   gather_facts: true
+  force_handlers: true
 
   tasks:
 
