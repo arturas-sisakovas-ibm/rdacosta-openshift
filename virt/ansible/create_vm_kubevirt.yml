@@ -20,19 +20,19 @@
           app: "{{ my_vm }}"
           kubevirt.io/dynamic-credentials-support: "true"
           network.kubevirt.io/headlessService: headless
+        data_volume_templates:
+          - metadata:
+              name: "{{ my_vm }}-volume"
+            spec:
+              sourceRef:
+                kind: DataSource
+                name: "{{ my_preference | replace('.', '') }}"
+                namespace: openshift-virtualization-os-images
+              storage:
+                resources:
+                  requests:
+                    storage: 30Gi
         spec:
-          dataVolumeTemplates:
-            - metadata:
-                name: "{{ my_vm }}-volume"
-              spec:
-                sourceRef:
-                  kind: DataSource
-                  name: "{{ my_preference | replace('.', '') }}"
-                  namespace: openshift-virtualization-os-images
-                storage:
-                  resources:
-                    requests:
-                      storage: 30Gi
           domain:
             devices:
               disks:
