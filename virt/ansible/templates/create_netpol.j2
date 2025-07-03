@@ -21,7 +21,7 @@ spec:
 {% if namespace | trim %}
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: {{ "namespace" | trim | to_json | default(omit) }}
+              kubernetes.io/metadata.name: "{{ namespace | trim | to_json | default(omit) }}"
 {% endif %}
 {% endfor %}
       ports:
