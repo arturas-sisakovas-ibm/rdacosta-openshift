@@ -1,0 +1,12 @@
+---
+- name: Create NetworkPolicy 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure NetworkPolicy exists
+      redhat.openshift.k8s:
+        template: templates/create_netpol.j2

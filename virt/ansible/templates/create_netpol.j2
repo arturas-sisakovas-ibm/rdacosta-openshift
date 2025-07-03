@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ my_netpol | default('allow-ingress-to-web') }}
+  namespace: {{ my_namespace | mandatory('You must specify a namespace') }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ my_app_label | default('web') }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+{% for label_dict in my_allowed_labels %}
+        - podSelector:
+            matchLabels:
+{% for key, value in label_dict.items() %}
+                {{ key }}: {{ value | to_json }}
+{% endfor %}
+{% endfor %}
+      ports:
+        - protocol: TCP
+          port: {{ my_port | default(80) }}
+
