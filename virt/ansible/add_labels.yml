@@ -11,20 +11,21 @@
       redhat.openshift.k8s:
         template: templates/add_labels.j2
 
-    - name: Print message
-      ansible.builtin.debug:
-        msg: |
 
-          🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨
-
-                  Do not forget to restart your VM for these labels to take effect
-
-          🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨     🚨
-        
     - name: Restart VM
       when: my_restart == "Yes"
-      redhat.openshift_virtualization.kubevirt_vm:
-        name: "{{ my_vm }}"
-        namespace: "{{ my_namespace }}"
-        state: restarted
-        wait: true
+      block:
+
+      - name: Ensure VM is stopped
+        redhat.openshift_virtualization.kubevirt_vm:
+          name: "{{ my_vm }}"
+          namespace: "{{ my_namespace }}"
+          running: false
+          wait: true
+
+      - name: Ensure VM is started
+        redhat.openshift_virtualization.kubevirt_vm:
+          name: "{{ my_vm }}"
+          namespace: "{{ my_namespace }}"
+          running: true
+          wait: true
