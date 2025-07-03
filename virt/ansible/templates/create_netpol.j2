@@ -20,7 +20,7 @@ spec:
 {% for namespace in my_allowed_namespace %}
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: {{ my_allowed_namespace | default(omit) }}
+              kubernetes.io/metadata.name: {{ namespace | default(omit) }}
 {% endfor %}
       ports:
         - protocol: TCP
