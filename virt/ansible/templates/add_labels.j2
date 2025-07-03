@@ -7,7 +7,6 @@ metadata:
 {%- for label in my_label.splitlines() %}
 {%- set kv = label.split(':', 1) %}
 {%- if kv|length == 2 and kv[0]|trim and kv[1]|trim %}
-    {{ kv[0]|trim | to_json }}: {{ kv[1]|trim | to_json }}
+    {{ kv[0]|trim }}: {{ kv[1]|trim }}
 {%- endif %}
 {%- endfor %}
-
