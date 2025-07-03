@@ -11,15 +11,17 @@ spec:
     - Ingress
   ingress:
     - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-cnv
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: {{ my_allowed_namespace | default(omit) }} 
         - podSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-cnv
+{% for namespace in my_allowed_namespace %}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ my_allowed_namespace | default(omit) }}
+{% endfor %}
       ports:
         - protocol: TCP
           port: {{ my_port | default(80) }}
