@@ -17,7 +17,7 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: openshift-cnv
-{% for namespace in my_allowed_namespace_list %}
+{% for namespace in my_allowed_namespace %}
 {% set ns = namespace | trim | regex_replace('^- ', '') | regex_replace('^\"|\"$', '') | regex_replace("^'|'$", '') %}
 {% if ns %}
         - namespaceSelector:
