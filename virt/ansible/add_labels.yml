@@ -1,0 +1,12 @@
+---
+- name: Add labels to VM 
+  hosts: localhost
+  gather_facts: false
+  become: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure label(s) exist 
+      redhat.openshift.k8s:
+        template: templates/add_labels.j2
