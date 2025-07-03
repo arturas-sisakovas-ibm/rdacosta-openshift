@@ -11,13 +11,15 @@ spec:
     - Ingress
   ingress:
     - from:
-{% for label_dict in my_allowed_labels %}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-cnv
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ my_allowed_namespace | default(omit) }} 
         - podSelector:
             matchLabels:
-{% for key, value in label_dict.items() %}
-                {{ key }}: {{ value | to_json }}
-{% endfor %}
-{% endfor %}
+              network.openshift.io/policy-group: ingress
       ports:
         - protocol: TCP
           port: {{ my_port | default(80) }}
