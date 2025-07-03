@@ -18,10 +18,11 @@ spec:
             matchLabels:
               kubernetes.io/metadata.name: openshift-cnv
 {% for namespace in [my_allowed_namespace] %}
-{% if namespace | trim %}
+{% set ns = namespace | trim | regex_replace('^\"|\"$', '') | regex_replace("^'|'$", '') %}
+{% if ns %}
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: {{ namespace | trim | to_json | default(omit) }}
+              kubernetes.io/metadata.name: {{ ns | to_json }}
 {% endif %}
 {% endfor %}
       ports:
