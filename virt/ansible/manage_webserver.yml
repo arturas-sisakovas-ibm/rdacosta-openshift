@@ -5,10 +5,6 @@
 
   vars:
 
-    my_services:
-      - http
-      - https
-
     my_content: |
       <title>Ansible test page</title>
       Hello from {{ inventory_hostname }}
@@ -33,16 +29,6 @@
 
           ❌ OH NO! We need to set my_package to either httpd or nginx ❌
 
-    - name: Ensure that we can connect to server
-      delegate_to: localhost
-      tags:
-        - always
-      ansible.builtin.wait_for:
-        host: "{{ my_host }}"
-        port: 22
-        delay: 10
-        timeout: 600
-
     - name: Ensure webserver is setup
       become: true
       tags:
@@ -61,14 +47,6 @@
           name: "{{ my_package }}"
           enabled: true
           state: started
-
-      - name: Ensure service is allowed in firewalld
-        loop: "{{ my_services }}"
-        ansible.posix.firewalld:
-          service: "{{ item }}"
-          immediate: true
-          permanent: true
-          state: enabled
 
       - name: Ensure stub content is installed for httpd
         when: my_package == "httpd"
@@ -102,14 +80,6 @@
         ansible.builtin.dnf:
           name: "{{ my_package }}"
           state: absent
-
-      - name: Ensure service is removed from firewall
-        loop: "{{ my_services }}"
-        ansible.posix.firewalld:
-          service: "{{ item }}"
-          immediate: true
-          permanent: true
-          state: disabled
 
       - name: Ensure stub content is removed from httpd
         when: my_package == "httpd"
