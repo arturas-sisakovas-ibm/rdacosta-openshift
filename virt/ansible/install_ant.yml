@@ -1,5 +1,5 @@
 - name: Manage Software
-  hosts: "{{ my_host }}"
+  hosts: "{{ my_namespace }}-{{ my_vm }}"
   become: true
   gather_facts: false
   force_handlers: true

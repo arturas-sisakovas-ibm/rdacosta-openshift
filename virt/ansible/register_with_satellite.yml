@@ -1,6 +1,6 @@
 ---
 - name: Ensure systems are registered with satellite
-  hosts: "{{ my_host | default('foo.example.com') }}"
+  hosts: "{{ my_namespace }}-{{ my_vm }}"
   become: true
   gather_facts: true
   force_handlers: true
