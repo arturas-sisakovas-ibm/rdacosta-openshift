@@ -22,7 +22,7 @@ spec:
 {% if ns %}
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: {{ ns | to_json }}
+              kubernetes.io/metadata.name: {{ ns | to_json | default(omit) }}
 {% endif %}
 {% endfor %}
       ports:
