@@ -6,7 +6,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: {{ my_app_label | default('web') }}
+      app: {{ my_vm | default('web') }}
   policyTypes:
     - Ingress
   ingress:
