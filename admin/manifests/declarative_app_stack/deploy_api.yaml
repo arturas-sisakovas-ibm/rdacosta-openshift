@@ -12,7 +12,7 @@ metadata:
   name: api
 spec:
   progressDeadlineSeconds: 600
-  replicas: 1 
+  replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -29,13 +29,30 @@ spec:
         app: api
         deployment: api
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - fe
+              topologyKey: kubernetes.io/hostname
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - db
+              topologyKey: kubernetes.io/hostname
       containers:
       - envFrom:
         - secretRef:
             name: api-config
         - secretRef:
             name: db-config
-        image: quay.io/rdacosta/world_api:latest 
+        image: quay.io/rdacosta/world_api:latest
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
