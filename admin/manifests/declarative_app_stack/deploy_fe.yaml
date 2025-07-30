@@ -46,15 +46,6 @@ spec:
         - mountPath: /opt/app-root/src/config.js
           name: config-js
           subPath: config.js
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: http://${API_SVC}/city?name=Liverpool
-            port: 8080
-            scheme: HTTP
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
         resources:
           limits:
             cpu: 100m
