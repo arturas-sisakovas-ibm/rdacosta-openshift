@@ -21,7 +21,7 @@ spec:
                 - sh
                 - -c
                 - |
-                  mysqldump -h db -u root -p$MYSQL_ROOT_PASSWORD world > /backup/world-$(date +\%F).sql
+                  mysqldump -h db -u root -p$MYSQL_ROOT_PASSWORD world > /backup/world-$(date +\%F).sql && echo "The backup completed".
               volumeMounts:
                 - name: backup
                   mountPath: /backup
