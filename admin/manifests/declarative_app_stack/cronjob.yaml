@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-backup
+spec:
+  schedule: "*/30 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: mysql-backup
+              image: quay.io/rdacosta/mysql-80:latest 
+              env:
+                - name: MYSQL_ROOT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: mysql-backup-secret
+                      key: MYSQL_ROOT_PASSWORD
+              command:
+                - sh
+                - -c
+                - |
+                  mysqldump -h db -u root -p$MYSQL_ROOT_PASSWORD world > /backup/world-$(date +\%F).sql
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          restartPolicy: OnFailure
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: backup
+
