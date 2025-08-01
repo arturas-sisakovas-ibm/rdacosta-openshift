@@ -34,6 +34,7 @@ spec:
                 values:
                 - api
             topologyKey: kubernetes.io/hostname
+            weight: 100
           - labelSelector:
               matchExpressions:
               - key: app
@@ -41,6 +42,7 @@ spec:
                 values:
                 - db
             topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - env:
         - name: API_SVC
