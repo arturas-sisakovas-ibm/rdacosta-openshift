@@ -20,29 +20,30 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: fe
     spec:
       affinity:
         podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - api
-            topologyKey: kubernetes.io/hostname
-            weight: 100
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - db
-            topologyKey: kubernetes.io/hostname
-            weight: 100
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - api
+              topologyKey: kubernetes.io/hostname
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - db
+              topologyKey: kubernetes.io/hostname
       containers:
       - env:
         - name: API_SVC
@@ -70,11 +71,9 @@ spec:
           name: config-js
           subPath: config.js
         readinessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - "curl -sf http://api:8080/city?name=Liverpool"
+          httpGet:
+            path: /health
+            port: 8080
           initialDelaySeconds: 5
           periodSeconds: 10
           timeoutSeconds: 3
@@ -96,3 +95,4 @@ spec:
             path: config.js
           name: fe-config
         name: config-js
+
