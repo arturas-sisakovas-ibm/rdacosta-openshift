@@ -12,7 +12,7 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      deployment: fe
+      app: fe
   strategy:
     rollingUpdate:
       maxSurge: 25%
