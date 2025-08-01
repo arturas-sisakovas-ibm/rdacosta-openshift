@@ -22,7 +22,7 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        deployment: fe
+        app: fe
     spec:
       affinity:
         podAffinity:
