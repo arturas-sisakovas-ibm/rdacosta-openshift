@@ -70,9 +70,8 @@ spec:
         - mountPath: /opt/app-root/src/config.js
           name: config-js
           subPath: config.js
-        readinessProbe:
-          httpGet:
-            path: /health
+        livenessProbe:
+          tcpSocket:
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 10

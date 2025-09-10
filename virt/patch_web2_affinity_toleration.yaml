@@ -15,7 +15,7 @@ spec:
               - key: tier
                 operator: In
                 values:
-                - production
+                - silver
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
