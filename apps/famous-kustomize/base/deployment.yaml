@@ -205,7 +205,7 @@ spec:
           
       containers:
         - name: mariadb
-          image: docker.io/bitnami/mariadb:10.5.10-debian-10-r0
+          image: docker.io/bitnami/mariadb:latest
           imagePullPolicy: "IfNotPresent"
           env:
             - name: BITNAMI_DEBUG
@@ -286,7 +286,6 @@ spec:
           requests:
             storage: "8Gi"
 ---
-# Source: famouschart/templates/tests/test-connection.yaml
 apiVersion: v1
 kind: Pod
 metadata:
