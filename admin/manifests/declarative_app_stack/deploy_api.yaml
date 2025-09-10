@@ -29,23 +29,6 @@ spec:
         app: api
         deployment: api
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - fe
-              topologyKey: kubernetes.io/hostname
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - db
-              topologyKey: kubernetes.io/hostname
       containers:
       - envFrom:
         - secretRef:

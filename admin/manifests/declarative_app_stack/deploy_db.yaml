@@ -14,23 +14,6 @@ spec:
       labels:
         app: db
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - fe
-              topologyKey: kubernetes.io/hostname
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - api
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: db
         image: quay.io/rdacosta/mysql-80:latest

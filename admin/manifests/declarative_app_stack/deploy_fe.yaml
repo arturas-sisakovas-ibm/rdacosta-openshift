@@ -23,27 +23,6 @@ spec:
       labels:
         app: fe
     spec:
-      affinity:
-        podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - api
-              topologyKey: kubernetes.io/hostname
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - db
-              topologyKey: kubernetes.io/hostname
       containers:
       - env:
         - name: API_SVC

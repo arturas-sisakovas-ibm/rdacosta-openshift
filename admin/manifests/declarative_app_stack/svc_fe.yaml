@@ -21,6 +21,6 @@ spec:
     protocol: TCP
     targetPort: 8443
   selector:
-    deployment: fe
+    app: fe
   sessionAffinity: None
   type: ClusterIP
