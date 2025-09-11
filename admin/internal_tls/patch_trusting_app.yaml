@@ -2,7 +2,7 @@ spec:
   template:
     spec:
       containers:
-        - name: baz 
+        - name: bar
           volumeMounts:
             - mountPath: /etc/pki/ca-trust/extracted/pem
               name: trusted-ca
