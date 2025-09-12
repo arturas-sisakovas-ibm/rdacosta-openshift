@@ -1,0 +1,26 @@
+---
+- name: Deleting the GitLab repository and the local clone
+  hosts: localhost
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Ensure the project does not exist in GitHub
+      ansible.builtin.include_role:
+        name: gls.utils.gitlab_project_destroy
+      vars:
+        gitlab_project_destroy_api_server: git.ocp4.example.com
+        gitlab_project_destroy_api_username: developer
+        gitlab_project_destroy_api_password: d3v3lop3r
+        gitlab_project_destroy_group: do0016l
+        gitlab_project_destroy_project_name: virtualization-deploy
+
+    - name: Ensure the local clone of the repository is removed
+      ansible.builtin.file:
+        state: absent
+        path: "{{ item }}"
+      loop:
+        - /home/student/virtualization-deploy
+        - /home/student/DO0016L/virtualization-deploy
+        - /home/devops/virtualization-deploy
+...

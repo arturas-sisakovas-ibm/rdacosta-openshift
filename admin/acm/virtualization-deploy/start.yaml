@@ -1,0 +1,20 @@
+---
+- name: Set up a GitLab repository and push exercise content
+  hosts: localhost
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Ensure the project exists in GitHub
+      ansible.builtin.include_role:
+        name: gls.utils.gitlab_project_create
+      vars:
+        gitlab_project_create_api_server: git.ocp4.example.com
+        gitlab_project_create_api_username: developer
+        gitlab_project_create_api_password: d3v3lop3r
+        gitlab_project_create_group: do0016l
+        gitlab_project_create_project_name: virtualization-deploy
+        gitlab_project_create_content: gitops-demo
+        gitlab_project_create_user: developer
+        gitlab_project_create_pass: d3v3lop3r
+...
