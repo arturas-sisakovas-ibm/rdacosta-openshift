@@ -88,7 +88,7 @@ spec:
         resources:
           requests:
             storage: 10Gi
-        storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization
+        storageClassName: lvms-vg1 
         volumeMode: Block
       source:
         http:
@@ -105,7 +105,7 @@ spec:
         resources:
           requests:
             storage: 1Gi
-        storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization
+        storageClassName: lvms-vg1 
   running: true
   template:
     metadata:
@@ -224,7 +224,7 @@ spec:
         resources:
           requests:
             storage: 10Gi
-        storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization
+        storageClassName: lvms-vg1 
         volumeMode: Block
       source:
         http:
@@ -241,7 +241,7 @@ spec:
         resources:
           requests:
             storage: 1Gi
-        storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization
+        storageClassName: lvms-vg1 
   running: true
   template:
     metadata:
