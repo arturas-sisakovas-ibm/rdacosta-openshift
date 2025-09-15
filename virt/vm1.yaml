@@ -74,6 +74,8 @@ spec:
         memory:
           guest: 2Gi
         resources: {}
+      hostname: vm1
+      subdomain: headless
       networks:
       - name: default
         pod: {}
