@@ -104,5 +104,6 @@ spec:
               - curl
               - bash-completion
             runcmd:
+            - systemctl disable --now firewalld
             - [ setsebool, -P, virt_qemu_ga_manage_ssh, on ]
         name: cloudinitdisk
