@@ -1,0 +1,12 @@
+spec:
+  template:
+    spec:
+      domain:
+        volumes:
+        - name: secret-volume
+          secret:
+            secretName: vms-secret
+      volumes:
+        - name: secret-volume
+          containerDisk:
+            image: virtiofs-csi-driver-image
