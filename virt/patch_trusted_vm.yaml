@@ -1,13 +1,13 @@
 spec:
   template:
     spec:
-      domain:
-        volumes:
+      volumes:
         - name: secret-volume
           secret:
             secretName: vms-secret
-      volumes:
-        - name: secret-volume
-          containerDisk:
-            image: virtiofs-csi-driver-image
-
+      domain:
+        devices:
+          disks:
+            - name: secret-volume
+              disk:
+                bus: virtiofs
