@@ -8,6 +8,6 @@ spec:
   schedule: '0 2 * * *'
   template:
     includedNamespaces:
-      - backup-webservers
+      - webservers
     storageLocation: oadp-dpa-1
     snapshotVolumes: true
