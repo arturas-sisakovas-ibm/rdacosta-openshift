@@ -1,0 +1,47 @@
+---
+- name: Configuring external iSCSI storage settings
+  hosts: server
+  become: true
+  gather_facts: false
+
+  module_defaults:
+    group/kubernetes.core.k8s:
+      host: "{{ ocp_cluster['host'] }}"
+      kubeconfig: "{{ ocp_cluster['kubeconfig'] }}"
+      validate_certs: "{{ ocp_cluster['validate_certs'] }}"
+      wait: true
+      wait_sleep: "{{ wait_sleep }}"
+      wait_timeout: "{{ wait_timeout }}"
+
+  tasks:
+
+    # NOTE: Update the 'lvm.conf' file if it changes in the classroom (ask DLE)
+    - name: Copy LVM configuration file
+      ansible.builtin.copy:
+        src: lvm.conf
+        dest: /etc/lvm/lvm.conf
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Configure LVM and iSCSI
+      ansible.builtin.command:
+        cmd: "{{ item.cmd }}"
+        stdin: "{{ item.stdin | default(None) }}"
+      register: result
+      ignore_errors: "{{ item.ignore_errors | default(false) }}"
+      loop_control:
+        label: "{{ item.cmd }}"
+      loop:
+        - cmd: vgimportdevices -ay
+          # ignore_errors: true
+        - cmd: lvchange -ay /dev/vg_iscsi/lv_disk1
+        - cmd: lvchange -ay /dev/vg_iscsi/lv_disk2
+        - cmd: targetcli
+          stdin: '/backstores/block create name=server.disk1 dev=/dev/vg_iscsi/lv_disk1'
+        - cmd: targetcli
+          stdin: '/backstores/block create name=server.disk2 dev=/dev/vg_iscsi/lv_disk2'
+        - cmd: targetcli
+          stdin: '/iscsi/iqn.2021-10.com.example:server.disk1/tpg1/luns create /backstores/block/server.disk1'
+        - cmd: targetcli
+          stdin: '/iscsi/iqn.2021-10.com.example:server.disk2/tpg1/luns create /backstores/block/server.disk2'
