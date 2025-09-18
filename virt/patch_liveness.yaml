@@ -4,5 +4,5 @@ spec:
       livenessProbe:
         tcpSocket:
           port: 3306
-        initialDelaySeconds: 40
+        initialDelaySeconds: 60
         periodSeconds: 5
