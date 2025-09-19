@@ -73,6 +73,13 @@ spec:
         resources: {}
       hostname: vm1
       subdomain: headless
+      livenessProbe:
+        guestAgentPing:
+          timeoutSeconds: 5
+        initialDelaySeconds: 40
+        periodSeconds: 5
+        successThreshold: 1
+        failureThreshold: 3
       networks:
       - name: default
         pod: {}
