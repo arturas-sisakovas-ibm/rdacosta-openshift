@@ -8,6 +8,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: ssh-pub-key
+  namespace: webservers
 type: Opaque
 data:
   ssh-publickey: c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCQVFER3RVVzNpc21IeXVDVzRDRGRUVk9PT3E2YXlTZHRZZW5YRldXeDdISmE0VlRlcGtHMDBhYUxJZDlvY3JhMTBoYytNQjBHVEpNQ3lhYkR2M2k4TktkaTZHREgvYU9MVnNwL0V3eThERXpaTUJsSkRDdDR2Mmk0L3dVNGxpdzZLZ0VGa1pzKzVobnFVOGQ0UXpsZHlHSjVvbnIrQUd2Rk9LRzY4Q1MwQkJsNDBaMXR3ZjFIaEN5eDhrNm56RDJvdmxreFdSRlpLUEFGcnRQQ0JWdlFEa09mVkZaRitsd3phU3p0Z0FqYkZaNEE5anFReVVZeDRrT0o1RHRSZWYzNnVjZFVkVlFhbGUwKzhsSUNsNy9nYjE0MlNQcFlmaHhlODgvQkpTY0xQUmp2Vk5ldTFUeFJtb0h0VmF6cW5Bb1J4UVlBbjJNb0k2QUcrdzZRdVpmOGY3YUwgTGFiR3JhZGluZ0tleQo=
@@ -18,6 +19,7 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: gls-metallb-ipaddresspool
   name: web1
+  namespace: webservers
 spec:
   ports:
   - name: ssh
@@ -34,6 +36,7 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: gls-metallb-ipaddresspool
   name: web2
+  namespace: webservers
 spec:
   ports:
   - name: ssh
@@ -50,6 +53,7 @@ metadata:
   annotations:
     haproxy.router.openshift.io/balance: roundrobin
   name: webserver
+  namespace: webservers
 spec:
   host: webserver.apps.ocp4.example.com
   port:
@@ -64,6 +68,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: webserver
+  namespace: webservers
 spec:
   ports:
   - name: http
@@ -81,6 +86,7 @@ metadata:
     app: web1
     kubevirt.io/dynamic-credentials-support: "true"
   name: web1
+  namespace: webservers
 spec:
   dataVolumeTemplates:
   - apiVersion: cdi.kubevirt.io/v1beta1
@@ -217,6 +223,7 @@ metadata:
     app: web2
     kubevirt.io/dynamic-credentials-support: "true"
   name: web2
+  namespace: webservers
 spec:
   dataVolumeTemplates:
   - apiVersion: cdi.kubevirt.io/v1beta1

@@ -11,6 +11,7 @@ metadata:
     app: vm1
     kubevirt.io/dynamic-credentials-support: "true"
   name: vm1
+  namespace: vms
 spec:
   dataVolumeTemplates:
   - apiVersion: cdi.kubevirt.io/v1beta1
