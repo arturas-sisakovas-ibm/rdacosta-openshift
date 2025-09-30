@@ -4,7 +4,7 @@ kind: Service
 metadata:
   annotations:
     metallb.universe.tf/address-pool: gls-metallb-ipaddresspool
-  name: rhel9-b
+  name: REPLACE_ME
 spec:
   ports:
   - name: ssh
@@ -12,6 +12,6 @@ spec:
     protocol: TCP
     targetPort: 22
   selector:
-    kubevirt.io/domain: rhel9-b
+    kubevirt.io/domain: REPLACE_ME
   type: LoadBalancer
 

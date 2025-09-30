@@ -31,7 +31,7 @@ spec:
     spec:
       source:
         http:
-          url: http://utility:8080/openshift4/images/rhel9-mariadb.qcow2 
+          url: http://utility:8080/openshift4/images/rhel9-mariadb.qcow2
       storage:
         resources:
           requests:

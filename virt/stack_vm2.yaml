@@ -4,6 +4,25 @@ kind: Namespace
 metadata:
   name: vms
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: headless
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: headless
+    port: 5434
+    protocol: TCP
+    targetPort: 5434
+  selector:
+    network.kubevirt.io/headlessService: headless
+  sessionAffinity: None
+  type: ClusterIP
+---
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
