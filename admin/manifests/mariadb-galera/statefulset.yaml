@@ -16,7 +16,7 @@ spec:
       terminationGracePeriodSeconds: 120
       containers:
       - name: mariadb-galera
-        image: bitnami/mariadb-galera:latest
+        image: bitnamilegacy/mariadb-galera:latest
         imagePullPolicy: Always
         env:
         - name: MARIADB_ROOT_PASSWORD
