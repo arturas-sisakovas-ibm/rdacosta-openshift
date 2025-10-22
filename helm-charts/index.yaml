@@ -41,5 +41,5 @@ entries:
       name: webserver-vms
       type: application
       urls:
-        - https://gitlab.com/rgdacosta/openshift/-/raw/main/helm-charts/vm_webservers.tar.gz 
-      version: 1.0
+        - https://gitlab.com/rgdacosta/openshift/-/raw/main/helm-charts/vm_webservers.tar.gz
+      version: 1.0.0
