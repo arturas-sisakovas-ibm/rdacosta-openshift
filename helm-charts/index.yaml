@@ -34,12 +34,12 @@ entries:
         - https://gitlab.com/rgdacosta/openshift/-/raw/8be96582e44399ce835b4cf97449efd584138b50/helm-charts/webserver-0.1.0.tgz
       version: 0.1.0
 
-  webserver-vms:
+  webservers:
     - apiVersion: v2
       appVersion: 1.16.0
       description: A Helm chart for OpenShift Virtual Machines
-      name: webserver-vms
+      name: webservers
       type: application
       urls:
-        - https://gitlab.com/rgdacosta/openshift/-/raw/main/helm-charts/vm_webservers.tar.gz
+        - https://gitlab.com/rgdacosta/openshift/-/raw/main/helm-charts/webservers-1.0.0.tar.gz
       version: 1.0.0
