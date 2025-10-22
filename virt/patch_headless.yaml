@@ -1,5 +1,5 @@
 spec:
   template:
     spec:
-      hostname: webx
+      hostname: vm1
       subdomain: headless
