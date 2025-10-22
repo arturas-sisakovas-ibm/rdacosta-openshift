@@ -36,10 +36,10 @@ entries:
 
   webserver-vms:
     - apiVersion: v2
-      appVersion: 1.0
+      appVersion: 1.16.0
       description: A Helm chart for OpenShift Virtual Machines
       name: webserver-vms
       type: application
       urls:
         - https://gitlab.com/rgdacosta/openshift/-/raw/main/helm-charts/vm_webservers.tar.gz 
-      version: 0.1.0
+      version: 1.0
