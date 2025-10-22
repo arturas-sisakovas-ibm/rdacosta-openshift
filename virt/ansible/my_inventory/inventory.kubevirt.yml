@@ -1,6 +1,6 @@
-plugin: redhat.openshift_virtualization.kubevirt 
+plugin: redhat.openshift_virtualization.kubevirt
 connections:
-  - use_service: true
+   - network_name: default
 namespaces:
-  - openshift-mtv
   - vms
+  - webservers
