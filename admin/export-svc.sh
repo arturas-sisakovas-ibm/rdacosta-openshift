@@ -7,6 +7,7 @@ fi
 
 oc get svc "$1" -o yaml \
 	| yq d - metadata.annotations \
+    | yq d - metadata.ownerReferences \
 	| yq d - metadata.creationTimestamp \
 	| yq d - metadata.namespace \
 	| yq d - metadata.resourceVersion \
