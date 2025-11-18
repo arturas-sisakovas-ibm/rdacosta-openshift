@@ -1,0 +1,11 @@
+- name: Restart a Linux service
+  hosts: "{{ my_name | mandatory('You need to specify the namespace/project that your VM is in') }}-{{ my_vm | mandatory('You must specify the VM to target) }}"
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: Ensure {{ my_service }} is restarted
+      ansible.builtin.service:
+        name: "{{ my_service }}"
+        state: "{{ y_state }}"
