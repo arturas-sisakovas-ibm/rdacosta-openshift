@@ -7,20 +7,13 @@
 
   tasks:
 
-    - name: Ensure VM is stopped
-      redhat.openshift_virtualization.kubevirt_vm:
-        name: "{{ my_vm }}"
-        namespace: "{{ my_namespace }}"
-        running: false
-        wait: true
-
     - name: Get current VM YAML
+      register: vm_info
       kubernetes.core.k8s_info:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
-      register: vm_info
 
     - name: Extract interfaces and networks
       set_fact:
@@ -35,9 +28,13 @@
       set_fact:
         vm_networks: "{{ [ {'name': 'default', 'pod': {}} ] + vm_networks if (vm_networks | selectattr('name','equalto','default') | list | length) == 0 else vm_networks }}"
 
+    - name: Ensure nic name is created
+      set_fact:
+        vm_nicname: nic-"{{ uuid }}"
+
     - name: Ensure multus interface is added 
       set_fact:
-        vm_interfaces: "{{ vm_interfaces + [ {'name': 'nic1', 'bridge': {}, 'model': 'virtio', 'macAddress': '02:42:ac:11:00:02'} ] if not (vm_interfaces | selectattr('name','equalto','nic1') | list) else vm_interfaces }}"
+        vm_interfaces: "{{ vm_interfaces + [ {'name': vm_nicname, 'bridge': {}, 'model': 'virtio', 'macAddress': '02:42:ac:11:00:02'} ] if not (vm_interfaces | selectattr('name','equalto','nic1') | list) else vm_interfaces }}"
 
     - name: Ensure multus network is added 
       set_fact:
@@ -56,12 +53,6 @@
           - op: replace
             path: /spec/template/spec/networks
             value: "{{ vm_networks }}"
-        wait: false
+        wait:  true
 
-    - name: Ensure VM is started
-      redhat.openshift_virtualization.kubevirt_vm:
-        name: "{{ my_vm }}"
-        namespace: "{{ my_namespace }}"
-        running: true
-        wait: true
 
