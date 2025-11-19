@@ -30,11 +30,11 @@
 
     - name: Ensure nic name is created
       set_fact:
-        vm_nicname: nic-"{{ uuid }}"
+        vm_nicname: nic-{{ lookup('community.general.random_string', length=4, upper=true, lower=true, digits=true) }}
 
     - name: Ensure multus interface is added 
       set_fact:
-        vm_interfaces: "{{ vm_interfaces + [ {'name': vm_nicname, 'bridge': {}, 'model': 'virtio', 'macAddress': '02:42:ac:11:00:02'} ] if not (vm_interfaces | selectattr('name','equalto','nic1') | list) else vm_interfaces }}"
+        vm_interfaces: "{{ vm_interfaces + [ {'name': vm_nicname, 'bridge': {}, 'model': 'virtio'} ] if not (vm_interfaces | selectattr('name','equalto','nic1') | list) else vm_interfaces }}"
 
     - name: Ensure multus network is added 
       set_fact:
