@@ -17,15 +17,6 @@
         running: true
         wait: true
 
-    - name: Test connection to VM
-      tags:
-        - start
-        - never
-      ansible.builtin.wait_for:
-        port: 22
-        delay: 20
-        timeout: 300
-
     - name: Ensure VM is stopped
       tags:
         - stop
@@ -55,10 +46,3 @@
           namespace: "{{ my_namespace }}"
           running: true
           wait: true
-
-      - name: Test connection to VM
-        ansible.builtin.wait_for:
-          port: 22
-          delay: 20
-          timeout: 300
-
