@@ -10,18 +10,55 @@
     - name: Ensure VM is started
       tags:
         - start
+        - never
       redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
         running: true
         wait: true
 
+    - name: Test connection to VM
+      tags:
+        - start
+        - never
+      ansible.builtin.wait_for:
+        port: 22
+        delay: 20
+        timeout: 300
+
     - name: Ensure VM is stopped
       tags:
         - stop
+        - never
       redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
         running: false
         wait: true
+
+    - name: Ensure VM is restarted
+      tags:
+        - restart
+        - never
+      block:
+
+      - name: Ensure VM is stopped
+        redhat.openshift_virtualization.kubevirt_vm:
+          name: "{{ my_vm }}"
+          namespace: "{{ my_namespace }}"
+          running: false
+          wait: true
+
+      - name: Ensure VM is started
+        redhat.openshift_virtualization.kubevirt_vm:
+          name: "{{ my_vm }}"
+          namespace: "{{ my_namespace }}"
+          running: true
+          wait: true
+
+      - name: Test connection to VM
+        ansible.builtin.wait_for:
+          port: 22
+          delay: 20
+          timeout: 300
 
