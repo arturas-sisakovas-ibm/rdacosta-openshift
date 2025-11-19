@@ -30,7 +30,7 @@
 
     - name: Ensure nic name is created
       set_fact:
-        vm_nicname: nic-{{ lookup('community.general.random_string', length=4, upper=true, lower=true, digits=true) }}
+        vm_nicname: nic-{{ lookup('community.general.random_string', length=4, upper=true, digits=true, lower=true, upper=false, special=false) }}
 
     - name: Ensure multus interface is added 
       set_fact:
