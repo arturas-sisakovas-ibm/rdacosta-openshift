@@ -26,6 +26,9 @@
       ansible.builtin.set_fact:
         repo_list: "{{ my_repo if my_repo is iterable and my_repo is not string else [my_repo] }}"
 
+    - debug:
+        var: repo_list
+
     - name: Ensure that yum repositories are defined in a job-specific repo file
       loop: "{{ repo_list }}"
       loop_control:
