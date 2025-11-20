@@ -16,8 +16,8 @@
 
     - name: Ensure RHEL 9 is being used
       ansible.builtin.assert:
-        that: 
-          - ansible_facts['distribution']  == "RedHat" 
+        that:
+          - ansible_facts['distribution']  == "RedHat"
           - ansible_facts['distribution_major_version'] == "9"
         fail_msg: |
 
@@ -30,9 +30,9 @@
           Conditions satisfied - proceeding
           **********************************
 
-    - name: Set RHEL release 
-      community.general.rhsm_release: 
-        release: "{{ redhat_release | default('9.6') }}"
+    - name: Set RHEL release
+      community.general.rhsm_release:
+        release: "{{ redhat_release | default('9.7') }}"
 
     - name: Update packages for new release
       ansible.builtin.dnf:
@@ -49,9 +49,3 @@
       when: reboothint['rc'] == 1
       ansible.builtin.reboot:
         reboot_timeout: 600
-
-    - name: Ensure that we can connect to server
-      ansible.builtin.wait_for:
-        port: 22
-        delay: 10
-        timeout: 600
