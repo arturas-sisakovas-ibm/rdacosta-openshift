@@ -2,7 +2,7 @@
 # This play is reliant on previously gathered facts
 - name: Manage Software
   hosts: "{{ my_namespace }}-{{ my_vm }}"
-  gather_facts: false
+  gather_facts: true
   force_handlers: true
 
   tasks:
