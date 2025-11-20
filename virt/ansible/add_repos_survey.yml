@@ -1,6 +1,6 @@
 ---
 - name: Ensure that yum repositories are configured for this job
-  hosts: localhost
+  hosts: "{{ my_namespace }}-{{ my_vm }}" 
   gather_facts: false
   become: true
 
