@@ -10,7 +10,7 @@ spec:
     name: "{{ my_svc | mandatory('You must specify a service name') }}"
     weight: 100
   port:
-    targetPort: http
+    targetPort: "{{ my_port }}"
   tls:
-    termination: edge
+    termination: "{{ my_termination }}"
     insecureEdgeTerminationPolicy: Redirect
