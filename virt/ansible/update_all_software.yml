@@ -6,9 +6,26 @@
 
   tasks:
 
+    - name: Ensure dnf-utils is installed
+      ansible.builtin.dnf:
+        name: dnf-utils
+        state: installed
+
     - name: Ensure that all packages are updated 
       become: true
       when: ansible_facts['distribution']  == "RedHat" and ansible_facts['distribution_major_version'] | int >= 8
       ansible.builtin.dnf:
         name: "*"
         state: latest
+
+    - name: Determine if reboot is necessary
+      register: reboothint
+      changed_when: false
+      ignore_errors: true
+      ansible.builtin.command: /usr/bin/dnf needs-restarting -r
+
+    - name: Ensure server is rebooted
+      when: reboothint['rc'] == 1
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+
