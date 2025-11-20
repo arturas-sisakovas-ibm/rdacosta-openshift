@@ -1,0 +1,26 @@
+---
+- name: Ensure that yum repositories are configured for this job
+  hosts: localhost
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Ensure that my_repo is normalised into a list
+      ansible.builtin.set_fact:
+        repo_list: "{{ my_repo if my_repo is iterable and my_repo is not string else [my_repo] }}"
+
+    - name: Ensure that yum repositories are defined in a job-specific repo file
+      loop: "{{ repo_list }}"
+      loop_control:
+        loop_var: item
+        index_var: index
+      ansible.builtin.yum_repository:
+        name: "{{ 'repo' ~ index }}"
+        file: "ansible_{{ tower_job_id }}"
+        description: "Repository {{ index }} for job {{ tower_job_id }}"
+        baseurl: "{{ item.baseurl | default(omit) }}"
+        metalink: "{{ item.metalink | default(omit) }}"
+        mirrorlist: "{{ item.mirrorlist | default(omit) }}"
+        gpgkey: "{{ item.gpgkey | default(omit) }}"
+        gpgcheck: "{{ item.gpgcheck | default('1') }}"
+        enabled: "{{ item.enabled | default('1') }}"
