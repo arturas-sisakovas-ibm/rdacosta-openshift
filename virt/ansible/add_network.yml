@@ -1,5 +1,5 @@
 ---
-- name: Add network interface 
+- name: Add network interface
   hosts: localhost
   gather_facts: false
   become: false
@@ -63,8 +63,6 @@
              if not (vm_networks | selectattr('name','equalto', vm_nicname) | list)
              else vm_networks }}
 
-    # -------------------------------------------------------
-
     - name: Debug before patching
       debug:
         msg:
@@ -86,3 +84,4 @@
             path: /spec/template/spec/networks
             value: "{{ vm_networks }}"
         wait: true
+
