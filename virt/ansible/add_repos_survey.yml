@@ -16,11 +16,11 @@
 
     - name: Ensure repo 3 fact is set
       ansible.builtin.set_fact:
-        rhel94_additional-baseos: http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-baseos-rpms
+        rhel94_additional_baseos: http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-baseos-rpms
 
     - name: Ensure repo 4 fact is set
       ansible.builtin.set_fact:
-        rhel94_additional-appstream: http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-appstream-rpms
+        rhel94_additional_appstream: http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-appstream-rpms
 
     - name: Ensure that my_repo is normalised into a list
       ansible.builtin.set_fact:
