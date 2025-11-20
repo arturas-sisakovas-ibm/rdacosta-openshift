@@ -1,6 +1,6 @@
 ---
 - name: Ensure that yum repositories are configured for this job
-  hosts: "{{ my_namespace }}-{{ my_vm }}" 
+  hosts: "{{ my_namespace }}-{{ my_vm }}"
   gather_facts: false
   become: true
 
@@ -23,7 +23,7 @@
         loop_var: item
         index_var: index
       ansible.builtin.yum_repository:
-        name: "Ansible Defined repo for {{ repo_map[item] }}"
+        name: "Ansible Defined repo for {{ repo_map[item] | last }}"
         file: "ansible_{{ tower_job_id }}"
         description: "Ansible Defined repo for {{ repo_map[item] }}"
         baseurl: "{{ repo_map[item] }}"
