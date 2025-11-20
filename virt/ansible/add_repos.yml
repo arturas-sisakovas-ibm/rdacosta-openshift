@@ -1,27 +1,25 @@
 ---
-- name: Add repos 
+- name: Add repos
   hosts: "{{ my_namespace }}-{{ my_vm }}"
   gather_facts: false
   become: true
   force_handlers: true
 
   tasks:
+    - name: Ensure BaseOS RPMs repo is added
+      ansible.builtin.yum_repository:
+        name: baseos
+        description: Classroom BaseOS RPMs repo
+        file: classroom_repos
+        baseurl: http://content.example.com/rhel9.4/x86_64/dvd/BaseOS
+        enabled: true
+        gpgcheck: false
 
-  - name: Ensure BaseOS RPMs repo is added
-    ansible.builtin.yum_repository:
-      name: baseos
-      description: Classroom BaseOS RPMs repo
-      file: classroom_repos
-      baseurl: http://content.example.com/rhel9.4/x86_64/dvd/BaseOS 
-      enabled: yes
-      gpgcheck: False
-
-  - name: Ensure AppStream RPMs repo is added 
-    ansible.builtin.yum_repository:
-      name: appstream
-      description: Classroom AppStream RPMs repo
-      file: classroom_repos
-      baseurl: http://content.example.com/rhel9.4/x86_64/dvd/AppStream 
-      enabled: yes
-      gpgcheck: False
-
+    - name: Ensure AppStream RPMs repo is added
+      ansible.builtin.yum_repository:
+        name: appstream
+        description: Classroom AppStream RPMs repo
+        file: classroom_repos
+        baseurl: http://content.example.com/rhel9.4/x86_64/dvd/AppStream
+        enabled: true
+        gpgcheck: false
