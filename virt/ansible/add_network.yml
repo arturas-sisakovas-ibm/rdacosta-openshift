@@ -32,9 +32,18 @@
       set_fact:
         vm_nicname: "nic-{{ lookup('community.general.random_string', length=4, upper=false, digits=true, lower=true, special=false) }}"
 
-    - name: Ensure multus interface is added 
+    - name: Ensure multus network is added
       set_fact:
-        vm_interfaces: "{{ vm_interfaces + [ {'name': vm_nicname, 'bridge': {}, 'model': 'virtio'} ] if not (vm_interfaces | selectattr('name','equalto','nic1') | list) else vm_interfaces }}"
+        vm_networks: >-
+          {{ vm_networks + [
+               {
+                 'name': vm_nicname,
+                 'multus': { 'networkName': 'default/' + my_nad }
+               }
+             ]
+             if not (vm_networks | selectattr('name','equalto', vm_nicname) | list)
+             else vm_networks
+          }}
 
     - name: Ensure multus network is added 
       set_fact:
