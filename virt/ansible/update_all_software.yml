@@ -1,0 +1,14 @@
+---
+# This play is reliant on previously gathered facts
+- name: Update Software
+  hosts: "{{ my_namespace }}-{{ my_vm }}"
+  gather_facts: true
+
+  tasks:
+
+    - name: Ensure that all packages are updated 
+      become: true
+      when: ansible_facts['distribution']  == "RedHat" and ansible_facts['distribution_major_version'] | int >= 8
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
