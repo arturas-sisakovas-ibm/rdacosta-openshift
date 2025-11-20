@@ -32,7 +32,7 @@
 
     - name: Set RHEL release
       community.general.rhsm_release:
-        release: "{{ redhat_release | default('9.7') }}"
+        release: "{{ my_release | default('9.7') }}"
 
     - name: Update packages for new release
       ansible.builtin.dnf:
