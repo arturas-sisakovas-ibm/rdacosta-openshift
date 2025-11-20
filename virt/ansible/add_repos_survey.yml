@@ -23,7 +23,7 @@
         loop_var: item
         index_var: index
       ansible.builtin.yum_repository:
-        name: "{{ repo_map[item] | replace(' ', '-') }}"
+        name: "{{ repo_map[item].split('/') | last }}"
         file: "ansible_{{ tower_job_id }}"
         description: "Ansible Defined repo for {{ repo_map[item] }}"
         baseurl: "{{ repo_map[item] }}"
