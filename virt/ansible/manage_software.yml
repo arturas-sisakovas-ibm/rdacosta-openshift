@@ -7,10 +7,6 @@
 
   tasks:
 
-    - name: Ensure ticket number is displayed
-      ansible.builtin.debug:
-        msg: "{{ my_ticket | mandatory('You cannot run this playbook without a ticket number') }}"
-
     - name: Ensure {{ my_package | default('bash') }} is at state {{ my_state | default('installed') }}
       become: true
       when: ansible_facts['distribution']  == "RedHat" and ansible_facts['distribution_major_version'] | int >= 8
