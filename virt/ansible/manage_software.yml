@@ -1,11 +1,15 @@
 ---
-# This play is reliant on previously gathered facts
 - name: Manage Software
   hosts: "{{ my_namespace }}-{{ my_vm }}"
   gather_facts: true
   force_handlers: true
 
   tasks:
+
+    - name: Ensure system is reachable
+      ansible.builtin.wait_for:
+        port: 22
+        timeout: 120
 
     - name: Ensure {{ my_package | default('bash') }} is at state {{ my_state | default('installed') }}
       become: true
