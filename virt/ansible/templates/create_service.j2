@@ -14,7 +14,7 @@ spec:
     protocol: TCP
     targetPort: {{ my_port }}
   selector:
-    kubevirt.io/domain: {{ my_vm | mandatory('You must specify a service name') }}
+    kubevirt.io/domain: {{ my_svc | mandatory('You must specify a service name') }}
   sessionAffinity: None
   type: ClusterIP
 
