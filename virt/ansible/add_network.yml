@@ -1,5 +1,5 @@
 ---
-- name: Add network interface
+- name: Ensure that additional network interfaces are added
   hosts: localhost
   gather_facts: false
   become: false
@@ -7,70 +7,67 @@
 
   tasks:
 
-    - name: Get current VM YAML
-      register: vm_info
+    - name: Ensure that my_nad is normalised into a list
+      set_fact:
+        nad_list: "{{ my_nad if my_nad is iterable and my_nad is not string else [my_nad] }}"
+
+    - name: Ensure that the current VM YAML is retrieved
       kubernetes.core.k8s_info:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
         name: "{{ my_vm }}"
         namespace: "{{ my_namespace }}"
+      register: vm_info
 
-    - name: Extract interfaces and networks
+    - name: Ensure that interfaces and networks are extracted
       set_fact:
         vm_interfaces: "{{ (vm_info.resources[0].spec.template.spec.domain.devices.interfaces | default([])) | list }}"
-        vm_networks:   "{{ (vm_info.resources[0].spec.template.spec.networks | default([])) | list }}"
+        vm_networks:   "{{ (vm_info.resources[0].spec.template.spec.networks            | default([])) | list }}"
 
-    - name: Ensure pod interface is present
+    - name: Ensure that the pod interface is present
       set_fact:
         vm_interfaces: >-
           {{ [ { 'name': 'default', 'masquerade': {} } ] + vm_interfaces
              if (vm_interfaces | selectattr('name','equalto','default') | list | length) == 0
              else vm_interfaces }}
 
-    - name: Ensure pod network is present
+    - name: Ensure that the pod network is present
       set_fact:
         vm_networks: >-
           {{ [ { 'name': 'default', 'pod': {} } ] + vm_networks
              if (vm_networks | selectattr('name','equalto','default') | list | length) == 0
              else vm_networks }}
 
-    - name: Generate a NIC name for this NAD
+    - name: Ensure that Multus interfaces and networks are added
       set_fact:
-        vm_nicname: "nic-{{ my_nad }}-{{ tower_job_id }}-{{ lookup('community.general.random_string',
-                                   length=2,
-                                   upper=false,
-                                   lower=true,
-                                   digits=true,
-                                   special=false) }}"
+        vm_interfaces: "{{ vm_interfaces + [ new_interface ] }}"
+        vm_networks:   "{{ vm_networks + [ new_network ] }}"
+      loop: "{{ nad_list }}"
+      loop_control:
+        loop_var: nad
+      when: >
+        (vm_interfaces | selectattr('name','equalto',
+          'nic-' + (nad | regex_replace('[^A-Za-z0-9]', '-')) + '-' + tower_job_id|string
+        ) | list | length) == 0
+      vars:
+        sanitized_nad: "{{ nad | regex_replace('[^A-Za-z0-9]', '-') }}"
+        nic_name: "nic-{{ sanitized_nad }}-{{ tower_job_id }}"
+        new_interface:
+          name: "{{ nic_name }}"
+          model: virtio
+          bridge: {}
+        new_network:
+          name: "{{ nic_name }}"
+          multus:
+            networkName: "default/{{ nad }}"
 
-    - name: Ensure multus interface is added (for this NAD)
-      set_fact:
-        vm_interfaces: >-
-          {{ vm_interfaces + [
-               { 'name': vm_nicname, 'bridge': {}, 'model': 'virtio' }
-             ]
-             if not (vm_interfaces | selectattr('name','equalto', vm_nicname) | list)
-             else vm_interfaces }}
-
-    - name: Ensure multus network is added (bound to this NAD)
-      set_fact:
-        vm_networks: >-
-          {{ vm_networks + [
-               { 'name': vm_nicname,
-                 'multus': { 'networkName': 'default/' + my_nad }
-               }
-             ]
-             if not (vm_networks | selectattr('name','equalto', vm_nicname) | list)
-             else vm_networks }}
-
-    - name: Debug before patching
+    - name: Ensure that updated VM interfaces and networks are displayed
       debug:
         msg:
-          - "NIC name for {{ my_nad }} : {{ vm_nicname }}"
           - "Interfaces: {{ vm_interfaces }}"
           - "Networks: {{ vm_networks }}"
 
-    - name: Patch VM
+    - name: Ensure that the VM is patched
       kubernetes.core.k8s_json_patch:
         api_version: kubevirt.io/v1
         kind: VirtualMachine
@@ -84,4 +81,3 @@
             path: /spec/template/spec/networks
             value: "{{ vm_networks }}"
         wait: true
-
