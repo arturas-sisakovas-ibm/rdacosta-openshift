@@ -35,7 +35,7 @@
         name: "{{ 'repo' ~ index }}"
         file: "ansible_{{ tower_job_id }}"
         description: "Repository {{ index }} for job {{ tower_job_id }}"
-        baseurl: "{{ item.repolist | default(omit) }}"
+        baseurl: "{{ item.repo_list | default(omit) }}"
         metalink: "{{ item.metalink | default(omit) }}"
         mirrorlist: "{{ item.mirrorlist | default(omit) }}"
         gpgkey: "{{ item.gpgkey | default(omit) }}"
