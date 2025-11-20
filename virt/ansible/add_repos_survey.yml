@@ -5,6 +5,23 @@
   become: true
 
   tasks:
+
+    - name: Ensure repo 1 fact is set
+      ansible.builtin.set_fact:
+        rhel9.4-baseos: http://content.example.com/rhel9.4/x86_64/dvd/BaseOS
+
+    - name: Ensure repo 2 fact is set
+      ansible.builtin.set_fact:
+        rhel9.4-appstream: http://content.example.com/rhel9.4/x86_64/dvd/AppStream
+
+    - name: Ensure repo 3 fact is set
+      ansible.builtin.set_fact:
+        rhel9.4-additional-baseos: http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-baseos-rpms
+
+    - name: Ensure repo 4 fact is set
+      ansible.builtin.set_fact:
+        rhel9.4-additional-appstream: http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-appstream-rpms
+
     - name: Ensure that my_repo is normalised into a list
       ansible.builtin.set_fact:
         repo_list: "{{ my_repo if my_repo is iterable and my_repo is not string else [my_repo] }}"
@@ -18,7 +35,7 @@
         name: "{{ 'repo' ~ index }}"
         file: "ansible_{{ tower_job_id }}"
         description: "Repository {{ index }} for job {{ tower_job_id }}"
-        baseurl: "{{ item.baseurl | default(omit) }}"
+        baseurl: "{{ item.repolist | default(omit) }}"
         metalink: "{{ item.metalink | default(omit) }}"
         mirrorlist: "{{ item.mirrorlist | default(omit) }}"
         gpgkey: "{{ item.gpgkey | default(omit) }}"
