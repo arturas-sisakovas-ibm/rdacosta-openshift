@@ -1,33 +1,21 @@
 ---
 - name: Ensure that yum repositories are configured for this job
-  hosts: "{{ my_namespace }}-{{ my_vm }}" 
+  hosts: localhost
   gather_facts: false
   become: true
 
+  vars:
+    repo_map:
+      "RHEL 9.4 BaseOS": "http://content.example.com/rhel9.4/x86_64/dvd/BaseOS"
+      "RHEL 9.4 AppStream": "http://content.example.com/rhel9.4/x86_64/dvd/AppStream"
+      "RHEL 9.4 Additional BaseOS": "http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-baseos-rpms"
+      "RHEL 9.4 Additional AppStream": "http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-appstream-rpms"
+
   tasks:
-
-    - name: Ensure repo 1 fact is set
-      ansible.builtin.set_fact:
-        rhel94_baseos: http://content.example.com/rhel9.4/x86_64/dvd/BaseOS
-
-    - name: Ensure repo 2 fact is set
-      ansible.builtin.set_fact:
-        rhel94_appstream: http://content.example.com/rhel9.4/x86_64/dvd/AppStream
-
-    - name: Ensure repo 3 fact is set
-      ansible.builtin.set_fact:
-        rhel94_additional_baseos: http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-baseos-rpms
-
-    - name: Ensure repo 4 fact is set
-      ansible.builtin.set_fact:
-        rhel94_additional_appstream: http://content.example.com/rhel9.4/x86_64/rhel9-additional/rhel-9-for-x86_64-appstream-rpms
 
     - name: Ensure that my_repo is normalised into a list
       ansible.builtin.set_fact:
         repo_list: "{{ my_repo if my_repo is iterable and my_repo is not string else [my_repo] }}"
-
-    - debug:
-        var: repo_list
 
     - name: Ensure that yum repositories are defined in a job-specific repo file
       loop: "{{ repo_list }}"
@@ -35,12 +23,9 @@
         loop_var: item
         index_var: index
       ansible.builtin.yum_repository:
-        name: "{{ 'repo' ~ index }}"
+        name: "Ansible Defined repo for {{ repo_map[item] }}"
         file: "ansible_{{ tower_job_id }}"
-        description: "Repository {{ index }} for job {{ tower_job_id }}"
-        baseurl: "{{ item.repo_list | default(omit) }}"
-        metalink: "{{ item.metalink | default(omit) }}"
-        mirrorlist: "{{ item.mirrorlist | default(omit) }}"
-        gpgkey: "{{ item.gpgkey | default(omit) }}"
-        gpgcheck: "{{ item.gpgcheck | default('1') }}"
-        enabled: "{{ item.enabled | default('1') }}"
+        description: "Ansible Defined repo for {{ repo_map[item] }}"
+        baseurl: "{{ repo_map[item] }}"
+        enabled: true
+        gpgcheck: false
