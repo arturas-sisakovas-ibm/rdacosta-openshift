@@ -1,12 +1,29 @@
 ---
-- name: Create service 
+- name: Ensure that a service is created
   hosts: localhost
   gather_facts: false
   become: false
-  force_handlers: true
 
   tasks:
 
-    - name: Ensure VM service exists
+    - name: Ensure that my_app is normalised into a list
+      ansible.builtin.set_fact:
+        app_list: "{{ my_app.split(',') | map('trim') | reject('equalto','') | list }}"
+
+    - name: Ensure that my_port is normalised into a list
+      ansible.builtin.set_fact:
+        port_list: "{{ my_port.split(',') | map('trim') | reject('equalto','') | list }}"
+
+    - name: Ensure that app_list and port_list have matching lengths
+      when: app_list | length != port_list | length
+      ansible.builtin.fail:
+        msg: "You must specify the same number of apps and ports"
+
+    - name: Ensure that svc_ports list is prepared
+      loop: "{{ app_list | zip(port_list) }}"
+      ansible.builtin.set_fact:
+        svc_ports: "{{ svc_ports | default([]) + [ {'name': item.0, 'port': item.1 } ] }}"
+
+    - name: Ensure that the VM service exists
       redhat.openshift.k8s:
         template: templates/create_service.j2

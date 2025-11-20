@@ -9,12 +9,13 @@ spec:
   - IPv4
   ipFamilyPolicy: SingleStack
   ports:
-  - name: {{ my_app }}
-    port: {{ my_port }}
+{% for p in svc_ports %}
+  - name: {{ p.name }}
+    port: {{ p.port }}
     protocol: TCP
-    targetPort: {{ my_port }}
+    targetPort: {{ p.port }}
+{% endfor %}
   selector:
     kubevirt.io/domain: {{ my_svc | mandatory('You must specify a service name') }}
   sessionAffinity: None
   type: ClusterIP
-
