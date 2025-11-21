@@ -1,0 +1,126 @@
+---
+- name: Import AAP objects via API
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    controller_host: "https://controller.apps.ocp4.example.com"
+    controller_username: "admin"
+    controller_password: "redhatocp"
+    import_dir: "./exports"
+
+  tasks:
+    #######################################################################
+    # JOB TEMPLATES
+    #######################################################################
+    - name: Read job templates file
+      ansible.builtin.slurp:
+        src: "{{ import_dir }}/job_templates.json"
+      register: jt_raw
+
+    - name: Decode job templates
+      ansible.builtin.set_fact:
+        jt_data: "{{ jt_raw.content | b64decode | from_json }}"
+
+    - name: Ensure job templates exist
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/job_templates/{{ item.id | default('') }}/"
+        method: "{{ 'PATCH' if (item.id is defined) else 'POST' }}"
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          job_type: "{{ item.job_type }}"
+          inventory: "{{ item.inventory }}"
+          project: "{{ item.project }}"
+          playbook: "{{ item.playbook }}"
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: true
+        validate_certs: false
+      loop: "{{ jt_data.results }}"
+
+    #######################################################################
+    # PROJECTS
+    #######################################################################
+    - name: Read projects file
+      ansible.builtin.slurp:
+        src: "{{ import_dir }}/projects.json"
+      register: proj_raw
+
+    - name: Decode projects
+      ansible.builtin.set_fact:
+        proj_data: "{{ proj_raw.content | b64decode | from_json }}"
+
+    - name: Ensure projects exist
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/projects/{{ item.id | default('') }}/"
+        method: "{{ 'PATCH' if (item.id is defined) else 'POST' }}"
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ item.organization }}"
+          scm_type: "{{ item.scm_type }}"
+          scm_url: "{{ item.scm_url }}"
+          scm_branch: "{{ item.scm_branch }}"
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: true
+        validate_certs: false
+      loop: "{{ proj_data.results }}"
+
+    #######################################################################
+    # INVENTORIES
+    #######################################################################
+    - name: Read inventories file
+      ansible.builtin.slurp:
+        src: "{{ import_dir }}/inventories.json"
+      register: inv_raw
+
+    - name: Decode inventories
+      ansible.builtin.set_fact:
+        inv_data: "{{ inv_raw.content | b64decode | from_json }}"
+
+    - name: Ensure inventories exist
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/inventories/{{ item.id | default('') }}/"
+        method: "{{ 'PATCH' if (item.id is defined) else 'POST' }}"
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ item.organization }}"
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: true
+        validate_certs: false
+      loop: "{{ inv_data.results }}"
+
+    #######################################################################
+    # CREDENTIALS
+    #######################################################################
+    - name: Read credentials file
+      ansible.builtin.slurp:
+        src: "{{ import_dir }}/credentials.json"
+      register: cred_raw
+
+    - name: Decode credentials
+      ansible.builtin.set_fact:
+        cred_data: "{{ cred_raw.content | b64decode | from_json }}"
+
+    - name: Ensure credentials exist
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/credentials/{{ item.id | default('') }}/"
+        method: "{{ 'PATCH' if (item.id is defined) else 'POST' }}"
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ item.organization }}"
+          credential_type: "{{ item.credential_type }}"
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: true
+        validate_certs: false
+      loop: "{{ cred_data.results }}"

@@ -1,0 +1,89 @@
+---
+- name: Export AAP objects via API
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    controller_host: "https://controller.apps.ocp4.example.com"
+    controller_username: "admin"
+    controller_password: "redhatocp"
+    export_dir: "./exports"
+
+  tasks:
+
+    - name: Ensure export directory exists
+      ansible.builtin.file:
+        path: "{{ export_dir }}"
+        state: directory
+
+    #######################################################################
+    # JOB TEMPLATES
+    #######################################################################
+    - name: Fetch job templates
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/job_templates/?page_size=200"
+        method: GET
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: jt
+
+    - name: Write job templates export file
+      ansible.builtin.copy:
+        dest: "{{ export_dir }}/job_templates.json"
+        content: "{{ jt.json | to_nice_json }}"
+
+    #######################################################################
+    # PROJECTS
+    #######################################################################
+    - name: Fetch projects
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/projects/?page_size=200"
+        method: GET
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: proj
+
+    - name: Write projects export file
+      ansible.builtin.copy:
+        dest: "{{ export_dir }}/projects.json"
+        content: "{{ proj.json | to_nice_json }}"
+
+    #######################################################################
+    # INVENTORIES
+    #######################################################################
+    - name: Fetch inventories
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/inventories/?page_size=200"
+        method: GET
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: inv
+
+    - name: Write inventories export file
+      ansible.builtin.copy:
+        dest: "{{ export_dir }}/inventories.json"
+        content: "{{ inv.json | to_nice_json }}"
+
+    #######################################################################
+    # CREDENTIALS
+    #######################################################################
+    - name: Fetch credentials
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/credentials/?page_size=200"
+        method: GET
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: cred
+
+    - name: Write credentials export file
+      ansible.builtin.copy:
+        dest: "{{ export_dir }}/credentials.json"
+        content: "{{ cred.json | to_nice_json }}"
