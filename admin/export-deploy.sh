@@ -14,4 +14,5 @@ oc get deploy "$1" -o yaml \
 	| yq d - metadata.uid \
 	| yq d - metadata.generation \
 	| yq d - spec.template.metadata.annotations \
-	| yq d - status
+	| yq d - status \
+    | sed 's/@sha.*/:latest/g'
