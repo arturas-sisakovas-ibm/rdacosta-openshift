@@ -5,7 +5,7 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-oc get is "$1" -o yaml \
+oc get project "$1" -o yaml \
 	| yq d - metadata.annotations \
 	| yq d - metadata.creationTimestamp \
 	| yq d - metadata.labels \
