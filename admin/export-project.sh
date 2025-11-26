@@ -13,5 +13,5 @@ oc get project "$1" -o yaml \
 	| yq d - metadata.uid \
     | yq d - spec \
 	| yq d - status \
-    | sed -ie 's/Project/ProjectRequest/g'
+    | sed 's/Project/ProjectRequest/g'
 
