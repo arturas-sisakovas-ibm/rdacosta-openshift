@@ -1,10 +1,10 @@
 services:
 
   database:
-    container_name: world_db
+    container_name: db
     options:
       --rm: true
-    image: quay.io/rdacosta/mysql-57-rhel7:latest
+    image: quay.io/rdacosta/mysql-80:latest
     environment:
       MYSQL_DATABASE: world
       MYSQL_USER: ricardo
@@ -13,15 +13,15 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ~/ocp-apps/compose-world/world_db/:/var/lib/mysql:Z
+      - ~/openshift/apps/compose-world/db/:/var/lib/mysql:Z
     networks:
       - app-net
 
   db_init:
     container_name: db_init
-    image: quay.io/rdacosta/mysql-57-rhel7:latest
+    image: quay.io/rdacosta/mysql-80:latest
     volumes:
-      - ~/ocp-apps/world-sql-db/world.sql:/var/tmp/world.sql:Z
+      - ~/openshift/apps/world-sql-db/world.sql:/var/tmp/world.sql:Z
     depends_on:
       database:
         condition: service_started
@@ -30,12 +30,12 @@ services:
       MYSQL_USER: ricardo
       MYSQL_PASSWORD: redhat123
       MYSQL_ROOT_PASSWORD: redhat321
-    command: ["sh", "-c", "until mysql -hworld_db -u$$MYSQL_USER -p$$MYSQL_PASSWORD -e 'show databases;'; do mysql -hworld_db -u$$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE < /var/tmp/world.sql; done"]
+    command: ["sh", "-c", "until mysql -hdb -u$$MYSQL_USER -p$$MYSQL_PASSWORD -e 'show databases;'; do mysql -hdb -u$$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE < /var/tmp/world.sql; done"]
     networks:
       - app-net
   
   api:
-    container_name: world_api
+    container_name: api
     options:
       --rm: true
     depends_on:
@@ -47,25 +47,26 @@ services:
     ports:
       - 8080:8080
     environment:
-      WORLD_HOST: world_db
-      WORLD_DATABASE: world
-      WORLD_USER: ricardo
-      WORLD_PASSWORD: redhat123
+      DB_HOST: db
+      MYSQL_DATABASE: world
+      MYSQL_USER: ricardo
+      MYSQL_PASSWORD: redhat123
     networks:
       - app-net
 
   frontend:
-    container_name: world_fe
+    container_name: fe
     options:
       --rm: true
-      #depends_on:
-      # api:
-      #  condition: service_started
+    depends_on:
+      api:
+        condition: service_started
     image: quay.io/rdacosta/world_fe:latest
     ports:
       - 8000:8080
     environment:
-      WORLD_API: http://world_api:8080
+      WORLD_API: http://api:8080/
+      API_SVC: http://api:8080/
     networks:
       - app-net
 
