@@ -13,7 +13,7 @@ app.use('/', route);
 
 // A route that says hello
 route.get('/', function(req, res) {
-    res.send('Hello! This is the index page for the app.\n');
+    res.send('Hello world!\n');
 });
 
 // A route that returns readiness status
@@ -41,7 +41,7 @@ route.get('/healthz', function(req, res) {
     else {
       console.log('ping /healthz => pong [unhealthy]');
       res.status(503);
-      res.send('Error!. App not healthy!\n');
+      res.send('Oops! The app is not healthy and a restart is required.\n');
     }
 });
 
