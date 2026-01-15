@@ -118,7 +118,7 @@ spec:
           requests:
             storage: 1Gi
         storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization
-  running: true
+  runStrategy: Always
   template:
     metadata:
       annotations:
@@ -255,7 +255,7 @@ spec:
           requests:
             storage: 1Gi
         storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization
-  running: true
+  runStrategy: Always
   template:
     metadata:
       annotations:

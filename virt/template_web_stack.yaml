@@ -54,7 +54,7 @@ objects:
     labels:
       app: webserver
   spec:
-    running: true
+    runStrategy: Always
     dataVolumeTemplates:
     - metadata:
         name: ${VM1_NAME}
@@ -118,7 +118,7 @@ objects:
     labels:
       app: webserver
   spec:
-    running: true
+    runStrategy: Always
     dataVolumeTemplates:
     - metadata:
         name: ${VM2_NAME}

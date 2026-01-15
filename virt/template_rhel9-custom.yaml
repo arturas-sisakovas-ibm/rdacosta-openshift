@@ -89,7 +89,7 @@ objects:
             requests:
               storage: ${EXTRA_DISK_SIZE}
           storageClassName: ${STORAGE_PROVISIONER}
-    running: false
+    runStrategy: Always
     template:
       metadata:
         annotations:
