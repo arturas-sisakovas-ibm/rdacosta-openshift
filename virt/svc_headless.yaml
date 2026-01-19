@@ -17,4 +17,3 @@ spec:
     network.kubevirt.io/headlessService: headless
   sessionAffinity: None
   type: ClusterIP
-  clusterIP: none
