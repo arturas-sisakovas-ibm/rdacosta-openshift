@@ -120,11 +120,11 @@ spec:
               baseos:
                 name: baseos
                 gpgcheck: False
-                baseurl: http://content.example.com/rhel9.4/x86_64/dvd/BaseOS
+                baseurl: http://content.example.com/rhel9.5/x86_64/dvd/BaseOS
               appstream:
                 name: appstream
                 gpgcheck: False
-                baseurl: http://content.example.com/rhel9.4/x86_64/dvd/AppStream
+                baseurl: http://content.example.com/rhel9.5/x86_64/dvd/AppStream
             packages:
               - vim-enhanced
               - curl
