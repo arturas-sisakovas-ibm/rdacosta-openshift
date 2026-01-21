@@ -1,0 +1,10 @@
+apiVersion: snapshot.kubevirt.io/v1beta1
+kind: VirtualMachineSnapshot
+metadata:
+  name: web1-pre-upgrade
+  namespace: webservers
+spec:
+  source:
+    apiGroup: kubevirt.io
+    kind: VirtualMachine
+    name: web1
