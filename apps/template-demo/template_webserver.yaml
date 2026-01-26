@@ -3,6 +3,7 @@ apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
   name: httpd-template
+  namespace: openshift
   annotations:
     description: "Creates a Deployment, Service, and Route for quay.io/rdacosta/my_httpd:latest"
 objects:
