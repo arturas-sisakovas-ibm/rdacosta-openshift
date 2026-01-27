@@ -77,8 +77,8 @@ spec:
     spec:
       accessModes:
         - ReadWriteOnce
-      storageClassName: ocs-external-storagecluster-ceph-rbd
+      storageClassName: nfs-storage 
       resources:
         requests:
-          storage: 5Gi
+          storage: 1Gi
       volumeMode: Filesystem
