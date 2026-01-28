@@ -52,7 +52,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
       containers:
       - envFrom:
-        - secretRef:
+        - configMapRef:
             name: api-config
         - secretRef:
             name: db-config
