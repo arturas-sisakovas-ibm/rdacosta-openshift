@@ -3,8 +3,8 @@ kind: StorageClass
 metadata:
   name: gold
 provisioner: k8s-sigs.io/nfs-subdir-external-provisioner
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 mountOptions:
   - vers=4.1
