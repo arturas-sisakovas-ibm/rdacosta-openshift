@@ -1,0 +1,1 @@
+var API_SVC = "api.world.svc";

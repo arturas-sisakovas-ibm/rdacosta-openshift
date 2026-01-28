@@ -5,6 +5,6 @@ metadata:
 spec:
   containers:
   - name: my-container
-    image: busybox
+    image: ubi10/ubi
     command: ["sleep", "3600"]
 

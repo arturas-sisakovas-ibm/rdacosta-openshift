@@ -45,11 +45,8 @@ spec:
                   - db
               topologyKey: kubernetes.io/hostname
       containers:
-      - env:
-        - name: API_SVC
-          valueFrom:
-            secretKeyRef:
-              key: API_SVC
+      - envFrom:
+          - configMapRef:
               name: fe-config
         image: quay.io/rdacosta/world_fe:latest
         imagePullPolicy: IfNotPresent
