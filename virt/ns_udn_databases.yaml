@@ -4,3 +4,4 @@ metadata:
   name: databases
   labels:
     k8s.ovn.org/primary-user-defined-network: ""
+    isolation: secure-app

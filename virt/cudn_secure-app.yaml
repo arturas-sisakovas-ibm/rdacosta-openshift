@@ -1,0 +1,17 @@
+---
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: secure-app
+spec:
+  namespaceSelector:
+    matchLabels:
+      isolation: secure-app
+  network:
+    topology: Layer2
+    layer2:
+      role: Primary
+      subnets:
+        - 10.100.10.0/24
+      ipam:
+        lifecycle: Persistent

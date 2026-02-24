@@ -12,6 +12,8 @@ objects:
       openshift.io/description: ${PROJECT_DESCRIPTION}
       openshift.io/display-name: ${PROJECT_DISPLAYNAME}
       openshift.io/requester: ${PROJECT_REQUESTING_USER}
+    labels:
+      k8s.ovn.org/primary-user-defined-network: ""
     creationTimestamp: null
     name: ${PROJECT_NAME}
   spec: {}
