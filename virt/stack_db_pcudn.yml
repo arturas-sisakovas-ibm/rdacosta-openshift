@@ -1,0 +1,141 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: databases-pcudn
+  labels:
+    k8s.ovn.org/primary-user-defined-network: ""
+    isolation: secure-app-primary
+---
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: secure-app-primary
+spec:
+  namespaceSelector:
+    matchLabels:
+      isolation: secure-app-primary
+  network:
+    topology: Layer2
+    layer2:
+      role: Primary
+      subnets:
+        - 10.100.10.0/24
+      ipam:
+        lifecycle: Persistent
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ssh-pub-key
+  namespace: databases-pcudn
+type: kubevirt.io/ssh-auth
+data:
+  ssh-publickey: c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCQVFER3RVVzNpc21IeXVDVzRDRGRUVk9PT3E2YXlTZHRZZW5YRldXeDdISmE0VlRlcGtHMDBhYUxJZDlvY3JhMTBoYytNQjBHVEpNQ3lhYkR2M2k4TktkaTZHREgvYU9MVnNwL0V3eThERXpaTUJsSkRDdDR2Mmk0L3dVNGxpdzZLZ0VGa1pzKzVobnFVOGQ0UXpsZHlHSjVvbnIrQUd2Rk9LRzY4Q1MwQkJsNDBaMXR3ZjFIaEN5eDhrNm56RDJvdmxreFdSRlpLUEFGcnRQQ0JWdlFEa09mVkZaRitsd3phU3p0Z0FqYkZaNEE5anFReVVZeDRrT0o1RHRSZWYzNnVjZFVkVlFhbGUwKzhsSUNsNy9nYjE0MlNQcFlmaHhlODgvQkpTY0xQUmp2Vk5ldTFUeFJtb0h0VmF6cW5Bb1J4UVlBbjJNb0k2QUcrdzZRdVpmOGY3YUwgTGFiR3JhZGluZ0tleQo=
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: db
+  namespace: databases-pcudn
+  labels:
+    app: db
+    kubevirt.io/dynamic-credentials-support: "true"
+spec:
+  runStrategy: Always
+  dataVolumeTemplates:
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        name: db
+      spec:
+        source:
+          http:
+            url: http://utility:8080/openshift4/images/rhel9-mariadb.qcow2
+        storage:
+          resources:
+            requests:
+              storage: 10Gi
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: db
+        kubevirt.io/size: small
+        network.kubevirt.io/headlessService: headless
+      annotations:
+        vm.kubevirt.io/flavor: small
+        vm.kubevirt.io/os: rhel9
+        vm.kubevirt.io/workload: server
+    spec:
+      accessCredentials:
+        - sshPublicKey:
+            propagationMethod:
+              qemuGuestAgent:
+                users:
+                  - cloud-user
+            source:
+              secret:
+                secretName: ssh-pub-key
+      domain:
+        cpu:
+          cores: 1
+          sockets: 1
+          threads: 1
+        memory:
+          guest: 2Gi
+        machine:
+          type: pc-q35-rhel9.4.0
+        firmware:
+          bootloader:
+            efi: {}
+        features:
+          acpi: {}
+          smm:
+            enabled: true
+        devices:
+          networkInterfaceMultiqueue: true
+          rng: {}
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              model: virtio
+              masquerade: {}
+        hostname: db
+        subdomain: headless
+      networks:
+        - name: default
+          pod: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: db
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |-
+              #cloud-config
+              user: cloud-user
+              password: redhatocp
+              chpasswd: { expire: False }
+              yum_repos:
+                baseos:
+                  name: baseos
+                  gpgcheck: False
+                  baseurl: http://content.example.com/rhel9.5/x86_64/dvd/BaseOS
+                appstream:
+                  name: appstream
+                  gpgcheck: False
+                  baseurl: http://content.example.com/rhel9.5/x86_64/dvd/AppStream
+              packages:
+                - vim-enhanced
+                - curl
+                - bash-completion
+              runcmd:
+                - [ setsebool, -P, virt_qemu_ga_manage_ssh, on ]
+                - [ dnf, update, -y, openssh-server ]

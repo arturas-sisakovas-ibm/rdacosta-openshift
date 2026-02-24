@@ -2,25 +2,24 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: databases
+  name: databases-scudn
   labels:
-    k8s.ovn.org/primary-user-defined-network: ""
-    isolation: secure-app
+    isolation: secure-app-secondary
 ---
 apiVersion: k8s.ovn.org/v1
 kind: ClusterUserDefinedNetwork
 metadata:
-  name: secure-app
+  name: secure-app-secondary
 spec:
   namespaceSelector:
     matchLabels:
-      isolation: secure-app
+      isolation: secure-app-secondary
   network:
     topology: Layer2
     layer2:
-      role: Primary
+      role: Secondary
       subnets:
-        - 10.100.10.0/24
+        - 10.110.10.0/24
       ipam:
         lifecycle: Persistent
 ---
@@ -28,7 +27,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: ssh-pub-key
-  namespace: databases
+  namespace: databases-scudn
 type: kubevirt.io/ssh-auth
 data:
   ssh-publickey: c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCQVFER3RVVzNpc21IeXVDVzRDRGRUVk9PT3E2YXlTZHRZZW5YRldXeDdISmE0VlRlcGtHMDBhYUxJZDlvY3JhMTBoYytNQjBHVEpNQ3lhYkR2M2k4TktkaTZHREgvYU9MVnNwL0V3eThERXpaTUJsSkRDdDR2Mmk0L3dVNGxpdzZLZ0VGa1pzKzVobnFVOGQ0UXpsZHlHSjVvbnIrQUd2Rk9LRzY4Q1MwQkJsNDBaMXR3ZjFIaEN5eDhrNm56RDJvdmxreFdSRlpLUEFGcnRQQ0JWdlFEa09mVkZaRitsd3phU3p0Z0FqYkZaNEE5anFReVVZeDRrT0o1RHRSZWYzNnVjZFVkVlFhbGUwKzhsSUNsNy9nYjE0MlNQcFlmaHhlODgvQkpTY0xQUmp2Vk5ldTFUeFJtb0h0VmF6cW5Bb1J4UVlBbjJNb0k2QUcrdzZRdVpmOGY3YUwgTGFiR3JhZGluZ0tleQo=
@@ -37,7 +36,7 @@ apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
   name: db
-  namespace: databases
+  namespace: databases-scudn
   labels:
     app: db
     kubevirt.io/dynamic-credentials-support: "true"
@@ -106,11 +105,17 @@ spec:
             - name: default
               model: virtio
               masquerade: {}
+            - name: secure
+              model: virtio
+              bridge: {}
         hostname: db
         subdomain: headless
       networks:
         - name: default
           pod: {}
+        - name: secure
+          multus:
+            networkName: databases-scudn/secure-app-secondary
       terminationGracePeriodSeconds: 180
       volumes:
         - name: rootdisk
