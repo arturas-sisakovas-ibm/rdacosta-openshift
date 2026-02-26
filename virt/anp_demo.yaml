@@ -1,0 +1,17 @@
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: deny-backend-to-frontend
+spec:
+  priority: 5
+  subject:
+    namespaces:
+      matchLabels:
+        kubernetes.io/metadata.name: frontend
+  ingress:
+    - name: deny-from-frontend
+      action: Deny
+      from:
+        - namespaces:
+            matchLabels:
+              kubernetes.io/metadata.name: backend
