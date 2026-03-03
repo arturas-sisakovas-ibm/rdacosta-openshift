@@ -6,14 +6,22 @@ metadata:
 spec:
   priority: 5
   subject:
-    namespaces: {}
+    namespaces:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: Exists
   ingress:
-  - name: allow-https
-    action: Allow
-    ports:
-    - portNumber:
-        port: 443
-        protocol: TCP
+    - name: allow-https
+      action: Allow
+      from:
+        - namespaces:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: Exists
+      ports:
+        - portNumber:
+            port: 443
+            protocol: TCP
 ---
 apiVersion: policy.networking.k8s.io/v1alpha1
 kind: AdminNetworkPolicy
@@ -22,11 +30,19 @@ metadata:
 spec:
   priority: 10
   subject:
-    namespaces: {}
+    namespaces:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: Exists
   ingress:
-  - name: deny-http
-    action: Deny
-    ports:
-    - portNumber:
-        port: 80
-        protocol: TCP
+    - name: deny-http
+      action: Deny
+      from:
+        - namespaces:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: Exists
+      ports:
+        - portNumber:
+            port: 80
+            protocol: TCP

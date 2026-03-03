@@ -210,10 +210,12 @@ spec:
                 gpgcheck: False
                 baseurl: http://content.example.com/rhel9.5/x86_64/dvd/AppStream
             packages:
+              - bash-completion
               - vim-enhanced
               - curl
             runcmd:
             - [ setsebool, -P, virt_qemu_ga_manage_ssh, on ]
+            - [ dnf, update, -y, openssh-server ]
         name: cloudinitdisk
 ---
 apiVersion: kubevirt.io/v1
