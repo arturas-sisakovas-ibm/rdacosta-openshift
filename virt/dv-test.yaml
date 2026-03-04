@@ -1,0 +1,15 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: dv-test-rhel10-1
+  namespace: openshift-virtualization-os-images
+spec:
+  source:
+    registry:
+      url: docker://registry.ocp4.example.com:8443/redhattraining/rhel:10.1
+      secretRef: lab-registry-secret
+  storage:
+    resources:
+      requests:
+        storage: 10Gi
+    storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization

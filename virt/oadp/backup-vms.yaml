@@ -1,0 +1,12 @@
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: backup-vms
+  namespace: openshift-adp
+  labels:
+    velero.io/storage-location: oadp-backup-1
+spec:
+  includedNamespaces:
+    - vms
+  storageLocation: oadp-backup-1
+  defaultVolumesToFsBackup: true
