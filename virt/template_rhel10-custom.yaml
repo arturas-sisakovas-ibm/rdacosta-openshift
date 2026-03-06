@@ -1,0 +1,265 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: rhel9-httpd
+  namespace: openshift
+  annotations:
+    defaults.template.kubevirt.io/disk: rootdisk
+    description: Template for Red Hat Enterprise Linux 9 VM or newer. A PVC with the
+      RHEL disk image must be available.
+    iconClass: icon-rhel
+    name.os.template.kubevirt.io/rhel9.0: Red Hat Enterprise Linux 9.0 or higher
+    name.os.template.kubevirt.io/rhel9.1: Red Hat Enterprise Linux 9.0 or higher
+    name.os.template.kubevirt.io/rhel9.2: Red Hat Enterprise Linux 9.0 or higher
+    name.os.template.kubevirt.io/rhel9.3: Red Hat Enterprise Linux 9.0 or higher
+    name.os.template.kubevirt.io/rhel9.4: Red Hat Enterprise Linux 9.0 or higher
+    name.os.template.kubevirt.io/rhel9.5: Red Hat Enterprise Linux 9.0 or higher
+    name.os.template.kubevirt.io/rhel9.6: Red Hat Enterprise Linux 9.0 or higher
+    name.os.template.kubevirt.io/rhel9.7: Red Hat Enterprise Linux 9.0 or higher
+    openshift.io/display-name: Red Hat Enterprise Linux 9 VM
+    openshift.io/documentation-url: https://github.com/kubevirt/common-templates
+    openshift.io/provider-display-name: Red Hat
+    openshift.io/support-url: https://github.com/kubevirt/common-templates/issues
+    openshift.kubevirt.io/pronounceable-suffix-for-name-expression: "true"
+    operator-sdk/primary-resource: openshift-cnv/ssp-kubevirt-hyperconverged
+    operator-sdk/primary-resource-type: SSP.ssp.kubevirt.io
+    tags: hidden,kubevirt,virtualmachine,linux,rhel
+    template.kubevirt.io/containerdisks: |
+      registry.redhat.io/rhel9/rhel-guest-image
+    template.kubevirt.io/editable: |
+      /objects[0].spec.template.spec.domain.cpu.sockets
+      /objects[0].spec.template.spec.domain.cpu.cores
+      /objects[0].spec.template.spec.domain.cpu.threads
+      /objects[0].spec.template.spec.domain.memory.guest
+      /objects[0].spec.template.spec.domain.devices.disks
+      /objects[0].spec.template.spec.volumes
+      /objects[0].spec.template.spec.networks
+    template.kubevirt.io/images: |
+      https://access.redhat.com/downloads/content/479/ver=/rhel---9/9.0/x86_64/product-software
+    template.kubevirt.io/provider: Red Hat
+    template.kubevirt.io/provider-support-level: Full
+    template.kubevirt.io/provider-url: https://www.redhat.com
+    template.kubevirt.io/version: v1alpha1
+    template.openshift.io/bindable: "false"
+  labels:
+    app.kubernetes.io/component: templating
+    app.kubernetes.io/managed-by: ssp-operator
+    app.kubernetes.io/name: common-templates
+    app.kubernetes.io/part-of: hyperconverged-cluster
+    app.kubernetes.io/version: 4.18.11
+    flavor.template.kubevirt.io/small: "true"
+    os.template.kubevirt.io/rhel9.0: "true"
+    os.template.kubevirt.io/rhel9.1: "true"
+    os.template.kubevirt.io/rhel9.2: "true"
+    os.template.kubevirt.io/rhel9.3: "true"
+    os.template.kubevirt.io/rhel9.4: "true"
+    os.template.kubevirt.io/rhel9.5: "true"
+    os.template.kubevirt.io/rhel9.6: "true"
+    os.template.kubevirt.io/rhel9.7: "true"
+    template.kubevirt.io/architecture: amd64
+    template.kubevirt.io/default-os-variant: "true"
+    template.kubevirt.io/type: base
+    template.kubevirt.io/version: v0.32.2
+    workload.template.kubevirt.io/server: "true"
+
+objects:
+
+- apiVersion: kubevirt.io/v1
+  kind: VirtualMachine
+  metadata:
+    name: ${NAME}
+    annotations:
+      vm.kubevirt.io/validations: |
+        [
+          {
+            "name": "minimal-required-memory",
+            "path": "jsonpath::.spec.domain.memory.guest",
+            "rule": "integer",
+            "message": "This VM requires more memory.",
+            "min": 1610612736
+          }
+        ]
+    labels:
+      app: ${NAME}
+      kubevirt.io/dynamic-credentials-support: "true"
+
+      vm.kubevirt.io/template: rhel9-httpd
+      vm.kubevirt.io/template.namespace: openshift
+      vm.kubevirt.io/template.revision: "1"
+      vm.kubevirt.io/template.version: v0.32.2
+
+  spec:
+    runStrategy: Halted
+
+    instancetype:
+      kind: VirtualMachineClusterInstancetype
+      name: u1.small
+
+    preference:
+      kind: VirtualMachineClusterPreference
+      name: rhel.9
+
+    dataVolumeTemplates:
+
+    - metadata:
+        name: ${NAME}
+      spec:
+        pvc:
+          accessModes:
+            - ReadWriteMany
+        storage:
+          resources:
+            requests:
+              storage: 10Gi
+          storageClassName: ${STORAGE_PROVISIONER}
+          volumeMode: Block
+        sourceRef:
+          kind: DataSource
+          name: rhel9.7
+          namespace: openshift-virtualization-os-images
+
+    template:
+      metadata:
+        annotations:
+          vm.kubevirt.io/flavor: medium
+          vm.kubevirt.io/os: rhel9
+          vm.kubevirt.io/workload: server
+        labels:
+          kubevirt.io/domain: ${NAME}
+          kubevirt.io/size: medium
+
+      spec:
+        hostname: ${NAME}
+        evictionStrategy: LiveMigrate
+        terminationGracePeriodSeconds: 180
+
+        domain:
+          cpu:
+            cores: 1
+            sockets: 1
+            threads: 1
+          memory:
+            guest: 2Gi
+          devices:
+            disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+
+            - name: disk1
+              disk:
+                bus: virtio
+
+            interfaces:
+            - name: default
+              masquerade: {}
+              model: virtio
+
+            rng: {}
+            networkInterfaceMultiqueue: true
+
+        networks:
+        - name: default
+          pod: {}
+
+        volumes:
+        - name: rootdisk
+          dataVolume:
+            name: ${NAME}
+
+        - name: cloudinitdisk
+          cloudInitConfigDrive:
+            userData: |
+              #cloud-config
+              user: cloud-user
+              password: ${CLOUD_USER_PASSWORD}
+              chpasswd:
+                expire: false
+
+              ssh_authorized_keys:
+                - ${SSH_PUBLIC_KEY}
+
+              packages:
+                - qemu-guest-agent
+                - httpd
+                - firewalld
+                - curl
+
+              runcmd:
+                - [ systemctl, enable, --now, qemu-guest-agent ]
+                - [ systemctl, enable, --now, firewalld ]
+                - [ firewall-cmd, --permanent, --add-service=http ]
+                - [ firewall-cmd, --permanent, --add-service=https ]
+                - [ firewall-cmd, --reload ]
+                - [ systemctl, enable, --now, httpd ]
+                - [ bash, -lc, "printf '%s | host: %s\n' \"${WEB_MESSAGE}\" \"$(hostname)\" > /var/www/html/index.html" ]
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${NAME}
+    annotations:
+      metallb.universe.tf/address-pool: ${METALLB_POOL}
+  spec:
+    type: LoadBalancer
+    selector:
+      kubevirt.io/domain: ${NAME}
+    ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+
+    - name: ssh
+      port: 22
+      targetPort: 22
+      protocol: TCP
+
+parameters:
+
+- name: NAME
+  description: Name of the virtual machine
+  generate: expression
+  from: rhel9-[a-z0-9]{5}
+
+- name: INSTANCE_TYPE
+  description: Cluster Instancetype to use for the VM
+  value: u1.small
+
+- name: CLOUD_USER_PASSWORD
+  description: Password for cloud-user
+  value: redhatocp
+
+- name: SSH_PUBLIC_KEY
+  description: SSH public key for login
+  value: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDjsULCfzrNxvqG4N7puLzH2S2+r3/NODQY7+Ad1lnqJA70HTIjO1QgEy2CcVfLJnqSDK1BJ6lZhggnxAT82WBC/eM6Nvf5rxYnUewgSmiLPlberjVM+BSxfduz9QMtbpDsSV3pS4N0AgKW7nG9c8qseig5MLbBN8iUrz8p3Vea9nKlBo7guJIIwdRcgSGI7d8TzhB5P0w8WHnpjoobNT2l72O5Gbbj7eFwc5vSj+XyuqDoVNcSsJvIeyGe7nmGsuBBD4zbJ16hx1lrR0VNhlVCpP4cjnHfhVTyQ07xEK56kv0+9+/91Dequ0hl0EsQ+ScQkeeZXmtxW2etGeayBxUhm5KKrSD9LyvK788sVxuqFKiBsrZhZjHMQx+WES5TeqJ0rFf028mvWGKDTJtLQP8IqtR+sdAddI3Vrwcb34JD7ItONKRwoIAHm1seokboQgJBwKHNY4hyTmiX0WuXGZ5prwnhNNNhkbZR5jgoqnUekfsHYOO7unByiPCWOAnMrVM= student@workstation
+
+- name: WEB_MESSAGE
+  description: Stub content for httpd
+  value: Hello from a template provisioned VM
+
+- name: STORAGE_PROVISIONER
+  description: Storage class used for VM disks
+  value: ocs-external-storagecluster-ceph-rbd-virtualization
+
+- name: ROOT_DISK_SIZE
+  description: Root disk size
+  value: 20Gi
+
+- name: EXTRA_DISK_SIZE
+  description: Extra disk size
+  value: 5Gi
+
+- name: METALLB_POOL
+  description: MetalLB address pool
+  value: gls-metallb-ipaddresspool

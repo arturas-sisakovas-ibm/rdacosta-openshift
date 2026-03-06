@@ -1,0 +1,218 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: rhel10-httpd-a
+  namespace: openshift
+  annotations:
+    defaults.template.kubevirt.io/disk: rootdisk
+    description: Template for Red Hat Enterprise Linux 10.1 VM with httpd installed.
+    iconClass: icon-rhel
+    name.os.template.kubevirt.io/rhel10.1: Red Hat Enterprise Linux 10.1
+    openshift.io/display-name: Red Hat Enterprise Linux 10.1 VM + httpd
+    openshift.io/documentation-url: https://github.com/kubevirt/common-templates
+    openshift.io/provider-display-name: Red Hat
+    openshift.io/support-url: https://github.com/kubevirt/common-templates/issues
+    openshift.kubevirt.io/pronounceable-suffix-for-name-expression: "true"
+    operator-sdk/primary-resource: openshift-cnv/ssp-kubevirt-hyperconverged
+    operator-sdk/primary-resource-type: SSP.ssp.kubevirt.io
+    tags: kubevirt,virtualmachine,linux,rhel,httpd
+    template.kubevirt.io/containerdisks: |
+      registry.redhat.io/rhel10/rhel-guest-image
+    template.kubevirt.io/editable: |
+      /objects[0].spec.template.spec.domain.cpu.cores
+      /objects[0].spec.template.spec.domain.memory.guest
+      /objects[0].spec.template.spec.domain.devices.disks
+      /objects[0].spec.template.spec.volumes
+      /objects[0].spec.template.spec.networks
+    template.kubevirt.io/images: |
+      https://access.redhat.com/downloads/content/rhel
+    template.kubevirt.io/provider: Red Hat
+    template.kubevirt.io/provider-support-level: Full
+    template.kubevirt.io/provider-url: https://www.redhat.com
+    template.kubevirt.io/version: v1alpha1
+    template.openshift.io/bindable: "false"
+  labels:
+    app.kubernetes.io/component: templating
+    app.kubernetes.io/managed-by: ssp-operator
+    app.kubernetes.io/name: common-templates
+    app.kubernetes.io/part-of: hyperconverged-cluster
+    app.kubernetes.io/version: 4.18.11
+    flavor.template.kubevirt.io/small: "true"
+    os.template.kubevirt.io/rhel10.1: "true"
+    template.kubevirt.io/architecture: amd64
+    template.kubevirt.io/default-os-variant: "true"
+    template.kubevirt.io/type: base
+    template.kubevirt.io/version: v0.32.2
+    workload.template.kubevirt.io/server: "true"
+
+objects:
+  # -----------------------------
+  # VirtualMachine
+  # -----------------------------
+  - apiVersion: kubevirt.io/v1
+    kind: VirtualMachine
+    metadata:
+      name: ${NAME}
+      labels:
+        app: ${NAME}
+        kubevirt.io/dynamic-credentials-support: "true"
+        vm.kubevirt.io/template: rhel10-httpd-a
+        vm.kubevirt.io/template.namespace: openshift
+        vm.kubevirt.io/template.revision: "1"
+        vm.kubevirt.io/template.version: v0.32.2
+    spec:
+      runStrategy: Always
+
+      dataVolumeTemplates:
+        - apiVersion: cdi.kubevirt.io/v1beta1
+          kind: DataVolume
+          metadata:
+            name: ${NAME}
+          spec:
+            sourceRef:
+              kind: DataSource
+              name: rhel10.1
+              namespace: openshift-virtualization-os-images
+            storage:
+              storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization
+              resources:
+                requests:
+                  storage: 30Gi
+
+      template:
+        metadata:
+          annotations:
+            vm.kubevirt.io/flavor: small
+            vm.kubevirt.io/os: rhel10
+            vm.kubevirt.io/workload: server
+          labels:
+            kubevirt.io/domain: ${NAME}
+            kubevirt.io/size: small
+        spec:
+          architecture: amd64
+
+          hostname: ${NAME}
+          terminationGracePeriodSeconds: 180
+
+          domain:
+            cpu:
+              cores: 1
+              sockets: 1
+              threads: 1
+            memory:
+              guest: 2Gi
+            devices:
+              disks:
+                - name: rootdisk
+                  disk:
+                    bus: virtio
+                - name: cloudinitdisk
+                  disk:
+                    bus: virtio
+              interfaces:
+                - name: default
+                  masquerade: {}
+                  model: virtio
+              rng: {}
+            features:
+              smm:
+                enabled: true
+            firmware:
+              bootloader:
+                efi: {}
+
+          networks:
+            - name: default
+              pod: {}
+
+          volumes:
+            - name: rootdisk
+              dataVolume:
+                name: ${NAME}
+
+            - name: cloudinitdisk
+              cloudInitNoCloud:
+                userData: |-
+                  #cloud-config
+                  users:
+                    - default
+                    - name: rhel
+                      plain_text_passwd: ${CLOUD_USER_PASSWORD}
+                      groups: wheel
+                      sudo: "ALL=(ALL) NOPASSWD:ALL"
+                      lock_passwd: false
+                      ssh_authorized_keys:
+                        - ${SSH_PUBLIC_KEY}
+
+                  ssh_pwauth: true
+                  chpasswd:
+                    expire: false
+
+                  yum_repos:
+                    baseos:
+                      name: baseos
+                      gpgcheck: False
+                      baseurl: http://content.example.com/rhel10.0/x86_64/dvd/BaseOS
+                    appstream:
+                      name: appstream
+                      gpgcheck: False
+                      baseurl: http://content.example.com/rhel10.0/x86_64/dvd/AppStream
+
+                  packages:
+                    - httpd
+                    - firewalld
+                    - curl
+                    - wget
+
+                  runcmd:
+                    - [ systemctl, enable, --now, firewalld ]
+                    - [ firewall-cmd, --permanent, --add-service=http ]
+                    - [ firewall-cmd, --permanent, --add-service=ssh ]
+                    - [ firewall-cmd, --reload ]
+                    - [ systemctl, enable, --now, httpd ]
+                    - [ bash, -lc, "printf '%s | host: %s\n' \"${WEB_MESSAGE}\" \"$(hostname)\" > /var/www/html/index.html" ]
+
+  # -----------------------------
+  # Service (MetalLB)
+  # -----------------------------
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: ${NAME}
+      annotations:
+        metallb.universe.tf/address-pool: ${METALLB_POOL}
+    spec:
+      type: LoadBalancer
+      selector:
+        kubevirt.io/domain: ${NAME}
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+          protocol: TCP
+        - name: ssh
+          port: 22
+          targetPort: 22
+          protocol: TCP
+
+parameters:
+  - name: NAME
+    description: VM name
+    generate: expression
+    from: rhel10-[a-z0-9]{16}
+
+  - name: CLOUD_USER_PASSWORD
+    description: Password for the cloud-user
+    value: redhatocp
+
+  - name: SSH_PUBLIC_KEY
+    description: SSH public key for login
+    value: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDjsULCfzrNxvqG4N7puLzH2S2+r3/NODQY7+Ad1lnqJA70HTIjO1QgEy2CcVfLJnqSDK1BJ6lZhggnxAT82WBC/eM6Nvf5rxYnUewgSmiLPlberjVM+BSxfduz9QMtbpDsSV3pS4N0AgKW7nG9c8qseig5MLbBN8iUrz8p3Vea9nKlBo7guJIIwdRcgSGI7d8TzhB5P0w8WHnpjoobNT2l72O5Gbbj7eFwc5vSj+XyuqDoVNcSsJvIeyGe7nmGsuBBD4zbJ16hx1lrR0VNhlVCpP4cjnHfhVTyQ07xEK56kv0+9+/91Dequ0hl0EsQ+ScQkeeZXmtxW2etGeayBxUhm5KKrSD9LyvK788sVxuqFKiBsrZhZjHMQx+WES5TeqJ0rFf028mvWGKDTJtLQP8IqtR+sdAddI3Vrwcb34JD7ItONKRwoIAHm1seokboQgJBwKHNY4hyTmiX0WuXGZ5prwnhNNNhkbZR5jgoqnUekfsHYOO7unByiPCWOAnMrVM= student@workstation
+
+  - name: WEB_MESSAGE
+    description: Stub content for httpd
+    value: Hello from a template provisioned RHEL10.1 VM
+
+  - name: METALLB_POOL
+    description: MetalLB address pool
+    value: gls-metallb-ipaddresspool
