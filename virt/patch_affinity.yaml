@@ -17,5 +17,5 @@ spec:
               - key: kubevirt.io/domain
                 operator: In
                 values:
-                - web1
+                - vm2
             topologyKey: kubernetes.io/hostname

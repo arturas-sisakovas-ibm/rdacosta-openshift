@@ -1,0 +1,12 @@
+apiVersion: migrations.kubevirt.io/v1alpha1
+kind: MigrationPolicy
+metadata:
+  name: demo
+spec:
+  allowAutoConverge: true
+  allowPostCopy: false
+  bandwidthPerMigration: 512Mi
+  completionTimeoutPerGiB: 300
+  selectors:
+    namespaceSelector:
+      migration-group: demo
