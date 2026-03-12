@@ -4,7 +4,7 @@ app = express();
 const app_ver = process.env.app_ver || "unknown";
 
 app.get('/', function (req, res) {
-  res.send(`Hello World! I am version ${app_ver}`);
+  res.send(`Hello World! I am version ${app_ver}\n`);
 });
 
 app.listen(8080, function () {
