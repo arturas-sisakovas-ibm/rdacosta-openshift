@@ -4,4 +4,5 @@ metadata:
   name: gitlab-repo
 spec:
   connectionConfig:
-    url: https://gitlab.com/rgdacosta/ocp-apps/-/raw/master/helm-charts
+    url: https://gitlab.com/rgdacosta/openshift/-/raw/main/helm-charts
+  name: Ricardo da Costa's GitLab Repo
