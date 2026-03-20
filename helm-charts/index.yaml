@@ -21,7 +21,7 @@ entries:
       name: famouschart
       type: application
       urls:
-        - https://gitlab.com/rgdacosta/ocp-apps/-/raw/main/helm-charts/famousquotes-0.1.0.tgz
+        - https://gitlab.com/rgdacosta/openshift/-/raw/main/helm-charts/famousquotes-0.1.0.tgz
       version: 0.1.0
 
   webserver:
