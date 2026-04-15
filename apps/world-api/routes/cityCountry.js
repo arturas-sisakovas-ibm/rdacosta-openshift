@@ -6,7 +6,7 @@ exports.city = (db) => {
             return res.status(400).send('Missing city name in query parameters.');
         }
 
-        const sql = 'SELECT * FROM City WHERE LOWER(Name) = LOWER(?)';
+        const sql = 'SELECT * FROM city WHERE LOWER(Name) = LOWER(?)';
         db.query(sql, [cityName], (err, result) => {
             if (err) throw err;
             res.send(result);
@@ -22,7 +22,7 @@ exports.country = (db) => {
             return res.status(400).send('Missing country name in query parameters.');
         }
 
-        const sql = 'SELECT * FROM Country WHERE LOWER(Name) = LOWER(?)';
+        const sql = 'SELECT * FROM country WHERE LOWER(Name) = LOWER(?)';
         db.query(sql, [countryName], (err, result) => {
             if (err) throw err;
             res.send(result);
