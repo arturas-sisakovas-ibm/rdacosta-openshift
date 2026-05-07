@@ -1,2 +1,3 @@
 FROM registry.access.redhat.com/ubi8:8.0
+USER 1000
 CMD bash -c "while true; do echo sleeping; sleep 5; done"
