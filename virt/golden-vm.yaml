@@ -27,7 +27,7 @@ spec:
         resources:
           requests:
             storage: 10Gi
-  runStrategy: Never
+  runStrategy: Halted
   template:
     metadata:
       annotations:
