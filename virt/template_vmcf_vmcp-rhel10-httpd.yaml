@@ -31,7 +31,6 @@ metadata:
     app.kubernetes.io/name: common-templates
     app.kubernetes.io/part-of: hyperconverged-cluster
     app.kubernetes.io/version: 4.18.11
-    flavor.template.kubevirt.io/small: "true"
     os.template.kubevirt.io/rhel10.1: "true"
     template.kubevirt.io/architecture: amd64
     template.kubevirt.io/default-os-variant: "true"
