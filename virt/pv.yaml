@@ -9,7 +9,7 @@ spec:
     - ReadWriteOnce
   volumeMode: Block
   claimRef:
-    name: web2-logs
+    name: html-data
     namespace: webservers
   iscsi:
     targetPortal: 192.168.51.40:3260

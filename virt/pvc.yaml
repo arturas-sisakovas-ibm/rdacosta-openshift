@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: web2-logs
+  name: html-data
   namespace: webservers
 spec:
   resources:

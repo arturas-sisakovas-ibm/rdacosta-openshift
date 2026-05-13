@@ -1,7 +1,7 @@
 apiVersion: instancetype.kubevirt.io/v1beta1
 kind: VirtualMachineClusterInstancetype
 metadata:
-  name: rhel10-small
+  name: rhel10-custom
 spec:
   cpu:
     guest: 2

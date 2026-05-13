@@ -2,12 +2,14 @@ apiVersion: clone.kubevirt.io/v1alpha1
 kind: VirtualMachineClone
 metadata:
   creationTimestamp: null
+  namespace: vms
   name: rhel9-basic-clone
 spec:
   source:
     apiGroup: kubevirt.io
     kind: VirtualMachine
     name: basic-rhel9
+    namespace: golden-vms
   target:
     apiGroup: kubevirt.io
     kind: VirtualMachine

@@ -1,0 +1,30 @@
+apiVersion: instancetype.kubevirt.io/v1beta1
+kind: VirtualMachineClusterPreference
+metadata:
+  annotations:
+    iconClass: icon-rhel
+    openshift.io/display-name: Red Hat Enterprise Linux 10 (amd64)
+    openshift.io/documentation-url: https://access.redhat.com
+    openshift.io/provider-display-name: Red Hat
+    openshift.io/support-url: https://access.redhat.com
+    tags: hidden,kubevirt,linux,rhel
+  labels:
+  name: rhel.10.1
+spec:
+  annotations:
+    vm.kubevirt.io/os: linux
+  devices:
+    preferredDiskBus: virtio
+    preferredDiskDedicatedIoThread: true
+    preferredInterfaceModel: virtio
+    preferredRng: {}
+  features:
+    preferredSmm: {}
+  firmware:
+    preferredEfi:
+      secureBoot: true
+  requirements:
+    cpu:
+      guest: 2
+    memory:
+      guest: 2048Mi

@@ -1,0 +1,28 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataImportCron
+metadata:
+  annotations:
+    cdi.kubevirt.io/storage.bind.immediate.requested: "true"
+    cdi.kubevirt.io/storage.import.storageClass: ocs-external-storagecluster-ceph-rbd-virtualization
+  labels:
+    instancetype.kubevirt.io/default-instancetype: rhel10-custom
+    instancetype.kubevirt.io/default-preference: rhel.10.1
+  name: rhel10.1
+  namespace: openshift-virtualization-os-images
+spec:
+  garbageCollect: Outdated
+  importsToKeep: 3
+  managedDataSource: rhel10.1
+  schedule: 0 0 * * 2
+  template:
+    metadata: {}
+    spec:
+      source:
+        registry:
+          url: docker://quay.io/rdacosta/rhel10.1:latest
+          secretRef: quay-io
+      storage:
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: ocs-external-storagecluster-ceph-rbd-virtualization

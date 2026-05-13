@@ -27,14 +27,6 @@ metadata:
     tags: hidden,kubevirt,virtualmachine,linux,rhel
     template.kubevirt.io/containerdisks: |
       registry.redhat.io/rhel9/rhel-guest-image
-    template.kubevirt.io/editable: |
-      /objects[0].spec.template.spec.domain.cpu.sockets
-      /objects[0].spec.template.spec.domain.cpu.cores
-      /objects[0].spec.template.spec.domain.cpu.threads
-      /objects[0].spec.template.spec.domain.memory.guest
-      /objects[0].spec.template.spec.domain.devices.disks
-      /objects[0].spec.template.spec.volumes
-      /objects[0].spec.template.spec.networks
     template.kubevirt.io/images: |
       https://access.redhat.com/downloads/content/479/ver=/rhel---9/9.0/x86_64/product-software
     template.kubevirt.io/provider: Red Hat
@@ -69,21 +61,9 @@ objects:
   kind: VirtualMachine
   metadata:
     name: ${NAME}
-    annotations:
-      vm.kubevirt.io/validations: |
-        [
-          {
-            "name": "minimal-required-memory",
-            "path": "jsonpath::.spec.domain.memory.guest",
-            "rule": "integer",
-            "message": "This VM requires more memory.",
-            "min": 1610612736
-          }
-        ]
     labels:
       app: ${NAME}
       kubevirt.io/dynamic-credentials-support: "true"
-
       vm.kubevirt.io/template: rhel9-httpd
       vm.kubevirt.io/template.namespace: openshift
       vm.kubevirt.io/template.revision: "1"
@@ -135,12 +115,6 @@ objects:
         terminationGracePeriodSeconds: 180
 
         domain:
-          cpu:
-            cores: 1
-            sockets: 1
-            threads: 1
-          memory:
-            guest: 2Gi
           devices:
             disks:
             - name: rootdisk
