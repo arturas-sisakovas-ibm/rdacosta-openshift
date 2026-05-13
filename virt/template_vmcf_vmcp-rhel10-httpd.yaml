@@ -84,12 +84,10 @@ objects:
       template:
         metadata:
           annotations:
-            vm.kubevirt.io/flavor: small
             vm.kubevirt.io/os: rhel10
             vm.kubevirt.io/workload: server
           labels:
             kubevirt.io/domain: ${NAME}
-            kubevirt.io/size: small
         spec:
           architecture: amd64
 
@@ -199,7 +197,7 @@ parameters:
 
   - name: VMCF
     description: Virtual Machine Cluster Instance Type
-    value: rhel10-small
+    value: rhel10-custom
 
   - name: VMCP
     description: Virtual Machine Cluster Preference
