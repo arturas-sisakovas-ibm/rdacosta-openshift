@@ -8,7 +8,7 @@ metadata:
   name: fe
 spec:
   lookupPolicy:
-    local: false
+    local: true
   tags:
   - annotations:
       openshift.io/imported-from: quay.io/rdacosta/world_fe:latest
