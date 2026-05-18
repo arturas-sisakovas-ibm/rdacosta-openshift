@@ -141,6 +141,8 @@ objects:
                   chpasswd:
                     expire: false
 
+                  # WARNING: GPG checking disabled for lab environment only
+                  # DO NOT use in production
                   yum_repos:
                     baseos:
                       name: baseos
