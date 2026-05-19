@@ -18,6 +18,8 @@ oc get deploy "$1" -o yaml \
             .status)
         | del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration",
               .metadata.annotations."deployment.kubernetes.io/revision",
+              .metadata.annotations."image.openshift.io/triggers",
+              .metadata.annotations."openshift.io/generated-by",
               .spec.template.metadata.annotations."kubectl.kubernetes.io/restartedAt",
               .spec.template.metadata.annotations."openshift.io/generated-by")' \
   | sed 's/@sha.*/:latest/g'

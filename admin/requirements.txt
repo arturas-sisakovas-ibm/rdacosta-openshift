@@ -1,0 +1,5 @@
+# Python dependencies for OpenShift admin tools
+# Install with: pip3 install -r requirements.txt
+
+# YAML Decoupler - Preserves formatting when splitting multi-document YAML
+ruamel.yaml>=0.18.0
