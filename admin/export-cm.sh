@@ -15,4 +15,5 @@ oc get cm "$1" -o yaml \
             .metadata.resourceVersion,
             .metadata.uid,
             .status)
-        | del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration")'
+        | del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration",
+              .metadata.annotations."openshift.io/generated-by")'

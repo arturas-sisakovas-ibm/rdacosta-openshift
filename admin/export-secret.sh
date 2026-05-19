@@ -26,4 +26,5 @@ oc get secret "$1" -o yaml \
               .metadata.annotations."volume.beta.kubernetes.io/storage-provisioner",
               .metadata.annotations."openshift.io/sa.scc.mcs",
               .metadata.annotations."openshift.io/sa.scc.supplemental-groups",
-              .metadata.annotations."openshift.io/sa.scc.uid-range")'
+              .metadata.annotations."openshift.io/sa.scc.uid-range",
+              .metadata.annotations."openshift.io/generated-by")'

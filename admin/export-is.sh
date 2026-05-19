@@ -17,4 +17,5 @@ oc get is "$1" -o yaml \
             .metadata.generation,
             .status)
         | del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration",
-              .metadata.annotations."openshift.io/image.dockerRepositoryCheck")'
+              .metadata.annotations."openshift.io/image.dockerRepositoryCheck",
+              .metadata.annotations."openshift.io/generated-by")'

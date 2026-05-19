@@ -17,4 +17,5 @@ oc get route "$1" -o yaml \
             .spec.host,
             .status)
         | del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration",
-              .metadata.annotations."openshift.io/host.generated")'
+              .metadata.annotations."openshift.io/host.generated",
+              .metadata.annotations."openshift.io/generated-by")'

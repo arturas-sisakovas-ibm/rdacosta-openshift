@@ -17,4 +17,5 @@ oc get svc "$1" -o yaml \
             .spec.clusterIP,
             .spec.clusterIPs,
             .status)
-        | del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration")'
+        | del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration",
+              .metadata.annotations."openshift.io/generated-by")'

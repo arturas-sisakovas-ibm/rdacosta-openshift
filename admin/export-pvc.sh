@@ -21,4 +21,5 @@ oc get pvc "$1" -o yaml \
               .metadata.annotations."pv.kubernetes.io/bind-completed",
               .metadata.annotations."pv.kubernetes.io/bound-by-controller",
               .metadata.annotations."volume.beta.kubernetes.io/storage-provisioner",
-              .metadata.annotations."volume.kubernetes.io/storage-provisioner")'
+              .metadata.annotations."volume.kubernetes.io/storage-provisioner",
+              .metadata.annotations."openshift.io/generated-by")'
